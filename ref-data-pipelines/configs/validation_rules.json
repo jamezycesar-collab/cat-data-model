@@ -1,0 +1,127 @@
+{
+ "$schema": "https://cat-pretrade.internal/schemas/ref-validation-rules-v1.json",
+ "description": "Per-table DQ rule catalog consumed by @dlt.expect_* decorators in ref-ingestion pipelines.",
+ "version": "1.0.0",
+ "last_updated": "2026-04-22",
+ "common_rules": {
+ "code_not_null": "{code_col} IS NOT NULL",
+ "name_not_null": "{name_col} IS NOT NULL",
+ "effective_start_not_null": "effective_start_date IS NOT NULL",
+ "effective_window_ordered": "effective_end_date >= effective_start_date",
+ "source_authority_not_null": "source_authority IS NOT NULL",
+ "record_source_not_null": "record_source IS NOT NULL",
+ "is_active_not_null": "is_active IS NOT NULL"
+ },
+ "tables": {
+ "ref_cat_event_type": {
+ "hard_fail": {
+ "code_alpha_3_10": "cat_event_type_code RLIKE '^[A-Z]{3,10}$'",
+ "category_enum": "category IS NULL OR category IN ('ORDER_REQUEST','ORDER','ROUTING','MODIFICATION','EXECUTION','ALLOCATION','QUOTE','COMBINED_ORDER','REPRESENTATIVE_ORDER','MANUAL')",
+ "phase_enum": "phase IS NULL OR phase IN ('2a','2b','2c','2d','2e')"
+ },
+ "warn_only": {
+ "exactly_50_rows": "(SELECT COUNT(*) FROM ref_cat_event_type WHERE is_active = TRUE) = 50"
+ }
+ },
+ "ref_mic": {
+ "hard_fail": {
+ "mic_code_4_upper_alnum": "mic_code RLIKE '^[A-Z0-9]{4}$'",
+ "country_code_iso3166": "country_code IS NULL OR country_code RLIKE '^[A-Z]{2}$'",
+ "status_enum": "status IS NULL OR status IN ('ACTIVE','DELETED','MODIFIED','EXPIRED')"
+ }
+ },
+ "ref_country": {
+ "hard_fail": {
+ "country_code_2_alpha": "country_code RLIKE '^[A-Z]{2}$'",
+ "alpha_3_valid": "alpha_3_code IS NULL OR alpha_3_code RLIKE '^[A-Z]{3}$'",
+ "numeric_code_3_digits": "numeric_code IS NULL OR numeric_code RLIKE '^[0-9]{3}$'",
+ "category_enum": "category IS NULL OR category IN ('AMERICAS','EMEA','APAC','AFRICA')"
+ }
+ },
+ "ref_currency": {
+ "hard_fail": {
+ "currency_code_3_alpha": "currency_code RLIKE '^[A-Z]{3}$'",
+ "minor_unit_valid": "minor_unit IS NULL OR minor_unit BETWEEN 0 AND 8",
+ "category_enum": "category IS NULL OR category IN ('FIAT','CRYPTO','PRECIOUS_METAL','FUND','OTHER')"
+ }
+ },
+ "ref_cfi_category": {
+ "hard_fail": {
+ "cfi_code_6_chars": "cfi_code RLIKE '^[A-Z-]{6}$'",
+ "category_prefix_valid": "category IS NULL OR category IN ('E','D','R','O','F','S','H','I','J','K','L','M','T')"
+ }
+ },
+ "ref_entity_legal_form": {
+ "hard_fail": {
+ "elf_code_4_alnum": "elf_code RLIKE '^[A-Z0-9]{4}$'",
+ "country_code_iso3166": "country_code IS NULL OR country_code RLIKE '^[A-Z]{2}$'"
+ }
+ },
+ "ref_order_type": {
+ "hard_fail": {
+ "fix_tag_40_numeric": "fix_tag_40_value IS NULL OR fix_tag_40_value RLIKE '^[A-Z0-9]{1,3}$'",
+ "category_enum": "category IS NULL OR category IN ('SIMPLE','CONDITIONAL','PEGGED','ALGO','DISCRETIONARY')"
+ }
+ },
+ "ref_time_in_force": {
+ "hard_fail": {
+ "tif_code_upper": "tif_code RLIKE '^[A-Z_]{2,20}$'",
+ "fix_tag_59_numeric": "fix_tag_59_value IS NULL OR fix_tag_59_value RLIKE '^[0-9]{1,2}$'"
+ }
+ },
+ "ref_handling_instruction": {
+ "hard_fail": {
+ "handling_upper": "handling_instruction_code RLIKE '^[A-Z_]{3,40}$'",
+ "fix_tag_21_value_enum": "fix_tag_21_value IS NULL OR fix_tag_21_value IN ('1','2','3')"
+ }
+ },
+ "ref_party_role": {
+ "hard_fail": {
+ "party_role_upper": "party_role_code RLIKE '^[A-Z_]{3,40}$'",
+ "regulatory_capacity_enum": "regulatory_capacity IS NULL OR regulatory_capacity IN ('PRINCIPAL','AGENCY','RISKLESS_PRINCIPAL','FIDUCIARY')"
+ }
+ },
+ "ref_instrument_type": {
+ "hard_fail": {
+ "instrument_type_upper": "instrument_type_code RLIKE '^[A-Z_]{3,40}$'",
+ "asset_class_enum": "asset_class IS NULL OR asset_class IN ('EQUITY','FIXED_INCOME','FX','COMMODITY','CRYPTO','RATES','CREDIT','EQUITY_DERIVATIVE')",
+ "cfi_prefix_1_char": "cfi_category_prefix IS NULL OR length(cfi_category_prefix) = 1"
+ }
+ },
+ "ref_day_count": {
+ "hard_fail": {
+ "day_count_upper": "day_count_code RLIKE '^[A-Z0-9_/.]{3,40}$'",
+ "category_enum": "category IS NULL OR category IN ('ACTUAL','30_360','BUSINESS_252')"
+ }
+ },
+ "ref_settlement_venue": {
+ "hard_fail": {
+ "bic_valid_when_present": "bic_code IS NULL OR bic_code RLIKE '^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$'",
+ "t_plus_nonneg": "t_plus_standard IS NULL OR t_plus_standard >= 0",
+ "category_enum": "category IS NULL OR category IN ('CSD','ICSD','CCP','CASH_CSD')"
+ }
+ },
+ "ref_regulator": {
+ "hard_fail": {
+ "regulator_upper": "regulator_code RLIKE '^[A-Z_]{2,20}$'",
+ "jurisdiction_enum": "jurisdiction_scope IS NULL OR jurisdiction_scope IN ('NATIONAL','FEDERAL','STATE','SUPRANATIONAL')"
+ }
+ },
+ "ref_credit_rating_scale": {
+ "hard_fail": {
+ "rating_agency_enum": "rating_agency IN ('SP','MOODYS','FITCH','DBRS','JCR','R_AND_I','SCOPE','KROLL')",
+ "agency_scale_enum": "agency_scale IN ('LONG_TERM','SHORT_TERM','ISSUER','ISSUE','RECOVERY')",
+ "default_prob_nonneg": "default_probability IS NULL OR default_probability BETWEEN 0 AND 1",
+ "basel_risk_weight_range": "basel_risk_weight IS NULL OR basel_risk_weight BETWEEN 0 AND 1.5"
+ }
+ },
+ "ref_tax_jurisdiction": {
+ "hard_fail": {
+ "country_code_iso3166": "country_code RLIKE '^[A-Z]{2}$'",
+ "default_withhold_range": "default_withholding_rate IS NULL OR default_withholding_rate BETWEEN 0 AND 1",
+ "treaty_withhold_range": "treaty_withholding_rate IS NULL OR treaty_withholding_rate BETWEEN 0 AND 1",
+ "category_enum": "category IS NULL OR category IN ('FEDERAL','STATE','PROVINCIAL','MUNICIPAL','SUPRANATIONAL')"
+ }
+ }
+ }
+}

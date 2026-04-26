@@ -1,0 +1,50 @@
+%% trade_lifecycle_state.mmd - State machine for the order lifecycle
+%% Scope: order_event.order_status + allocation.status + settlement transitions
+
+stateDiagram-v2
+ direction LR
+
+ [*] --> ORDER_REQUESTED : order_request created (MEIR/MOIR)
+ ORDER_REQUESTED --> NEW : order_event opened (MENO)
+ ORDER_REQUESTED --> REJECTED : reject_before_open
+ NEW --> PARTIALLY_FILLED : execution received (MEOT partial)
+ NEW --> FILLED : execution received (MEOT terminal)
+ NEW --> MODIFIED : order_modification (MEOM)
+ NEW --> CANCELLED : cancel_request (MEOC)
+ NEW --> EXPIRED : time_in_force expired (MEOE)
+ NEW --> ROUTED : order_route created (MECO/MLCO)
+
+ MODIFIED --> NEW : re-open_after_mod
+ PARTIALLY_FILLED --> FILLED : terminal fill received
+ PARTIALLY_FILLED --> CANCELLED : cancel_remaining
+ ROUTED --> PARTIALLY_FILLED : remote_fill
+ ROUTED --> FILLED : remote_terminal_fill
+
+ FILLED --> ALLOCATED : allocation created (MEPA)
+ ALLOCATED --> CONFIRMED : trade_confirmation issued
+ CONFIRMED --> AFFIRMED : affirmation received (CTM)
+
+ AFFIRMED --> CLEARED : CCP novation (clearing_record)
+ CLEARED --> SETTLEMENT_INSTRUCTED : settlement_instruction created
+ SETTLEMENT_INSTRUCTED --> IN_SETTLEMENT : DVP at DTCC
+ IN_SETTLEMENT --> SETTLED : actual_settle_date matched
+ IN_SETTLEMENT --> SETTLEMENT_FAIL : fail_reason populated
+ SETTLEMENT_FAIL --> IN_SETTLEMENT : retry_after_repair
+ SETTLEMENT_FAIL --> CANCELLED : cancel_after_fail
+
+ SETTLED --> POSITION_UPDATED : position row inserted
+ POSITION_UPDATED --> [*]
+
+ REJECTED --> [*]
+ CANCELLED --> [*]
+ EXPIRED --> [*]
+
+ state CORRECTIONS {
+ direction LR
+ [*] --> CORRECTION_PENDING : MEOJ / MEOC correction
+ CORRECTION_PENDING --> CORRECTION_SUBMITTED : submitted to CAT
+ CORRECTION_SUBMITTED --> CORRECTION_ACCEPTED : FINRA ACK
+ CORRECTION_SUBMITTED --> CORRECTION_REJECTED : FINRA feedback err
+ CORRECTION_REJECTED --> CORRECTION_PENDING : repair retry
+ CORRECTION_ACCEPTED --> [*]
+ }

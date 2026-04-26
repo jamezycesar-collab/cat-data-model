@@ -1,0 +1,242 @@
+%% gold_star_schema_er.mmd - Gold layer star schema for FINRA CAT submissions + BI
+%% 4 facts (event-grain) x 8 conformed dimensions (SCD2) + 2 operational tables
+
+classDiagram
+ direction TB
+
+ namespace Dimensions_SCD2 {
+ class dim_date
+ class dim_party
+ class dim_instrument
+ class dim_venue
+ class dim_account
+ class dim_event_type
+ class dim_desk
+ class dim_trader
+ }
+
+ namespace Facts {
+ class fact_cat_order_events
+ class fact_cat_allocations
+ class fact_cat_quotes
+ class fact_cat_customer_records
+ }
+
+ namespace Operational {
+ class cat_submission_batch
+ class cat_feedback_error
+ }
+
+ class dim_date {
+ <<dim static>>
+ +date_sk : PK
+ +calendar_date : DATE
+ day_of_week : INT
+ is_trading_day : BOOLEAN
+ t_plus_1_deadline : DATE
+ cat_submission_deadline : DATE
+ is_t1_settlement_eligible : BOOLEAN
+ }
+
+ class dim_party {
+ <<dim SCD2>>
+ +dim_party_sk : PK
+ party_id_bk : BK
+ lei : STRING
+ cat_imid : STRING
+ crd : STRING
+ fdid : STRING
+ party_type : STRING
+ ultimate_parent_id : STRING
+ effective_start_date : DATE
+ effective_end_date : DATE
+ is_current : BOOLEAN
+ row_hash : SHA256
+ }
+
+ class dim_instrument {
+ <<dim SCD2>>
+ +dim_instrument_sk : PK
+ instrument_id_bk : BK
+ isin : STRING
+ cusip : STRING
+ figi : STRING
+ symbol : STRING
+ asset_class : STRING
+ cfi_code : STRING
+ effective_start_date : DATE
+ effective_end_date : DATE
+ is_current : BOOLEAN
+ row_hash : SHA256
+ }
+
+ class dim_venue {
+ <<dim SCD2>>
+ +dim_venue_sk : PK
+ venue_id_bk : BK
+ mic : STRING
+ venue_category : STRING
+ country_code : STRING
+ effective_start_date : DATE
+ effective_end_date : DATE
+ is_current : BOOLEAN
+ }
+
+ class dim_account {
+ <<dim SCD2>>
+ +dim_account_sk : PK
+ account_id_bk : BK
+ account_type : STRING
+ custodian_id : STRING
+ clearing_member_id : STRING
+ is_current : BOOLEAN
+ }
+
+ class dim_event_type {
+ <<dim static taxonomy>>
+ +dim_event_type_sk : PK
+ cat_event_code : BK
+ event_name : STRING
+ submission_file_type : STRING
+ event_phase : STRING
+ }
+
+ class dim_desk {
+ <<dim SCD2>>
+ +dim_desk_sk : PK
+ desk_id_bk : BK
+ desk_name : STRING
+ desk_hierarchy : STRING
+ is_current : BOOLEAN
+ }
+
+ class dim_trader {
+ <<dim SCD2>>
+ +dim_trader_sk : PK
+ trader_id_bk : BK
+ cat_trader_id : STRING
+ given_name_hash : SHA256
+ family_name_hash : SHA256
+ is_current : BOOLEAN
+ }
+
+ class fact_cat_order_events {
+ <<fact event-grain>>
+ +order_event_fact_sk : PK
+ event_date : PK partition
+ firm_roe_id : BK unique_per_day_imid
+ cat_order_id : STRING
+ cat_event_code : FK dim_event_type
+ dim_party_sk : FK
+ dim_instrument_sk : FK
+ dim_venue_sk : FK
+ dim_account_sk : FK
+ dim_desk_sk : FK
+ dim_trader_sk : FK
+ event_timestamp : DATETIME2 nanos
+ quantity : DECIMAL
+ price : DECIMAL
+ side : STRING
+ order_type : STRING
+ time_in_force : STRING
+ dv2_source_hk : STRING
+ }
+
+ class fact_cat_allocations {
+ <<fact event-grain>>
+ +allocation_fact_sk : PK
+ event_date : PK
+ firm_roe_id : STRING
+ cat_order_id : STRING
+ cat_event_code : FK dim_event_type
+ dim_party_sk : FK
+ dim_instrument_sk : FK
+ dim_account_sk : FK
+ allocated_quantity : DECIMAL
+ allocated_price : DECIMAL
+ allocation_pct : DECIMAL
+ allocation_timestamp : DATETIME2 nanos
+ dv2_source_hk : STRING
+ }
+
+ class fact_cat_quotes {
+ <<fact event-grain>>
+ +quote_fact_sk : PK
+ event_date : PK
+ firm_roe_id : STRING
+ cat_event_code : FK dim_event_type
+ dim_party_sk : FK
+ dim_instrument_sk : FK
+ dim_venue_sk : FK
+ quote_side : STRING
+ bid_price : DECIMAL
+ ask_price : DECIMAL
+ bid_size : DECIMAL
+ ask_size : DECIMAL
+ quote_timestamp : DATETIME2 nanos
+ dv2_source_hk : STRING
+ }
+
+ class fact_cat_customer_records {
+ <<fact snapshot>>
+ +cais_fact_sk : PK
+ snapshot_date : PK
+ fdid : BK
+ dim_party_sk : FK
+ dim_account_sk : FK
+ customer_type : STRING
+ large_trader_flag : BOOLEAN
+ effective_start_date : DATE
+ dv2_source_hk : STRING
+ }
+
+ class cat_submission_batch {
+ <<operational>>
+ +batch_id : PK
+ event_date : DATE
+ cat_reporter_imid : STRING
+ submission_file_type : STRING
+ file_name : STRING
+ file_size_bytes : BIGINT
+ record_count : BIGINT
+ submission_timestamp : TIMESTAMP
+ ack_status : ENUM
+ }
+
+ class cat_feedback_error {
+ <<operational>>
+ +error_id : PK
+ batch_id : FK cat_submission_batch
+ firm_roe_id : STRING
+ error_code : STRING
+ error_description : STRING
+ t_plus_3_deadline : DATE
+ resolution_status : ENUM
+ }
+
+ fact_cat_order_events "*" --> "1" dim_date : event_date
+ fact_cat_order_events "*" --> "1" dim_party : dim_party_sk
+ fact_cat_order_events "*" --> "1" dim_instrument : dim_instrument_sk
+ fact_cat_order_events "*" --> "1" dim_venue : dim_venue_sk
+ fact_cat_order_events "*" --> "1" dim_account : dim_account_sk
+ fact_cat_order_events "*" --> "1" dim_event_type : cat_event_code
+ fact_cat_order_events "*" --> "1" dim_desk : dim_desk_sk
+ fact_cat_order_events "*" --> "1" dim_trader : dim_trader_sk
+
+ fact_cat_allocations "*" --> "1" dim_date : event_date
+ fact_cat_allocations "*" --> "1" dim_party : dim_party_sk
+ fact_cat_allocations "*" --> "1" dim_instrument : dim_instrument_sk
+ fact_cat_allocations "*" --> "1" dim_account : dim_account_sk
+ fact_cat_allocations "*" --> "1" dim_event_type : cat_event_code
+
+ fact_cat_quotes "*" --> "1" dim_date : event_date
+ fact_cat_quotes "*" --> "1" dim_party : dim_party_sk
+ fact_cat_quotes "*" --> "1" dim_instrument : dim_instrument_sk
+ fact_cat_quotes "*" --> "1" dim_venue : dim_venue_sk
+ fact_cat_quotes "*" --> "1" dim_event_type : cat_event_code
+
+ fact_cat_customer_records "*" --> "1" dim_party : dim_party_sk
+ fact_cat_customer_records "*" --> "1" dim_account : dim_account_sk
+
+ cat_submission_batch "1" --> "*" cat_feedback_error : receives
+ fact_cat_order_events..> cat_submission_batch : serialized_into

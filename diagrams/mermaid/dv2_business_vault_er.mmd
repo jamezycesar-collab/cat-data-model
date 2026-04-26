@@ -1,0 +1,163 @@
+%% dv2_business_vault_er.mmd - Business Vault (computed sats + derived links + aggregated bridges)
+%% 5 computed satellites + 2 derived links + 4 aggregated bridges = 11 BV objects
+
+classDiagram
+ direction LR
+
+ namespace ComputedSatellites {
+ class sat_bv_party_risk
+ class sat_bv_order_best_execution
+ class sat_bv_execution_latency
+ class sat_bv_confirmation_sla
+ class sat_bv_settlement_fail_risk
+ }
+
+ namespace DerivedLinks {
+ class link_bv_order_to_execution_derived
+ class link_bv_beneficial_owner_chain
+ }
+
+ namespace AggregatedBridges {
+ class bridge_bv_daily_trade_lifecycle_facts
+ class bridge_bv_hourly_venue_quality
+ class bridge_bv_cat_event_coverage
+ class bridge_bv_counterparty_exposure
+ }
+
+ class sat_bv_party_risk {
+ <<computed SCD2>>
+ +party_hk : PK,FK
+ +load_date : PK
+ load_end_date : TIMESTAMP
+ hash_diff : SHA256
+ aggregated_exposure_usd : DECIMAL
+ exposure_rank_percentile : DECIMAL
+ g_sib_classification : STRING
+ basel_bcar_tier : STRING
+ record_source : STRING
+ }
+
+ class sat_bv_order_best_execution {
+ <<computed SCD2>>
+ +order_hk : PK,FK
+ +load_date : PK
+ hash_diff : SHA256
+ venue_price : DECIMAL
+ nbbo_price : DECIMAL
+ price_improvement_bps : DECIMAL
+ effective_over_quoted_ratio : DECIMAL
+ rule_611_compliant : BOOLEAN
+ record_source : STRING
+ }
+
+ class sat_bv_execution_latency {
+ <<computed SCD2>>
+ +execution_hk : PK,FK
+ +load_date : PK
+ hash_diff : SHA256
+ order_to_exec_micros : BIGINT
+ venue_matching_latency_micros : BIGINT
+ network_rtt_micros : BIGINT
+ record_source : STRING
+ }
+
+ class sat_bv_confirmation_sla {
+ <<computed SCD2>>
+ +confirmation_hk : PK,FK
+ +load_date : PK
+ hash_diff : SHA256
+ sla_target_minutes : INT
+ actual_confirm_latency_minutes : INT
+ sla_breach_flag : BOOLEAN
+ rule_15c6_2_compliant : BOOLEAN
+ record_source : STRING
+ }
+
+ class sat_bv_settlement_fail_risk {
+ <<computed SCD2>>
+ +settlement_hk : PK,FK
+ +load_date : PK
+ hash_diff : SHA256
+ fail_probability_score : DECIMAL
+ cumulative_fail_days : INT
+ dtcc_novation_status : STRING
+ csdr_penalty_eligible : BOOLEAN
+ record_source : STRING
+ }
+
+ class link_bv_order_to_execution_derived {
+ <<derived link>>
+ +link_hk : PK
+ order_hk : FK
+ execution_hk : FK
+ derivation_rule : STRING
+ confidence_score : DECIMAL
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+
+ class link_bv_beneficial_owner_chain {
+ <<derived recursive>>
+ +link_hk : PK
+ root_party_hk : FK
+ beneficial_owner_hk : FK
+ chain_depth : INT
+ effective_control_pct : DECIMAL
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+
+ class bridge_bv_daily_trade_lifecycle_facts {
+ <<aggregated>>
+ +bridge_hk : PK
+ fact_date : PK
+ party_hk : FK
+ instrument_hk : FK
+ venue_hk : FK
+ order_count : BIGINT
+ execution_count : BIGINT
+ allocation_count : BIGINT
+ total_notional_usd : DECIMAL
+ settlement_fail_count : BIGINT
+ }
+
+ class bridge_bv_hourly_venue_quality {
+ <<aggregated>>
+ +bridge_hk : PK
+ hour_ts : PK
+ venue_hk : FK
+ instrument_hk : FK
+ fill_rate : DECIMAL
+ price_improvement_bps : DECIMAL
+ rejection_rate : DECIMAL
+ median_latency_micros : BIGINT
+ }
+
+ class bridge_bv_cat_event_coverage {
+ <<aggregated>>
+ +bridge_hk : PK
+ cat_reportable_date : PK
+ cat_event_code : STRING
+ submission_count : BIGINT
+ accepted_count : BIGINT
+ error_count : BIGINT
+ coverage_ratio : DECIMAL
+ }
+
+ class bridge_bv_counterparty_exposure {
+ <<aggregated>>
+ +bridge_hk : PK
+ exposure_date : PK
+ party_hk : FK
+ counterparty_hk : FK
+ agreement_hk : FK
+ gross_exposure_usd : DECIMAL
+ net_exposure_usd : DECIMAL
+ collateral_posted_usd : DECIMAL
+ }
+
+ sat_bv_order_best_execution..> bridge_bv_hourly_venue_quality : feeds
+ sat_bv_execution_latency..> bridge_bv_hourly_venue_quality : feeds
+ sat_bv_settlement_fail_risk..> bridge_bv_daily_trade_lifecycle_facts : feeds
+ sat_bv_party_risk..> bridge_bv_counterparty_exposure : feeds
+ link_bv_beneficial_owner_chain..> sat_bv_party_risk : inputs

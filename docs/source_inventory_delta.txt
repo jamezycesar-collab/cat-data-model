@@ -1,0 +1,35 @@
+# Delta Lake Entity Inventory
+# file_size_bytes: 56536
+# last_modified_timestamp: 2026-04-21T21:11:17.437799
+# entity_count: 29
+# generated: 2026-04-21T21:47:39.805018
+
+account
+asset_class_reference
+clock_sync_audit
+corporate_action_linkage
+digital_asset_attributes
+equity_attributes
+error_correction
+event_type_reference
+fixed_income_attributes
+instrument
+instrument_classification
+instrument_identifier
+instrument_listing
+legal_entity
+natural_person
+option_attributes
+order_event
+order_modification
+order_route
+party
+party_address
+party_classification
+party_identifier
+party_relationship
+party_role
+quote_event
+reporting_submission
+venue
+venue_asset_class

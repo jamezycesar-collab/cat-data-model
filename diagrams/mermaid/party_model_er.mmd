@@ -1,0 +1,171 @@
+%% party_model_er.mmd - Enterprise Party Model ER
+%% Subject Area: Party (light blue #dae8fc)
+%% Entities: 14 (party, legal_entity, natural_person, party_role, party_relationship,
+%% party_identifier, party_address, party_classification, account,
+%% party_contact, party_regulatory_status, party_credit_rating,
+%% beneficial_ownership, desk)
+
+classDiagram
+ direction LR
+
+ class party {
+ <<entity supertype>>
+ +party_id : PK
+ party_type : ENUM
+ party_status : ENUM
+ ultimate_parent_party_id : FK self
+ domicile_country : ISO3166
+ tax_residency : ISO3166
+ effective_date : DATE
+ end_date : DATE
+ }
+
+ class legal_entity {
+ <<entity subtype>>
+ +party_id : PK,FK party
+ lei : ISO17442
+ legal_form : ISO20275
+ incorporation_country : ISO3166
+ incorporation_date : DATE
+ is_regulated : BOOLEAN
+ g_sib_flag : BOOLEAN
+ mifid_ii_category : ENUM
+ }
+
+ class natural_person {
+ <<entity subtype>>
+ +party_id : PK,FK party
+ given_name_hash : SHA256
+ family_name_hash : SHA256
+ date_of_birth_hash : SHA256
+ citizenship_country : ISO3166
+ pep_flag : BOOLEAN
+ kyc_status : ENUM
+ }
+
+ class party_role {
+ <<entity>>
+ +party_role_id : PK
+ party_id : FK party
+ role_type : ENUM
+ role_capacity : ENUM
+ desk_id : FK desk
+ start_date : DATE
+ end_date : DATE
+ }
+
+ class party_relationship {
+ <<entity>>
+ +relationship_id : PK
+ parent_party_id : FK party
+ child_party_id : FK party
+ relationship_type : ENUM
+ ownership_percentage : DECIMAL
+ voting_percentage : DECIMAL
+ effective_date : DATE
+ }
+
+ class party_identifier {
+ <<entity>>
+ +identifier_id : PK
+ party_id : FK party
+ id_type : ENUM
+ id_value : STRING
+ id_issuer : STRING
+ effective_start : DATE
+ }
+
+ class party_address {
+ <<entity>>
+ +address_id : PK
+ party_id : FK party
+ address_type : ENUM
+ country_code : ISO3166
+ address_line1 : STRING
+ city : STRING
+ postal_code : STRING
+ }
+
+ class party_classification {
+ <<entity>>
+ +classification_id : PK
+ party_id : FK party
+ classification_scheme : ENUM
+ classification_code : STRING
+ }
+
+ class account {
+ <<entity>>
+ +account_id : PK
+ party_id : FK party
+ account_type : ENUM
+ account_status : ENUM
+ custodian_party_id : FK party
+ clearing_party_id : FK party
+ base_currency : ISO4217
+ }
+
+ class party_contact {
+ <<entity>>
+ +contact_id : PK
+ party_id : FK party
+ contact_type : ENUM
+ email_hash : SHA256
+ phone_hash : SHA256
+ }
+
+ class party_regulatory_status {
+ <<entity>>
+ +status_id : PK
+ party_id : FK party
+ regulator_code : FK ref_regulator
+ registration_type : ENUM
+ registration_id : STRING
+ effective_start : DATE
+ }
+
+ class party_credit_rating {
+ <<entity>>
+ +rating_id : PK
+ party_id : FK party
+ agency : ENUM
+ rating_code : STRING
+ outlook : ENUM
+ rating_date : DATE
+ }
+
+ class beneficial_ownership {
+ <<entity recursive>>
+ +ownership_id : PK
+ owned_party_id : FK party
+ owner_party_id : FK party
+ ownership_percentage : DECIMAL
+ control_type : ENUM
+ ultimate_beneficial_owner_flag : BOOLEAN
+ effective_start : DATE
+ }
+
+ class desk {
+ <<entity>>
+ +desk_id : PK
+ desk_name : STRING
+ desk_type : ENUM
+ parent_desk_id : FK desk
+ lei : ISO17442
+ }
+
+ party <|-- legal_entity : inherits
+ party <|-- natural_person : inherits
+ party "1" --> "*" party_role : has
+ party "1" --> "*" party_identifier : identified_by
+ party "1" --> "*" party_address : has
+ party "1" --> "*" party_classification : classified_as
+ party "1" --> "*" party_contact : reachable_via
+ party "1" --> "*" party_regulatory_status : registered_with
+ party "1" --> "*" party_credit_rating : rated_by
+ party "1" --> "*" account : owns
+ party "1" --> "*" party_relationship : parent_of
+ party "1" --> "*" beneficial_ownership : owned_by
+ party..> party : ultimate_parent (self-ref)
+ desk "1" --> "*" party_role : staffs
+ desk..> desk : parent (self-ref)

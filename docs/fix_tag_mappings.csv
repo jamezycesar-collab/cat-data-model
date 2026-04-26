@@ -1,0 +1,74 @@
+fix_tag,fix_field_name,fix_msg_type,target_entity,target_column,fix_version,cat_event_type,notes
+1,Account,35=D,order_event,account_id,4.2+,MENO,FK joined through account lookup
+6,AvgPx,35=8,execution,execution_price,4.2+,MEOT,Average fill price (for multi-fill aggregations)
+11,ClOrdID,35=D,order_event,client_order_id,4.2+,MENO,Client-assigned order ID
+14,CumQty,35=8,execution,cumulative_qty,4.2+,MEOT,Cumulative filled qty (derived)
+17,ExecID,35=8,execution,cat_execution_id,4.2+,MEOT,Execution identifier (maps to CAT eventID)
+19,ExecRefID,35=8,execution,cat_execution_id,4.2+,MEOT,References original ExecID on BUST/CORRECT
+20,ExecTransType,35=8,execution,execution_type,4.2,MEOT,0=New 1=Cancel 2=Correct 3=Status
+21,HandlInst,35=D,order_event,order_handling_instruction,4.2+,MENO,1=Auto-Private 2=Auto-Public 3=Manual
+22,IDSource,35=D,instrument_identifier,identifier_scheme,4.2+,-,1=CUSIP 2=SEDOL 3=QUIK 4=ISIN 5=RIC 8=ExchangeSymbol
+23,IOIID,35=6,indication_of_interest,ioi_id,4.2+,-,Unique IOI identifier
+25,IOIQltyInd,35=6,indication_of_interest,ioi_natural_flag,4.2+,-,H=High M=Med L=Low
+27,IOIQty,35=6,indication_of_interest,max_quantity,4.2+,-,IOI size
+30,LastMkt,35=8,execution,last_market,4.2+,MEOT,MIC of execution venue
+31,LastPx,35=8,execution,execution_price,4.2+,MEOT,Price of this fill
+32,LastQty,35=8,execution,execution_quantity,4.2+,MEOT,Quantity of this fill
+37,OrderID,35=8,order_event,broker_order_id,4.2+,MENO,Broker-assigned order ID
+38,OrderQty,35=D,order_event,order_quantity,4.2+,MENO,Requested quantity
+39,OrdStatus,35=8,order_event,order_status,4.2+,MEOA,0=New 1=Partial 2=Filled 4=Cancel 8=Reject
+40,OrdType,35=D,order_event,order_type,4.2+,MENO,1=Market 2=Limit 3=Stop 4=StopLimit
+41,OrigClOrdID,35=G,order_modification,prior_order_id,4.2+,MEOM,Original ClOrdID being replaced
+44,Price,35=D,order_event,limit_price,4.2+,MENO,Limit/stop price
+48,SecurityID,35=D,instrument_identifier,identifier_value,4.2+,-,With IDSource (22) resolves instrument
+54,Side,35=D,order_event,side,4.2+,MENO,1=Buy 2=Sell 3=BuyMinus 4=SellPlus 5=SellShort 6=SellShortExempt
+55,Symbol,35=D,instrument,ticker,4.2+,-,Security ticker
+59,TimeInForce,35=D,order_event,time_in_force,4.2+,MENO,0=Day 1=GTC 2=AtOpen 3=IOC 4=FOK 5=GTX 6=GTD 7=AtClose
+60,TransactTime,35=D,order_event,order_timestamp,4.2+,MENO,Time of order entry
+62,ValidUntilTime,35=S,quote_event,validity_end,4.2+,MEQS,Quote expiry
+64,SettlDate,35=D,order_event,settlement_date,4.2+,-,Contractual settlement date
+75,TradeDate,35=8,execution,trade_date,4.2+,MEOT,Business date of trade
+99,StopPx,35=D,order_event,stop_price,4.2+,MENO,Stop-order trigger price
+117,QuoteID,35=S,quote_event,quote_id,4.2+,MEQS,Market maker's quote identifier
+130,IOINaturalFlag,35=6,indication_of_interest,ioi_natural_flag,4.2+,-,Y=Natural N=Principal
+131,QuoteReqID,35=R,quote_request,quote_req_id,4.2+,MEQR,RFQ identifier
+132,BidPx,35=S,quote_event,bid_price,4.2+,MEQS,Bid price
+133,OfferPx,35=S,quote_event,ask_price,4.2+,MEQS,Offer/ask price
+134,BidSize,35=S,quote_event,bid_quantity,4.2+,MEQS,Bid size
+135,OfferSize,35=S,quote_event,ask_quantity,4.2+,MEQS,Offer size
+150,ExecType,35=8,execution,execution_type,4.4+,MEOT,0=New 1=PartialFill 2=Fill 3=DoneForDay 4=Cancel 5=Replace 6=PendingCancel 7=Stopped 8=Rejected B=Calc C=Expired D=Restated E=PendingReplace F=Trade G=TradeCorrect H=TradeCancel I=OrderStatus
+151,LeavesQty,35=8,execution,remaining_quantity,4.4+,MEOT,Open qty remaining
+167,SecurityType,35=D,instrument,instrument_type,4.2+,-,CS=Common FUT=Future OPT=Option TBOND=Treasury etc.
+207,SecurityExchange,35=D,venue,mic_code,4.2+,-,MIC code
+336,TradingSessionID,35=D,venue_trading_session,session_type,4.4+,-,Session identifier
+376,ComplianceID,35=D,order_event,compliance_id,4.4+,-,Compliance identifier
+378,ExecRestatementReason,35=8,execution,execution_type,4.4+,MEOT,Restatement reason code
+432,ExpireDate,35=D,order_event,expire_date,4.2+,MENO,GTD expiry date
+448,PartyID,35=D,party_role,party_role_id,4.4+,-,Party identifier (in Parties group)
+452,PartyRole,35=D,party_role,role_type,4.4+,-,1=ExecFirm 3=ClientID 11=OrderOriginationTrader 12=ExecutingTrader 13=OrderOriginationFirm 17=ContraFirm 22=EnteringFirm 24=CustomerAccount 38=PositionAccount 44=RegulatoryAgency 62=ClearingOrg 66=ClearingAccount 83=ConfirmingParty
+453,NoPartyIDs,35=D,order_event,-,4.4+,-,Repeating group counter
+455,SecurityAltID,35=D,instrument_identifier,identifier_value,4.4+,-,Alternate identifier
+456,SecurityAltIDSource,35=D,instrument_identifier,identifier_scheme,4.4+,-,Alternate identifier source
+528,OrderCapacity,35=D,execution,capacity,4.4+,MEOT,A=Agency P=Principal R=RisklessPrincipal
+529,OrderRestrictions,35=D,order_event,solicitation_flag,4.4+,MENO,A=Program X=NonIndexArb etc.
+555,NoLegs,35=D,order_leg,-,4.4+,MLNO,Repeating group counter
+556,LegCurrency,35=D,order_leg,leg_currency,4.4+,MLNO,Per-leg currency
+564,LegPositionEffect,35=D,order_leg,leg_side,4.4+,MLNO,O=Open C=Close
+600,LegSymbol,35=D,instrument_leg,ticker,4.4+,MLNO,Per-leg ticker
+602,LegSecurityID,35=D,instrument_leg,identifier_value,4.4+,MLNO,Per-leg security ID
+603,LegSecurityIDSource,35=D,instrument_leg,identifier_scheme,4.4+,MLNO,Per-leg source
+608,LegCFICode,35=D,instrument_leg,cfi_code,4.4+,MLNO,Per-leg CFI
+609,LegSecurityType,35=D,instrument_leg,instrument_type,4.4+,MLNO,Per-leg type
+687,LegQty,35=D,order_leg,leg_quantity,4.4+,MLNO,Per-leg quantity
+694,QuoteRespType,35=AJ,quote_response,response_status,4.4+,-,1=Hit/Lift 2=Counter 3=Expired 4=Cover 5=DoneAway
+704,OpenInterest,35=P,position,quantity_long,4.4+,-,Position open interest
+728,PosReqID,35=AN,position,position_id,4.4+,-,Position request ID
+751,TradeReportID,35=AE,execution,cat_execution_id,4.4+,MEOT,Trade report identifier
+828,TrdType,35=AE,execution,execution_type,4.4+,MEOT,0=Regular 1=Block 2=EFP 3=Transfer 4=LateTrade 22=OffHours etc.
+851,LastLiquidityInd,35=8,execution,liquidity_indicator,4.4+,MEOT,1=Added 2=Removed 3=LiquidityRouted 4=Auction
+880,TrdMatchID,35=8,execution,cat_execution_id,4.4+,MEOT,CCP-assigned match ID
+1003,TradeID,35=AE,execution,execution_id,5.0+,MEOT,Unique trade identifier
+1091,PreTradeAnonymity,35=D,order_event,anonymity_flag,5.0+,-,Pre-trade anonymity request
+1385,ContingencyType,35=D,order_event,order_handling_instruction,5.0+,-,1=OneCancelsOther 2=OneTriggersOther 3=OneUpdatesOther_CancelQty 4=OneUpdatesOther_ReduceQty
+1090,MaxPriceLevels,35=D,order_event,-,5.0+,-,Iceberg max price levels
+1138,DisplayQty,35=D,order_event,display_quantity,5.0+,-,Iceberg displayed quantity

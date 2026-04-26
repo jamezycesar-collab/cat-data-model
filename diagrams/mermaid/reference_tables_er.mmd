@@ -1,0 +1,217 @@
+%% reference_tables_er.mmd - 16 reference tables + 3 reference hubs
+%% All enforce ISO / FINRA CAT / MiFID II enumerations via CHECK + FK constraints.
+
+classDiagram
+ direction TB
+
+ namespace ISO_Core {
+ class ref_mic
+ class ref_country
+ class ref_currency
+ class ref_cfi_category
+ class ref_entity_legal_form
+ }
+
+ namespace CAT_FINRA {
+ class ref_cat_event_type
+ class ref_regulator
+ class ref_order_type
+ class ref_time_in_force
+ class ref_handling_instruction
+ }
+
+ namespace Party_Instrument {
+ class ref_party_role
+ class ref_instrument_type
+ class ref_day_count
+ class ref_settlement_venue
+ class ref_credit_rating_scale
+ class ref_tax_jurisdiction
+ }
+
+ namespace ReferenceHubs {
+ class hub_mic
+ class hub_currency
+ class hub_country
+ }
+
+ class ref_mic {
+ <<reference ISO10383>>
+ +mic : PK
+ operating_mic : STRING
+ market_name : STRING
+ legal_entity_name : STRING
+ country_code : FK ref_country
+ city : STRING
+ status : ENUM
+ effective_start_date : DATE
+ }
+
+ class ref_country {
+ <<reference ISO3166-1>>
+ +country_code : PK alpha-2
+ country_code_alpha3 : STRING
+ country_name : STRING
+ numeric_code : INT
+ region : STRING
+ eu_member : BOOLEAN
+ fatf_high_risk : BOOLEAN
+ }
+
+ class ref_currency {
+ <<reference ISO4217>>
+ +currency_code : PK alpha-3
+ numeric_code : INT
+ currency_name : STRING
+ minor_unit : INT
+ country_code : FK ref_country
+ status : ENUM
+ }
+
+ class ref_cfi_category {
+ <<reference ISO10962>>
+ +cfi_code : PK 6-char
+ category : STRING
+ group : STRING
+ attributes : STRING
+ iso_10962_hierarchy : STRING
+ }
+
+ class ref_entity_legal_form {
+ <<reference ISO20275>>
+ +elf_code : PK 4-char
+ country_code : FK ref_country
+ elf_name : STRING
+ elf_local_language_name : STRING
+ abbreviation : STRING
+ }
+
+ class ref_cat_event_type {
+ <<reference FINRA CAT>>
+ +cat_event_code : PK
+ event_name : STRING
+ event_phase : ENUM
+ submission_file_type : ENUM
+ active_flag : BOOLEAN
+ effective_start_date : DATE
+ }
+
+ class ref_regulator {
+ <<reference>>
+ +regulator_code : PK
+ regulator_name : STRING
+ jurisdiction : FK ref_country
+ submission_endpoint : STRING
+ oversight_domain : ENUM
+ }
+
+ class ref_order_type {
+ <<reference FIX 40>>
+ +order_type_code : PK
+ fix_tag_value : STRING
+ order_type_name : STRING
+ fix_tag_id : INT
+ description : STRING
+ }
+
+ class ref_time_in_force {
+ <<reference FIX 59>>
+ +tif_code : PK
+ fix_tag_value : STRING
+ tif_name : STRING
+ description : STRING
+ }
+
+ class ref_handling_instruction {
+ <<reference FIX 21>>
+ +handling_inst_code : PK
+ fix_tag_value : STRING
+ instruction_name : STRING
+ description : STRING
+ }
+
+ class ref_party_role {
+ <<reference FIX 452>>
+ +role_code : PK
+ role_name : STRING
+ fix_tag_value : STRING
+ description : STRING
+ }
+
+ class ref_instrument_type {
+ <<reference>>
+ +instrument_type_code : PK
+ instrument_type_name : STRING
+ asset_class : ENUM
+ cfi_prefix : STRING
+ }
+
+ class ref_day_count {
+ <<reference ISDA>>
+ +day_count_code : PK
+ day_count_name : STRING
+ isda_convention : STRING
+ numerator_basis : STRING
+ denominator_basis : STRING
+ }
+
+ class ref_settlement_venue {
+ <<reference>>
+ +settlement_venue_code : PK
+ settlement_venue_name : STRING
+ country_code : FK ref_country
+ settlement_cycle : ENUM
+ operating_hours : STRING
+ }
+
+ class ref_credit_rating_scale {
+ <<reference>>
+ +rating_code : PK
+ agency : ENUM
+ rating_category : ENUM
+ investment_grade_flag : BOOLEAN
+ moodys_equivalent : STRING
+ sp_equivalent : STRING
+ }
+
+ class ref_tax_jurisdiction {
+ <<reference>>
+ +jurisdiction_code : PK
+ country_code : FK ref_country
+ jurisdiction_name : STRING
+ fatca_status : ENUM
+ crs_participant : BOOLEAN
+ }
+
+ class hub_mic {
+ <<DV hub>>
+ +mic_hk : PK SHA256
+ mic : BK
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+ class hub_currency {
+ <<DV hub>>
+ +currency_hk : PK SHA256
+ currency_code : BK
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+ class hub_country {
+ <<DV hub>>
+ +country_hk : PK SHA256
+ country_code : BK
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+
+ ref_mic "1" --> "1" ref_country : located_in
+ ref_currency "1" --> "1" ref_country : issued_by
+ ref_entity_legal_form "1" --> "1" ref_country : recognised_in
+ ref_regulator "1" --> "1" ref_country : oversees
+ ref_settlement_venue "1" --> "1" ref_country : domiciled_in
+ ref_tax_jurisdiction "1" --> "1" ref_country : based_on
+
+ hub_mic..> ref_mic : materialises
+ hub_currency..> ref_currency : materialises
+ hub_country..> ref_country : materialises

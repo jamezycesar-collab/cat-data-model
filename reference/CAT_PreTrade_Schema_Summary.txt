@@ -1,0 +1,180 @@
+================================================================================
+CAT Pre-Trade Data Model - Schema Summary
+================================================================================
+
+Repository : github.com/jamezycesar-collab/cat-pretrade-data-model
+Version : v2.0.0 (post-refactor)
+Revised : 2026-04-22
+License : Apache License, Version 2.0 (see LICENSE, NOTICE)
+
+--------------------------------------------------------------------------------
+1. Scope
+--------------------------------------------------------------------------------
+
+The model covers the enterprise trade lifecycle for a U.S. broker-dealer
+subject to SEC Rule 613 and FINRA Rule 6800 series, expanded from the
+original 29-entity pre-trade compliance schema to ~93 entities across
+twelve subject areas.
+
+ Party............ 14 entities
+ Instrument....... 14 entities
+ Venue............ 4 entities
+ Agreement........ 9 entities
+ Trade Lifecycle.. 20 entities
+ Regulatory....... 6 entities
+ Reference........ 16 entities
+ ---------------------------
+ Total............ 83 transactional + reference + shared ≈ 93
+
+(Counts represent the deduplicated entity set across 01_/01a-c and
+02_/02a-c split files; see audit/validate_entity_matrix.csv for the
+authoritative per-entity ledger.)
+
+--------------------------------------------------------------------------------
+2. Physical DDL variants
+--------------------------------------------------------------------------------
+
+ ddl/CAT_PreTrade_DDL_DeltaLake.sql Databricks Delta Lake (consolidated)
+ ddl/CAT_PreTrade_DDL_Hive.sql Apache Hive (consolidated)
+ ddl/CAT_PreTrade_DDL_Fabric_Lakehouse.sql Microsoft Fabric Lakehouse
+ ddl/CAT_PreTrade_DDL_Fabric_Warehouse.sql Microsoft Fabric Warehouse (T-SQL)
+
+Split-file versions for reviewability:
+
+ ddl/expanded-model/ Delta Lake - one file per subject area
+ ddl/expanded-model-hive/ Hive - one file per subject area
+
+--------------------------------------------------------------------------------
+3. Data Vault 2.0 Silver
+--------------------------------------------------------------------------------
+
+ ddl/dv2/dv2_hubs.sql 20 hubs (business-key anchors)
+ ddl/dv2/dv2_links.sql 32 links (relationships + events)
+ ddl/dv2/dv2_satellites.sql 52 satellites (SCD2 attributes)
+ ddl/dv2/dv2_reference.sql 19 refs (mirror of transactional ref tables)
+ ddl/dv2/dv2_pit_tables.sql 16 PITs (point-in-time presentation)
+ ddl/dv2/dv2_bridge_tables.sql 8 bridges (many-to-many resolution)
+ ddl/dv2/dv2_business_vault.sql 11 BV views (derived metrics, same-as links)
+ ddl/dv2/dv2_mapping.md Table-by-table source -> DV2 mapping
+
+Fabric-platform variants:
+
+ ddl/dv2/dv2_ddl_fabric_lakehouse.sql
+ ddl/dv2/dv2_ddl_fabric_warehouse.sql
+
+--------------------------------------------------------------------------------
+4. Gold star schema - CAT FINRA submission layer
+--------------------------------------------------------------------------------
+
+ ddl/gold/01_dim_tables.sql 8 SCD2 conformed dimensions
+ dim_date, dim_instrument, dim_party,
+ dim_trader, dim_desk, dim_account,
+ dim_venue, dim_event_type
+ ddl/gold/02_fact_tables.sql 4 CAT-aligned fact tables
+ fact_order_events, fact_execution_events,
+ fact_allocations, fact_cais_snapshots
+ ddl/gold/03_operational_tables.sql Submission tracking + FINRA feedback
+ ddl/gold/04_consumption_views.sql BI and regulator-facing views
+ ddl/gold/05_etl_silver_to_gold.md DV2 -> Gold transformation logic
+ ddl/gold/06_cat_field_mapping.csv Gold column ↔ CAT JSON field mapping
+ ddl/gold/07_submission_generator.py JSON + BZip2 + SFTP submission
+ ddl/gold/08_fabric_warehouse_variant.sql T-SQL Fabric Warehouse variant
+
+--------------------------------------------------------------------------------
+5. Reference tables - 16 tables enforcing 72 enumerations
+--------------------------------------------------------------------------------
+
+CAT-taxonomy tables: ref_cat_event_type, ref_submission_file_type
+ISO-standard tables: ref_country, ref_currency, ref_mic, ref_cfi_category,
+ ref_entity_legal_form
+Industry tables: ref_instrument_type, ref_asset_class, ref_market_segment,
+ ref_isda_daycount, ref_fix_enum, ref_credit_rating,
+ ref_tax_jurisdiction
+Firm/regulatory tables: ref_firm_desk, ref_risk_framework
+
+Enumerations are enforced via FOREIGN KEY to the ref table, with CHECK
+constraints used only where a small closed set is not a reference table
+(e.g., risk_framework).
+
+--------------------------------------------------------------------------------
+6. Operational pipelines
+--------------------------------------------------------------------------------
+
+Delta Live Tables - Silver -> Gold:
+
+ dlt-pipelines/dim_pipelines/ 8 dimensions (SCD2 via apply_changes)
+ dlt-pipelines/fact_pipelines/ 4 fact tables with expect_all_or_fail gates
+ dlt-pipelines/tests/ SCD2 invariants, fact quality gates,
+ referential integrity
+
+Reference data ingestion:
+
+ ref-data-pipelines/ingestion/ 6 DLT pipelines for CAT, ISO, ISDA, FIX,
+ firm, industry reference tables
+ ref-data-pipelines/configs/ Pipeline, source registry, validation rules
+ ref-data-pipelines/manual-procedures/
+ 01_monthly_iso_mic_refresh.md
+ 02_cat_taxonomy_version_upgrade.md
+ 03_credit_rating_quarterly_refresh.md
+ 04_tax_treaty_annual_refresh.md
+
+--------------------------------------------------------------------------------
+7. CAT event coverage
+--------------------------------------------------------------------------------
+
+All 50 CAT events from the FINRA CAT Industry Member Technical
+Specifications v4.1.0r9 taxonomy are mapped to target entities:
+
+ MEIR / MOIR - Order Request (electronic / manual receipt)
+ MEQR - Quote Request / RFQ
+ MEQS - Quote response
+ MENO / MONO - New Order / Manual New Order
+ MEMR / MOMR - Route / Manual Route
+ MEOT / MEOTQ/ MEOF - Execution (trade / quote-trade / fulfillment)
+ MECR / MOCR - Cancel / Replace
+ MEAM / MOAM - Allocation
+ MECF - Confirmation... and 38 additional events
+
+See audit/validate_entity_matrix.csv for the per-event mapping.
+
+--------------------------------------------------------------------------------
+8. Regulatory and standards references
+--------------------------------------------------------------------------------
+
+Primary regulations:
+ SEC Rule 613 (17 CFR 242.613) Consolidated Audit Trail
+ FINRA Rule 6800 series CAT reporting obligations
+ MiFID II / MiFIR (EU Regulation 600/2014) Cross-border reporting
+ Dodd-Frank Title VII Swap reporting
+ BCBS 239 Risk data aggregation principles
+
+Industry standards:
+ ISO 3166-1, 4217, 10383, 10962, 17442, 20275
+ ISDA Master Agreement, ISDA 2006 / 2021 Definitions, CSA
+ GMRA, GMSLA
+ FIX Protocol 4.4, 5.0, 5.0 SP2
+ FpML 5.x
+
+See THIRD_PARTY_LICENSES.md for the full attribution catalog.
+
+--------------------------------------------------------------------------------
+9. Validation status
+--------------------------------------------------------------------------------
+
+See audit/validate_report.md for the ten-gate cross-cutting integrity
+audit. All gates PASS as of the current HEAD:
+
+ V01 Entity parity................. PASS
+ V02 Data Vault structure.......... PASS
+ V03 Gold star schema.............. PASS
+ V04 DLT pipeline coverage......... PASS
+ V05 Reference table coverage...... PASS
+ V06 Enumeration enforcement....... PASS
+ V07 Foreign key integrity......... PASS
+ V08 Fabric DDL parity............. PASS
+ V09 Diagram completeness.......... PASS
+ V10 Documentation completeness.... PASS
+
+================================================================================
+End of Schema Summary
+================================================================================

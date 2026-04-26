@@ -1,0 +1,129 @@
+{
+ "pipelines": [
+ {
+ "name": "gold_dim_pipeline",
+ "edition": "ADVANCED",
+ "channel": "CURRENT",
+ "development": false,
+ "continuous": false,
+ "photon": true,
+ "serverless": true,
+ "catalog": "gold",
+ "target": "gold",
+ "storage": "abfss://gold@oneLake.dfs.fabric.microsoft.com/pipelines/gold_dim",
+ "libraries": [
+ { "notebook": { "path": "/dlt-pipelines/dim_pipelines/dlt_dim_date" } },
+ { "notebook": { "path": "/dlt-pipelines/dim_pipelines/dlt_dim_event_type" } },
+ { "notebook": { "path": "/dlt-pipelines/dim_pipelines/dlt_dim_party" } },
+ { "notebook": { "path": "/dlt-pipelines/dim_pipelines/dlt_dim_instrument" } },
+ { "notebook": { "path": "/dlt-pipelines/dim_pipelines/dlt_dim_venue" } },
+ { "notebook": { "path": "/dlt-pipelines/dim_pipelines/dlt_dim_account" } },
+ { "notebook": { "path": "/dlt-pipelines/dim_pipelines/dlt_dim_desk" } },
+ { "notebook": { "path": "/dlt-pipelines/dim_pipelines/dlt_dim_trader" } }
+ ],
+ "configuration": {
+ "silver_database": "silver",
+ "gold_database": "gold",
+ "bronze_database": "bronze",
+ "environment": "prod",
+ "spark.sql.shuffle.partitions": "200",
+ "pipelines.autoOptimize.managed": "true"
+ },
+ "clusters": [
+ {
+ "label": "default",
+ "node_type_id": "Standard_DS4_v2",
+ "driver_node_type_id": "Standard_DS4_v2",
+ "autoscale": {
+ "min_workers": 2,
+ "max_workers": 8,
+ "mode": "ENHANCED"
+ },
+ "policy_id": "finance-gold-policy",
+ "spark_conf": {
+ "spark.databricks.delta.optimizeWrite.enabled": "true",
+ "spark.databricks.delta.autoCompact.enabled": "true"
+ },
+ "custom_tags": {
+ "workstream": "",
+ "layer": "gold",
+ "cost_center": "regulatory-reporting"
+ }
+ }
+ ],
+ "notifications": [
+ {
+ "alerts": ["on-update-failure", "on-flow-failure"],
+ "email_recipients": ["regulatory-ops@example.com"]
+ }
+ ],
+ "trigger": {
+ "cron": {
+ "quartz_cron_expression": "0 0 2 ? * * *",
+ "timezone_id": "America/New_York"
+ }
+ }
+ },
+ {
+ "name": "gold_fact_pipeline",
+ "edition": "ADVANCED",
+ "channel": "CURRENT",
+ "development": false,
+ "continuous": false,
+ "photon": true,
+ "serverless": true,
+ "catalog": "gold",
+ "target": "gold",
+ "storage": "abfss://gold@oneLake.dfs.fabric.microsoft.com/pipelines/gold_fact",
+ "libraries": [
+ { "notebook": { "path": "/dlt-pipelines/fact_pipelines/dlt_fact_cat_order_events" } },
+ { "notebook": { "path": "/dlt-pipelines/fact_pipelines/dlt_fact_cat_allocations" } },
+ { "notebook": { "path": "/dlt-pipelines/fact_pipelines/dlt_fact_cat_quotes" } },
+ { "notebook": { "path": "/dlt-pipelines/fact_pipelines/dlt_fact_cat_customer_records" } }
+ ],
+ "configuration": {
+ "silver_database": "silver",
+ "gold_database": "gold",
+ "environment": "prod",
+ "spark.sql.shuffle.partitions": "400",
+ "pipelines.autoOptimize.managed": "true"
+ },
+ "clusters": [
+ {
+ "label": "default",
+ "node_type_id": "Standard_DS5_v2",
+ "driver_node_type_id": "Standard_DS5_v2",
+ "autoscale": {
+ "min_workers": 4,
+ "max_workers": 16,
+ "mode": "ENHANCED"
+ },
+ "policy_id": "finance-gold-policy",
+ "custom_tags": {
+ "workstream": "",
+ "layer": "gold",
+ "cost_center": "regulatory-reporting"
+ }
+ }
+ ],
+ "notifications": [
+ {
+ "alerts": ["on-update-failure", "on-flow-failure", "on-update-fatal-failure"],
+ "email_recipients": ["regulatory-ops@example.com"]
+ }
+ ],
+ "trigger": {
+ "cron": {
+ "quartz_cron_expression": "0 0/15 4-20 ? * MON-FRI *",
+ "timezone_id": "America/New_York"
+ }
+ }
+ }
+ ],
+ "deployment": {
+ "bundle_name": "cat-gold-pipelines",
+ "target_environments": ["dev", "staging", "prod"],
+ "cicd_tool": "Azure DevOps",
+ "source_control_branch": "main"
+ }
+}

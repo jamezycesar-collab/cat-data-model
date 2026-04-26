@@ -1,0 +1,151 @@
+%% full_model_er.mmd - Full Enterprise Model (all 83 entities, clustered)
+%% Rendering: classDiagram with UML cluster namespaces per subject area
+%% Purpose: one-page overview - details live in subject-area ERs
+
+classDiagram
+ direction TB
+
+ namespace Party {
+ class party
+ class legal_entity
+ class natural_person
+ class party_role
+ class party_relationship
+ class party_identifier
+ class party_address
+ class party_classification
+ class account
+ class party_contact
+ class party_regulatory_status
+ class party_credit_rating
+ class beneficial_ownership
+ class desk
+ }
+
+ namespace Instrument {
+ class instrument
+ class equity_attributes
+ class option_attributes
+ class fixed_income_attributes
+ class digital_asset_attributes
+ class derivative_contract
+ class structured_product
+ class instrument_leg
+ class instrument_underlying
+ class instrument_identifier
+ class instrument_classification
+ class instrument_listing
+ class corporate_action_linkage
+ class instrument_risk_classification
+ }
+
+ namespace Venue {
+ class venue
+ class venue_asset_class
+ class venue_trading_session
+ class venue_connectivity
+ }
+
+ namespace Agreement {
+ class agreement
+ class agreement_schedule
+ class agreement_netting_set
+ class collateral_agreement
+ class collateral_haircut
+ class margin_call
+ class repo_transaction
+ class securities_loan
+ class commission_schedule
+ }
+
+ namespace TradeLifecycle {
+ class quote_request
+ class quote_event
+ class quote_response
+ class request_for_execution
+ class indication_of_interest
+ class order_request
+ class order_event
+ class order_route
+ class order_modification
+ class order_leg
+ class execution
+ class execution_leg
+ class allocation
+ class allocation_instruction
+ class trade_confirmation
+ class clearing_record
+ class settlement_instruction
+ class settlement_obligation
+ class position
+ class position_break
+ }
+
+ namespace Operations {
+ class error_correction
+ class clock_sync_audit
+ class audit_trail_event
+ }
+
+ namespace RegulatoryReporting {
+ class reporting_submission
+ class regulatory_report
+ class regulatory_hold
+ }
+
+ namespace Reference {
+ class ref_cat_event_type
+ class ref_mic
+ class ref_country
+ class ref_currency
+ class ref_cfi_category
+ class ref_entity_legal_form
+ class ref_order_type
+ class ref_time_in_force
+ class ref_handling_instruction
+ class ref_party_role
+ class ref_instrument_type
+ class ref_day_count
+ class ref_settlement_venue
+ class ref_regulator
+ class ref_credit_rating_scale
+ class ref_tax_jurisdiction
+ }
+
+ party..> legal_entity : supertype
+ party..> natural_person : supertype
+ party "1" --> "*" account : owns
+ party "1" --> "*" party_role : has
+ party..> desk : staffed_via
+
+ instrument..> equity_attributes : supertype
+ instrument..> option_attributes : supertype
+ instrument..> fixed_income_attributes : supertype
+ instrument..> derivative_contract : supertype
+ instrument..> structured_product : supertype
+ instrument..> digital_asset_attributes : supertype
+ instrument "1" --> "*" instrument_listing : listed_at
+ instrument_listing "*" --> "1" venue : on
+
+ agreement "1" --> "*" collateral_agreement : governs
+ agreement "1" --> "*" repo_transaction : hosts
+ agreement "1" --> "*" securities_loan : hosts
+
+ quote_request "1" --> "*" quote_event : elicits
+ quote_event "1" --> "*" request_for_execution : converts_to
+ request_for_execution "1" --> "*" order_request : triggers
+ order_request "1" --> "*" order_event : becomes
+ order_event "1" --> "*" execution : fills
+ execution "1" --> "*" allocation : splits
+ allocation "1" --> "*" trade_confirmation : confirmed
+ allocation "1" --> "*" settlement_instruction : settled
+ settlement_instruction "1" --> "1" settlement_obligation : produces
+ allocation "1" --> "*" position : updates
+
+ reporting_submission "1" --> "*" regulatory_report : contains
+ regulatory_report..> execution : reports_on
+ regulatory_report..> allocation : reports_on
+ regulatory_report..> order_event : reports_on
+
+ audit_trail_event..> party : references
+ error_correction..> reporting_submission : retargets

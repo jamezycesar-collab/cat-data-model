@@ -1,0 +1,76 @@
+%% regulatory_reporting_er.mmd - Regulatory reporting entities
+%% Subject Area: Regulatory Reporting (light orange #fce5cd)
+%% Entities: 6 - reporting_submission, regulatory_report, regulatory_hold + ref_cat_event_type, ref_regulator, ref_cfi_category (show linked refs)
+
+classDiagram
+ direction LR
+
+ class reporting_submission {
+ <<entity>>
+ +submission_id : PK
+ submission_date : DATE
+ regulator_code : FK ref_regulator
+ report_type : ENUM
+ submission_status : ENUM
+ file_name : STRING
+ file_size_bytes : BIGINT
+ record_count : BIGINT
+ ack_status : ENUM
+ ack_timestamp : TIMESTAMP
+ }
+
+ class regulatory_report {
+ <<entity>>
+ +report_id : PK
+ submission_id : FK reporting_submission
+ event_date : DATE
+ cat_event_type : FK ref_cat_event_type
+ cat_order_id : STRING
+ firm_roe_id : STRING
+ report_phase : ENUM
+ report_payload : JSON
+ created_timestamp : TIMESTAMP
+ }
+
+ class regulatory_hold {
+ <<entity>>
+ +hold_id : PK
+ entity_type : STRING
+ entity_id : STRING
+ regulator_code : FK ref_regulator
+ hold_type : ENUM
+ hold_reason : STRING
+ hold_start_date : DATE
+ hold_end_date : DATE
+ hold_status : ENUM
+ }
+
+ class ref_cat_event_type {
+ <<reference taxonomy>>
+ +cat_event_code : PK
+ event_name : STRING
+ event_phase : ENUM
+ submission_file_type : ENUM
+ active_flag : BOOLEAN
+ }
+
+ class ref_regulator {
+ <<reference>>
+ +regulator_code : PK
+ regulator_name : STRING
+ jurisdiction : ISO3166
+ submission_endpoint : STRING
+ }
+
+ class ref_cfi_category {
+ <<reference>>
+ +cfi_code : PK
+ cfi_category : STRING
+ cfi_group : STRING
+ iso_10962_hierarchy : STRING
+ }
+
+ reporting_submission "1" --> "*" regulatory_report : contains
+ reporting_submission "1" --> "1" ref_regulator : submitted_to
+ regulatory_report "1" --> "1" ref_cat_event_type : typed_by
+ regulatory_hold "1" --> "1" ref_regulator : imposed_by

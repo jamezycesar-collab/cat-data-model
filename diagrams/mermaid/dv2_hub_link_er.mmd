@@ -1,0 +1,180 @@
+%% dv2_hub_link_er.mmd - Data Vault 2.0 Hub / Link / Satellite structure
+%% Shows the 18 hubs + key links + representative satellites.
+%% Stereotypes: <<hub>>, <<link>>, <<satellite>>
+
+classDiagram
+ direction TB
+
+ namespace CoreHubs {
+ class hub_party
+ class hub_account
+ class hub_instrument
+ class hub_venue
+ class hub_agreement
+ }
+
+ namespace LifecycleHubs {
+ class hub_order_request
+ class hub_quote_request
+ class hub_quote
+ class hub_order
+ class hub_execution
+ class hub_allocation
+ class hub_confirmation
+ class hub_clearing
+ class hub_settlement
+ }
+
+ namespace OpsHubs {
+ class hub_submission
+ class hub_position
+ }
+
+ namespace ReferenceHubs {
+ class hub_mic
+ class hub_currency
+ class hub_country
+ }
+
+ class hub_party {
+ <<hub>>
+ +party_hk : PK SHA256
+ party_id : BK
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+ class hub_instrument {
+ <<hub>>
+ +instrument_hk : PK SHA256
+ instrument_id : BK
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+ class hub_order {
+ <<hub>>
+ +order_hk : PK SHA256
+ cat_order_id : BK
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+ class hub_execution {
+ <<hub>>
+ +execution_hk : PK SHA256
+ execution_id : BK
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+ class hub_allocation {
+ <<hub>>
+ +allocation_hk : PK SHA256
+ allocation_id : BK
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+
+ class link_order_execution {
+ <<link>>
+ +link_hk : PK SHA256
+ order_hk : FK
+ execution_hk : FK
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+ class link_execution_allocation {
+ <<link>>
+ +link_hk : PK SHA256
+ execution_hk : FK
+ allocation_hk : FK
+ account_hk : FK
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+ class link_party_account {
+ <<link>>
+ +link_hk : PK SHA256
+ party_hk : FK
+ account_hk : FK
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+ class link_instrument_venue {
+ <<link>>
+ +link_hk : PK SHA256
+ instrument_hk : FK
+ venue_hk : FK
+ listing_type : STRING
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+ class link_order_route_venue {
+ <<link>>
+ +link_hk : PK SHA256
+ order_hk : FK
+ venue_hk : FK
+ route_sequence : INT
+ load_date : TIMESTAMP
+ record_source : STRING
+ }
+
+ class sat_party_details {
+ <<satellite SCD2>>
+ +party_hk : PK,FK
+ +load_date : PK
+ load_end_date : TIMESTAMP
+ hash_diff : SHA256
+ party_type : STRING
+ party_status : STRING
+ domicile_country : STRING
+ tax_residency : STRING
+ record_source : STRING
+ }
+ class sat_instrument_details {
+ <<satellite SCD2>>
+ +instrument_hk : PK,FK
+ +load_date : PK
+ load_end_date : TIMESTAMP
+ hash_diff : SHA256
+ isin : STRING
+ cusip : STRING
+ figi : STRING
+ asset_class : STRING
+ record_source : STRING
+ }
+ class sat_order_details {
+ <<satellite append-only>>
+ +order_hk : PK,FK
+ +load_date : PK
+ hash_diff : SHA256
+ order_type : STRING
+ time_in_force : STRING
+ quantity : DECIMAL
+ price : DECIMAL
+ record_source : STRING
+ }
+ class sat_execution_details {
+ <<satellite append-only>>
+ +execution_hk : PK,FK
+ +load_date : PK
+ hash_diff : SHA256
+ executed_quantity : DECIMAL
+ executed_price : DECIMAL
+ execution_timestamp : TIMESTAMP
+ venue_hk : STRING
+ record_source : STRING
+ }
+
+ hub_party "1" --> "*" sat_party_details : describes
+ hub_instrument "1" --> "*" sat_instrument_details : describes
+ hub_order "1" --> "*" sat_order_details : describes
+ hub_execution "1" --> "*" sat_execution_details : describes
+
+ hub_order "1" --> "*" link_order_execution : participates
+ hub_execution "1" --> "*" link_order_execution : participates
+ hub_execution "1" --> "*" link_execution_allocation : participates
+ hub_allocation "1" --> "*" link_execution_allocation : participates
+ hub_party "1" --> "*" link_party_account : participates
+ hub_account "1" --> "*" link_party_account : participates
+ hub_instrument "1" --> "*" link_instrument_venue : participates
+ hub_venue "1" --> "*" link_instrument_venue : participates
+ hub_order "1" --> "*" link_order_route_venue : participates
+ hub_venue "1" --> "*" link_order_route_venue : participates

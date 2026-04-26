@@ -1,0 +1,112 @@
+%% agreement_model_er.mmd - Enterprise Agreement Model ER
+%% Subject Area: Agreement (light gray #f5f5f5)
+%% Entities: 9 - ISDA / CSA / GMRA / GMSLA master agreements + dependent collateral + financing
+
+classDiagram
+ direction LR
+
+ class agreement {
+ <<entity>>
+ +agreement_id : PK
+ agreement_type : ENUM
+ agreement_subtype : ENUM
+ party_a_id : FK party
+ party_b_id : FK party
+ effective_date : DATE
+ termination_date : DATE
+ governing_law : ISO3166
+ }
+
+ class agreement_schedule {
+ <<entity>>
+ +schedule_id : PK
+ agreement_id : FK agreement
+ schedule_section : ENUM
+ section_number : STRING
+ elected_option : STRING
+ schedule_value : STRING
+ }
+
+ class agreement_netting_set {
+ <<entity>>
+ +netting_set_id : PK
+ agreement_id : FK agreement
+ netting_set_type : ENUM
+ close_out_netting : BOOLEAN
+ settlement_netting : BOOLEAN
+ jurisdiction : ISO3166
+ }
+
+ class collateral_agreement {
+ <<entity>>
+ +collateral_agreement_id : PK
+ agreement_id : FK agreement
+ collateral_category : ENUM
+ base_currency : ISO4217
+ threshold_amount : DECIMAL
+ minimum_transfer_amount : DECIMAL
+ rounding_amount : DECIMAL
+ }
+
+ class collateral_haircut {
+ <<entity>>
+ +haircut_id : PK
+ collateral_agreement_id : FK collateral_agreement
+ collateral_type : ENUM
+ haircut_percentage : DECIMAL
+ rating_threshold : STRING
+ maturity_bucket : ENUM
+ }
+
+ class margin_call {
+ <<entity>>
+ +margin_call_id : PK
+ collateral_agreement_id : FK collateral_agreement
+ call_date : DATE
+ exposure_amount : DECIMAL
+ required_collateral : DECIMAL
+ call_status : ENUM
+ dispute_flag : BOOLEAN
+ }
+
+ class repo_transaction {
+ <<entity>>
+ +repo_id : PK
+ agreement_id : FK agreement
+ trade_date : DATE
+ start_date : DATE
+ end_date : DATE
+ repo_rate : DECIMAL
+ haircut_percentage : DECIMAL
+ collateral_instrument_id : FK instrument
+ }
+
+ class securities_loan {
+ <<entity>>
+ +loan_id : PK
+ agreement_id : FK agreement
+ trade_date : DATE
+ loaned_instrument_id : FK instrument
+ borrow_fee_rate : DECIMAL
+ collateral_type : ENUM
+ recall_notice_days : INT
+ }
+
+ class commission_schedule {
+ <<entity>>
+ +commission_schedule_id : PK
+ agreement_id : FK agreement
+ asset_class : ENUM
+ commission_rate_bps : DECIMAL
+ min_commission : DECIMAL
+ effective_start : DATE
+ }
+
+ agreement "1" --> "*" agreement_schedule : structured_by
+ agreement "1" --> "*" agreement_netting_set : nets_via
+ agreement "1" --> "*" collateral_agreement : collateralised_by
+ agreement "1" --> "*" repo_transaction : supports
+ agreement "1" --> "*" securities_loan : supports
+ agreement "1" --> "*" commission_schedule : prices_via
+ collateral_agreement "1" --> "*" collateral_haircut : applies
+ collateral_agreement "1" --> "*" margin_call : generates

@@ -1,0 +1,114 @@
+%% dv2_pit_bridge_er.mmd - Point-In-Time tables + Bridges (query-layer helpers)
+%% PIT = single-hub timeslice; Bridge = multi-hub flattened chain.
+
+classDiagram
+ direction LR
+
+ namespace PIT_Single_Hub {
+ class pit_party
+ class pit_account
+ class pit_instrument
+ class pit_venue
+ class pit_agreement
+ class pit_order
+ class pit_execution
+ class pit_allocation
+ class pit_confirmation
+ class pit_clearing
+ class pit_settlement
+ class pit_submission
+ class pit_quote
+ class pit_order_request
+ class pit_repo
+ class pit_securities_loan
+ }
+
+ namespace Bridges_MultiHop {
+ class bridge_trade_lifecycle
+ class bridge_order_to_execution
+ class bridge_execution_to_allocation
+ class bridge_allocation_to_settlement
+ class bridge_party_instrument_activity
+ class bridge_quote_rfq_response
+ class bridge_party_agreement_netting
+ class bridge_order_routing_chain
+ }
+
+ class pit_party {
+ <<PIT>>
+ +snapshot_date : PK
+ +party_hk : PK
+ sat_party_details_load_date : TIMESTAMP
+ sat_party_identifiers_load_date : TIMESTAMP
+ sat_party_role_load_date : TIMESTAMP
+ record_source : STRING
+ }
+
+ class pit_order {
+ <<PIT>>
+ +snapshot_date : PK
+ +order_hk : PK
+ sat_order_details_load_date : TIMESTAMP
+ sat_order_status_load_date : TIMESTAMP
+ sat_order_modification_load_date : TIMESTAMP
+ record_source : STRING
+ }
+
+ class bridge_trade_lifecycle {
+ <<bridge cross-hub>>
+ +bridge_hk : PK SHA256(all hub_hks)
+ order_request_hk : FK
+ quote_hk : FK
+ order_hk : FK
+ execution_hk : FK
+ allocation_hk : FK
+ confirmation_hk : FK
+ clearing_hk : FK
+ settlement_hk : FK
+ party_hk : FK
+ account_hk : FK
+ instrument_hk : FK
+ venue_hk : FK
+ trade_date : DATE
+ lifecycle_status : STRING
+ effective_start : TIMESTAMP
+ effective_end : TIMESTAMP
+ record_source : STRING
+ }
+
+ class bridge_order_routing_chain {
+ <<bridge>>
+ +bridge_hk : PK
+ order_hk : FK
+ parent_order_hk : FK
+ route_sequence : INT
+ destination_venue_hk : FK
+ routing_broker_hk : FK
+ route_type : STRING
+ algo_strategy : STRING
+ route_timestamp : TIMESTAMP
+ trade_date : DATE
+ }
+
+ class bridge_party_instrument_activity {
+ <<bridge>>
+ +bridge_hk : PK
+ party_hk : FK
+ instrument_hk : FK
+ activity_date : DATE
+ first_order_timestamp : TIMESTAMP
+ last_execution_timestamp : TIMESTAMP
+ order_count : BIGINT
+ execution_count : BIGINT
+ buy_quantity : DECIMAL
+ sell_quantity : DECIMAL
+ notional_usd : DECIMAL
+ }
+
+ pit_party..> bridge_trade_lifecycle : enriches
+ pit_order..> bridge_trade_lifecycle : enriches
+ bridge_trade_lifecycle --> bridge_order_routing_chain : extends
+ bridge_trade_lifecycle --> bridge_party_instrument_activity : summarises
+
+ note for bridge_trade_lifecycle "Central multi-hop bridge - 12 hub FKs.\nFeeds Gold fact_cat_order_events directly."
+ note for pit_order "PIT indexes sat_order_details / _status /\n_modification for as-of queries;\nRetention: 30 days operational."

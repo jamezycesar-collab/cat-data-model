@@ -1,0 +1,67 @@
+{
+ "$schema": "https://databricks.com/schemas/dlt-pipeline-v1.json",
+ "pipelines": [
+ {
+ "name": "ref_ingest_monthly",
+ "edition": "ADVANCED",
+ "channel": "CURRENT",
+ "photon": true,
+ "serverless": true,
+ "development": false,
+ "continuous": false,
+ "schedule": {
+ "quartz_cron_expression": "0 0 6 1 * ?",
+ "timezone_id": "America/New_York"
+ },
+ "target_catalog": "cat_prod",
+ "target_schema": "gold",
+ "storage": "abfss://onelake@cat-prod.dfs.fabric.microsoft.com/ref/monthly",
+ "libraries": [
+ {"notebook": {"path": "/Repos/ref-data-pipelines/ingestion/dlt_ref_iso_codes"}},
+ {"notebook": {"path": "/Repos/ref-data-pipelines/ingestion/dlt_ref_industry"}}
+ ],
+ "configuration": {
+ "pipelines.autoOptimize.managed": "true",
+ "silver_database": "silver",
+ "gold_database": "gold",
+ "pipeline_tag": "WS9_REF_MONTHLY"
+ },
+ "notifications": [
+ {
+ "email_recipients": ["ref-data-ops@cat-prod.com", "data-governance@cat-prod.com"],
+ "alerts": ["on-update-failure", "on-flow-failure"]
+ }
+ ]
+ },
+ {
+ "name": "ref_ingest_adhoc",
+ "edition": "ADVANCED",
+ "channel": "CURRENT",
+ "photon": true,
+ "serverless": true,
+ "development": false,
+ "continuous": false,
+ "target_catalog": "cat_prod",
+ "target_schema": "gold",
+ "storage": "abfss://onelake@cat-prod.dfs.fabric.microsoft.com/ref/adhoc",
+ "libraries": [
+ {"notebook": {"path": "/Repos/ref-data-pipelines/ingestion/dlt_ref_cat_taxonomy"}},
+ {"notebook": {"path": "/Repos/ref-data-pipelines/ingestion/dlt_ref_fix_enums"}},
+ {"notebook": {"path": "/Repos/ref-data-pipelines/ingestion/dlt_ref_isda_conventions"}},
+ {"notebook": {"path": "/Repos/ref-data-pipelines/ingestion/dlt_ref_firm_taxonomy"}}
+ ],
+ "configuration": {
+ "pipelines.autoOptimize.managed": "true",
+ "silver_database": "silver",
+ "gold_database": "gold",
+ "pipeline_tag": "WS9_REF_ADHOC"
+ },
+ "notifications": [
+ {
+ "email_recipients": ["ref-data-ops@cat-prod.com"],
+ "alerts": ["on-update-failure"]
+ }
+ ]
+ }
+ ]
+}

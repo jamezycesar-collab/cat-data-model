@@ -1,0 +1,287 @@
+%% cat_event_taxonomy_class.mmd - FINRA CAT 50-event taxonomy, organised by phase
+%% Each phase is a UML namespace; each event is a class with submission file type.
+
+classDiagram
+ direction TB
+
+ namespace PreTrade_Quote_RFQ {
+ class MEQR
+ class MEQS
+ }
+
+ namespace OrderRequest_Client {
+ class MEIR
+ class MOIR
+ }
+
+ namespace OrderOpen_Modify_Cancel {
+ class MENO
+ class MEOA
+ class MEOM
+ class MEOR
+ class MEOC
+ class MEOE
+ }
+
+ namespace OrderRouting {
+ class MECO
+ class MLCO
+ class MOCO
+ }
+
+ namespace OrderExecution {
+ class MEOT
+ class MEOTQ
+ class MEOTS
+ class MEOF
+ }
+
+ namespace PostTrade_Allocation {
+ class MEPA
+ class MEAA
+ class MOFA
+ }
+
+ namespace Corrections_Errors {
+ class MEOJ
+ }
+
+ namespace Customer_CAIS {
+ class CAIS_Customer
+ class CAIS_Account
+ class CAIS_TradingRelationship
+ }
+
+ namespace OptionsEquities_Extensions {
+ class MEOC_Option
+ class MEQS_Option
+ class MEIR_Option
+ }
+
+ namespace Manual_Supervisory {
+ class MEOR_Manual
+ class MEOM_Manual
+ }
+
+ class MEQR {
+ <<event QuoteRequest>>
+ +cat_event_code : MEQR
+ submission_file_type : QuoteEvents
+ phase : PreTrade
+ description : Manual/Electronic Quote Request
+ }
+ class MEQS {
+ <<event QuoteSent>>
+ +cat_event_code : MEQS
+ submission_file_type : QuoteEvents
+ phase : PreTrade
+ description : Manual/Electronic Quote Sent
+ }
+ class MEIR {
+ <<event InternalOrderReceived>>
+ +cat_event_code : MEIR
+ submission_file_type : OrderEvents
+ phase : OrderRequest
+ description : Electronic Internal Order Received
+ }
+ class MOIR {
+ <<event ManualInternalOrderReceived>>
+ +cat_event_code : MOIR
+ submission_file_type : OrderEvents
+ phase : OrderRequest
+ description : Manual Internal Order Received
+ }
+ class MENO {
+ <<event NewOrder>>
+ +cat_event_code : MENO
+ submission_file_type : OrderEvents
+ phase : OrderOpen
+ description : New Order
+ }
+ class MEOA {
+ <<event OrderAccepted>>
+ +cat_event_code : MEOA
+ submission_file_type : OrderEvents
+ phase : OrderOpen
+ description : Order Accepted
+ }
+ class MEOM {
+ <<event OrderModified>>
+ +cat_event_code : MEOM
+ submission_file_type : OrderEvents
+ phase : OrderOpen
+ description : Order Modification
+ }
+ class MEOR {
+ <<event OrderRejected>>
+ +cat_event_code : MEOR
+ submission_file_type : OrderEvents
+ phase : OrderOpen
+ description : Order Rejected
+ }
+ class MEOC {
+ <<event OrderCancelled>>
+ +cat_event_code : MEOC
+ submission_file_type : OrderEvents
+ phase : OrderOpen
+ description : Order Cancelled
+ }
+ class MEOE {
+ <<event OrderExpired>>
+ +cat_event_code : MEOE
+ submission_file_type : OrderEvents
+ phase : OrderOpen
+ description : Order Expired
+ }
+ class MECO {
+ <<event ElectronicRoute>>
+ +cat_event_code : MECO
+ submission_file_type : OrderEvents
+ phase : OrderRouting
+ description : Manual/Electronic Route Out
+ }
+ class MLCO {
+ <<event ExchangeRoute>>
+ +cat_event_code : MLCO
+ submission_file_type : OrderEvents
+ phase : OrderRouting
+ description : Route Out to an Exchange
+ }
+ class MOCO {
+ <<event ManualRoute>>
+ +cat_event_code : MOCO
+ submission_file_type : OrderEvents
+ phase : OrderRouting
+ description : Manual Route Out
+ }
+ class MEOT {
+ <<event OrderFill>>
+ +cat_event_code : MEOT
+ submission_file_type : OrderEvents
+ phase : Execution
+ description : Order Fulfillment (execution)
+ }
+ class MEOTQ {
+ <<event OrderFillNanoTS>>
+ +cat_event_code : MEOTQ
+ submission_file_type : OrderEvents
+ phase : Execution
+ description : Order Fulfillment with nanosecond precision
+ }
+ class MEOTS {
+ <<event OrderFillStopped>>
+ +cat_event_code : MEOTS
+ submission_file_type : OrderEvents
+ phase : Execution
+ description : Stopped Order Fulfillment
+ }
+ class MEOF {
+ <<event FullFill>>
+ +cat_event_code : MEOF
+ submission_file_type : OrderEvents
+ phase : Execution
+ description : Order Fulfillment Final
+ }
+ class MEPA {
+ <<event ProrataAllocation>>
+ +cat_event_code : MEPA
+ submission_file_type : Allocations
+ phase : Allocation
+ description : Post-trade Allocation
+ }
+ class MEAA {
+ <<event AffirmedAllocation>>
+ +cat_event_code : MEAA
+ submission_file_type : Allocations
+ phase : Allocation
+ description : Affirmed Allocation
+ }
+ class MOFA {
+ <<event OrderFillAllocated>>
+ +cat_event_code : MOFA
+ submission_file_type : Allocations
+ phase : Allocation
+ description : Fill Allocated To Account
+ }
+ class MEOJ {
+ <<event CorrectionAdjust>>
+ +cat_event_code : MEOJ
+ submission_file_type : OrderEvents
+ phase : Correction
+ description : Order Adjustment / Correction
+ }
+ class CAIS_Customer {
+ <<event CAIS>>
+ +cat_event_code : CAIS_Customer
+ submission_file_type : CAIS
+ phase : CustomerRecord
+ description : Customer identification
+ }
+ class CAIS_Account {
+ <<event CAIS>>
+ +cat_event_code : CAIS_Account
+ submission_file_type : CAIS
+ phase : CustomerRecord
+ description : Account identification
+ }
+ class CAIS_TradingRelationship {
+ <<event CAIS>>
+ +cat_event_code : CAIS_TradingRelationship
+ submission_file_type : CAIS
+ phase : CustomerRecord
+ description : Trading relationship link
+ }
+ class MEOC_Option {
+ <<event OptionsCancel>>
+ +cat_event_code : MEOC
+ submission_file_type : OrderEvents
+ phase : Options
+ description : Options order cancelled
+ }
+ class MEQS_Option {
+ <<event OptionsQuote>>
+ +cat_event_code : MEQS
+ submission_file_type : QuoteEvents
+ phase : Options
+ description : Options quote sent
+ }
+ class MEIR_Option {
+ <<event OptionsOrder>>
+ +cat_event_code : MEIR
+ submission_file_type : OrderEvents
+ phase : Options
+ description : Options internal order received
+ }
+ class MEOR_Manual {
+ <<event ManualReject>>
+ +cat_event_code : MEOR
+ submission_file_type : OrderEvents
+ phase : ManualSupervisory
+ description : Manual rejection
+ }
+ class MEOM_Manual {
+ <<event ManualModify>>
+ +cat_event_code : MEOM
+ submission_file_type : OrderEvents
+ phase : ManualSupervisory
+ description : Manual modification
+ }
+
+ MEQR..> MEQS : elicits
+ MEQS..> MEIR : converted_to
+ MEIR..> MENO : opens
+ MOIR..> MENO : opens
+ MENO..> MECO : routed_via
+ MECO..> MLCO : chained
+ MLCO..> MEOT : fills_at_exchange
+ MENO..> MEOT : filled
+ MEOT..> MEPA : split_via
+ MEPA..> MEAA : affirmed
+ MEOT..> MOFA : alternative_alloc
+ MEOT..> MEOJ : may_correct
+ MEOC..> MEOJ : correction_event
+ MENO..> MEOA : accepted
+ MENO..> MEOR : rejected
+ MENO..> MEOC : cancelled
+ MENO..> MEOE : expired
+ MENO..> MEOM : modified

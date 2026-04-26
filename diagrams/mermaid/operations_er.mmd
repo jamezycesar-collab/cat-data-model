@@ -1,0 +1,46 @@
+%% operations_er.mmd - Operations entities
+%% Subject Area: Operations (light purple #e1d5e7)
+%% Entities: 3 - error_correction, clock_sync_audit, audit_trail_event
+
+classDiagram
+ direction LR
+
+ class error_correction {
+ <<entity>>
+ +correction_id : PK
+ cat_order_id : STRING
+ correction_type : ENUM
+ source_event_type : ENUM
+ original_value : STRING
+ corrected_value : STRING
+ correction_date : DATE
+ corrected_by_party_id : FK party
+ submission_id : FK reporting_submission
+ }
+
+ class clock_sync_audit {
+ <<entity>>
+ +sync_event_id : PK
+ system_identifier : STRING
+ nist_time_server : STRING
+ drift_microseconds : BIGINT
+ sync_timestamp : TIMESTAMP
+ sync_date : DATE
+ sync_status : ENUM
+ }
+
+ class audit_trail_event {
+ <<entity>>
+ +audit_event_id : PK
+ entity_type : STRING
+ entity_id : STRING
+ event_type : ENUM
+ action_type : ENUM
+ actor_party_id : FK party
+ old_value : STRING
+ new_value : STRING
+ event_timestamp : TIMESTAMP
+ }
+
+ error_correction..> audit_trail_event : records_via
+ clock_sync_audit..> audit_trail_event : records_via

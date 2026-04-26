@@ -1,0 +1,130 @@
+source_entity,source_column,target_entity,target_column,cardinality,subject_area,description
+legal_entity,party_id,party,party_id,1:1,party,Supertype/subtype
+natural_person,party_id,party,party_id,1:1,party,Supertype/subtype
+party_identifier,party_id,party,party_id,N:1,party,Party identifiers (LEI/CRD/TIN)
+party_role,party_id,party,party_id,N:1,party,Roles a party can take
+party_relationship,parent_party_id,party,party_id,N:1,party,Parent in party hierarchy
+party_relationship,child_party_id,party,party_id,N:1,party,Child in party hierarchy
+party_address,party_id,party,party_id,N:1,party,Address linkage
+party_contact,party_id,party,party_id,N:1,party,Contact linkage
+account,party_id,party,party_id,N:1,party,Account owner
+beneficial_owner,party_id,party,party_id,N:1,party,Beneficial owner of entity
+beneficial_owner,beneficial_party_id,party,party_id,N:1,party,The owner party
+ownership_structure,parent_party_id,party,party_id,N:1,party,Ownership parent
+ownership_structure,subsidiary_party_id,party,party_id,N:1,party,Ownership subsidiary
+control_relationship,controlling_party_id,party,party_id,N:1,party,Controlling party
+control_relationship,controlled_party_id,party,party_id,N:1,party,Controlled party
+desk,parent_desk_id,desk,desk_id,N:1,party,Self-referential desk hierarchy
+desk,legal_entity_id,legal_entity,party_id,N:1,party,Desk belongs to entity
+information_barrier,desk_a_id,desk,desk_id,N:1,party,Barrier side A
+information_barrier,desk_b_id,desk,desk_id,N:1,party,Barrier side B
+equity_instrument,instrument_id,instrument,instrument_id,1:1,instrument,Supertype/subtype
+debt_instrument,instrument_id,instrument,instrument_id,1:1,instrument,Supertype/subtype
+derivative_instrument,instrument_id,instrument,instrument_id,1:1,instrument,Supertype/subtype
+fund_instrument,instrument_id,instrument,instrument_id,1:1,instrument,Supertype/subtype
+instrument_identifier,instrument_id,instrument,instrument_id,N:1,instrument,ISIN/CUSIP/SEDOL linkage
+instrument_classification,instrument_id,instrument,instrument_id,N:1,instrument,CFI/ICB/SIC classification
+instrument_leg,parent_instrument_id,instrument,instrument_id,N:1,instrument,Multi-leg parent
+instrument_leg,underlying_instrument_id,instrument,instrument_id,N:1,instrument,Leg underlying
+instrument_relationship,parent_instrument_id,instrument,instrument_id,N:1,instrument,Parent instrument
+instrument_relationship,child_instrument_id,instrument,instrument_id,N:1,instrument,Child instrument
+underlying_reference,derivative_instrument_id,derivative_instrument,instrument_id,N:1,instrument,Underlying linkage
+underlying_reference,underlying_instrument_id,instrument,instrument_id,N:1,instrument,Underlying instrument
+corporate_action,instrument_id,instrument,instrument_id,N:1,instrument,CA target instrument
+option_contract_details,instrument_id,derivative_instrument,instrument_id,1:1,instrument,Option-specific details
+future_contract_details,instrument_id,derivative_instrument,instrument_id,1:1,instrument,Future-specific details
+swap_contract_details,instrument_id,derivative_instrument,instrument_id,1:1,instrument,Swap-specific details
+venue_asset_class,venue_id,venue,venue_id,N:1,venue,Venue-asset-class mapping
+venue_trading_session,venue_id,venue,venue_id,N:1,venue,Venue sessions
+venue_connectivity,venue_id,venue,venue_id,N:1,venue,Firm-venue connectivity
+venue_connectivity,party_role_id,party_role,party_role_id,N:1,venue,Connected party
+agreement,party_role_id,party_role,party_role_id,N:1,agreement,Agreement side A
+agreement,counterparty_role_id,party_role,party_role_id,N:1,agreement,Agreement side B
+agreement_schedule,agreement_id,agreement,agreement_id,N:1,agreement,Schedule parts
+agreement_netting_set,agreement_id,agreement,agreement_id,N:1,agreement,Netting sets under agreement
+collateral_agreement,agreement_id,agreement,agreement_id,N:1,agreement,CSA/margin terms
+collateral_haircut,collateral_agreement_id,collateral_agreement,collateral_agreement_id,N:1,agreement,Haircut schedules
+margin_call,collateral_agreement_id,collateral_agreement,collateral_agreement_id,N:1,agreement,Margin calls
+repo_transaction,agreement_id,agreement,agreement_id,N:1,agreement,Repo under GMRA
+repo_transaction,instrument_id,instrument,instrument_id,N:1,agreement,Repo collateral
+securities_loan,agreement_id,agreement,agreement_id,N:1,agreement,Loan under GMSLA
+securities_loan,instrument_id,instrument,instrument_id,N:1,agreement,Loaned instrument
+commission_schedule,agreement_id,agreement,agreement_id,N:1,agreement,Commission under agreement
+commission_schedule,account_id,account,account_id,N:1,agreement,Commission per account
+quote_request,requesting_party_role_id,party_role,party_role_id,N:1,pretrade,RFQ requester
+quote_request,instrument_id,instrument,instrument_id,N:1,pretrade,RFQ instrument
+quote_event,quote_request_id,quote_request,quote_request_id,N:1,pretrade,Response to RFQ
+quote_event,quoting_party_role_id,party_role,party_role_id,N:1,pretrade,Market maker
+quote_event,instrument_id,instrument,instrument_id,N:1,pretrade,Quoted instrument
+quote_event,venue_id,venue,venue_id,N:1,pretrade,Quote venue
+quote_response,quote_request_id,quote_request,quote_request_id,N:1,pretrade,RFQ<->Quote junction (RFQ side)
+quote_response,quote_event_id,quote_event,quote_event_id,N:1,pretrade,RFQ<->Quote junction (Quote side)
+quote_response,responding_party_role_id,party_role,party_role_id,N:1,pretrade,Responder
+request_for_execution,requesting_party_role_id,party_role,party_role_id,N:1,pretrade,RFE requester
+request_for_execution,receiving_party_role_id,party_role,party_role_id,N:1,pretrade,RFE receiver
+request_for_execution,instrument_id,instrument,instrument_id,N:1,pretrade,RFE instrument
+indication_of_interest,originator_party_role_id,party_role,party_role_id,N:1,pretrade,IOI originator
+indication_of_interest,instrument_id,instrument,instrument_id,N:1,pretrade,IOI instrument
+indication_of_interest,venue_id,venue,venue_id,N:1,pretrade,IOI venue
+order_request,requesting_party_role_id,party_role,party_role_id,N:1,order_request,Order request source
+order_request,receiving_party_role_id,party_role,party_role_id,N:1,order_request,Order request receiver
+order_request,instrument_id,instrument,instrument_id,N:1,order_request,Order request instrument
+order_request,order_event_id,order_event,order_event_id,N:1,order_request,Resulting order (post-systematization)
+order_request,quote_event_id,quote_event,quote_event_id,N:1,order_request,RFQ-sourced order (MEQS->MEIR chain)
+order_event,order_request_id,order_request,order_request_id,N:1,order,MEIR/MOIR -> MENO chain
+order_event,rfe_id,request_for_execution,rfe_id,N:1,order,RFE->Order chain
+order_event,instrument_id,instrument,instrument_id,N:1,order,Order instrument
+order_event,party_role_id,party_role,party_role_id,N:1,order,Order originator
+order_event,account_id,account,account_id,N:1,order,Order account
+order_event,parent_order_id,order_event,order_event_id,N:1,order,MECO/MLCO parent
+order_route,order_event_id,order_event,order_event_id,N:1,order,Route parent order
+order_route,destination_venue_id,venue,venue_id,N:1,order,Routed-to venue
+order_modification,order_event_id,order_event,order_event_id,N:1,order,Modified order
+order_leg,order_event_id,order_event,order_event_id,N:1,order,Multi-leg child
+order_leg,instrument_id,instrument,instrument_id,N:1,order,Leg instrument
+order_leg,instrument_leg_id,instrument_leg,leg_id,N:1,order,Canonical leg reference
+execution,order_event_id,order_event,order_event_id,N:1,execution,Parent order
+execution,quote_event_id,quote_event,quote_event_id,N:1,execution,MEOTQ source quote linkage
+execution,execution_venue_id,venue,venue_id,N:1,execution,Execution venue
+execution,contra_party_role_id,party_role,party_role_id,N:1,execution,Contra party
+execution_leg,execution_id,execution,execution_id,N:1,execution,Parent execution
+execution_leg,instrument_id,instrument,instrument_id,N:1,execution,Leg instrument
+execution_leg,instrument_leg_id,instrument_leg,leg_id,N:1,execution,Canonical leg
+execution_leg,leg_venue_id,venue,venue_id,N:1,execution,Leg-specific venue
+allocation,execution_id,execution,execution_id,N:1,allocation,Block fill source
+allocation,order_event_id,order_event,order_event_id,N:1,allocation,Parent order
+allocation,allocated_account_id,account,account_id,N:1,allocation,Destination account
+allocation,allocated_party_role_id,party_role,party_role_id,N:1,allocation,Account party
+allocation,instrument_id,instrument,instrument_id,N:1,allocation,Allocated instrument
+allocation,allocation_instruction_id,allocation_instruction,instruction_id,N:1,allocation,Governing instruction
+allocation_instruction,account_id,account,account_id,N:1,allocation,Target account
+allocation_instruction,party_role_id,party_role,party_role_id,N:1,allocation,Owning party
+allocation_instruction,instrument_id,instrument,instrument_id,N:1,allocation,Instrument scope
+allocation_instruction,order_event_id,order_event,order_event_id,N:1,allocation,Order-specific instruction
+trade_confirmation,allocation_id,allocation,allocation_id,N:1,posttrade,Confirmed allocation
+trade_confirmation,execution_id,execution,execution_id,N:1,posttrade,Confirmed execution
+trade_confirmation,confirming_party_role_id,party_role,party_role_id,N:1,posttrade,Confirming party
+trade_confirmation,counterparty_role_id,party_role,party_role_id,N:1,posttrade,Counterparty
+trade_confirmation,settlement_instruction_id,settlement_instruction,settlement_id,N:1,posttrade,Downstream settlement
+clearing_record,execution_id,execution,execution_id,N:1,posttrade,Cleared execution
+clearing_record,allocation_id,allocation,allocation_id,N:1,posttrade,Cleared allocation
+clearing_record,ccp_party_id,party,party_id,N:1,posttrade,CCP (OCC/NSCC/FICC/LCH)
+clearing_record,clearing_member_party_id,party,party_id,N:1,posttrade,Clearing member
+clearing_record,netting_set_id,agreement_netting_set,netting_set_id,N:1,posttrade,Netting set
+settlement_instruction,allocation_id,allocation,allocation_id,N:1,posttrade,Settled allocation
+settlement_instruction,clearing_id,clearing_record,clearing_id,N:1,posttrade,Cleared trade
+settlement_instruction,custodian_party_id,party,party_id,N:1,posttrade,Custodian
+settlement_obligation,party_role_id,party_role,party_role_id,N:1,posttrade,Obligated party
+settlement_obligation,instrument_id,instrument,instrument_id,N:1,posttrade,Obligated instrument
+settlement_obligation,netting_set_id,agreement_netting_set,netting_set_id,N:1,posttrade,CNS/bilateral net set
+position,account_id,account,account_id,N:1,position,Position account
+position,instrument_id,instrument,instrument_id,N:1,position,Position instrument
+position,custodian_party_id,party,party_id,N:1,position,Custodian
+position_break,position_id,position,position_id,N:1,position,Broken position
+position_break,resolver_party_role_id,party_role,party_role_id,N:1,position,Break resolver
+regulatory_report,submission_id,reporting_submission,submission_id,N:1,regulatory,Submission record
+regulatory_report,reporting_party_role_id,party_role,party_role_id,N:1,regulatory,Reporting entity
+regulatory_hold,order_event_id,order_event,order_event_id,N:1,regulatory,Held order
+regulatory_hold,execution_id,execution,execution_id,N:1,regulatory,Held execution
+regulatory_hold,account_id,account,account_id,N:1,regulatory,Held account
+audit_trail_event,changed_by_party_role_id,party_role,party_role_id,N:1,regulatory,Change actor

@@ -1,0 +1,84 @@
+%% fabric_deployment_flowchart.mmd - Microsoft Fabric deployment topology
+%% Shows which engine hosts which layer + OneLake layout + egress targets.
+
+flowchart LR
+ classDef bronze fill:#e6ccb2,stroke:#7f5539
+ classDef silver fill:#d6d6d6,stroke:#5a5a5a
+ classDef gold fill:#ffd166,stroke:#c79a00
+ classDef wh fill:#b5d6fe,stroke:#2965bf
+ classDef bi fill:#fbe5d6,stroke:#ed7d31
+ classDef ingress fill:#dae8fc,stroke:#6c8ebf
+ classDef egress fill:#f8cecc,stroke:#b85450
+
+ subgraph INGRESS [Ingress]
+ EVH["Eventstream<br/>CAT / FIX / market feeds"]
+ ADF["Data Factory pipelines<br/>(CRM, reference, batch)"]
+ SFTP["FINRA / counterparty SFTP"]
+ end
+
+ subgraph ONELAKE [OneLake storage - single copy]
+ subgraph LHB [Lakehouse Bronze]
+ BRONZE["Files/raw/&lcub;source&rcub;/yyyy=/mm=/dd=/<br/>Delta tables (schema-on-read)"]
+ end
+ subgraph LHS [Lakehouse Silver - DV2]
+ SILVER_DV["Hubs 18 + Links 22 + Sats 52<br/>PITs 16 + Bridges 8<br/>Business Vault 11 + Ref DV 19"]
+ end
+ subgraph WHG [Warehouse Gold]
+ GOLD_DIM["dim_* SCD2 x 8"]
+ GOLD_FCT["fact_* x 4"]
+ GOLD_VW["v_* consumption views"]
+ end
+ end
+
+ subgraph COMPUTE [Compute engines]
+ SPARK["Spark notebooks / DLT<br/>(Silver builds)"]
+ WH["SQL Warehouse (T-SQL)<br/>Gold queries, stored procs"]
+ SHORTCUT["Shortcut<br/>(Warehouse reads Lakehouse tables)"]
+ end
+
+ subgraph CONSUMPTION [Consumption]
+ PBI["Power BI Direct Lake"]
+ SUR["Surveillance jobs"]
+ CAT["FINRA CAT submission pipeline<br/>(JSON + BZip2)"]
+ end
+
+ subgraph GOV [Governance]
+ PUR["Microsoft Purview<br/>catalog + lineage"]
+ UC["Workspace RBAC<br/>(Contributor / Admin)"]
+ RLS["Row-Level Security<br/>CREATE SECURITY POLICY"]
+ KV["Key Vault<br/>SFTP creds, SAS tokens"]
+ end
+
+ EVH --> BRONZE
+ ADF --> BRONZE
+ SFTP --> BRONZE
+
+ BRONZE --> SPARK
+ SPARK --> SILVER_DV
+ SILVER_DV --> SHORTCUT
+ SHORTCUT --> WH
+ WH --> GOLD_DIM
+ WH --> GOLD_FCT
+ GOLD_DIM --> GOLD_VW
+ GOLD_FCT --> GOLD_VW
+
+ GOLD_DIM --> PBI
+ GOLD_FCT --> PBI
+ GOLD_VW --> SUR
+ GOLD_FCT --> CAT
+
+ PUR -.catalogues.-> BRONZE
+ PUR -.catalogues.-> SILVER_DV
+ PUR -.catalogues.-> GOLD_FCT
+ UC -.secures.-> WH
+ RLS -.enforces.-> WH
+ KV -.supplies.-> ADF
+ KV -.supplies.-> CAT
+
+ class BRONZE bronze
+ class SILVER_DV silver
+ class GOLD_DIM,GOLD_FCT,GOLD_VW gold
+ class WH wh
+ class PBI,SUR bi
+ class EVH,ADF,SFTP ingress
+ class CAT egress

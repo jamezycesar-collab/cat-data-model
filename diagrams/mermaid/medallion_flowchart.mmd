@@ -1,0 +1,84 @@
+%% medallion_flowchart.mmd - Bronze -> Silver -> Gold data flow on Databricks / Fabric
+%% Color bands: Bronze (brown), Silver (light gray), Gold (yellow)
+
+flowchart TD
+ classDef bronze fill:#e6ccb2,stroke:#7f5539,color:#000
+ classDef silver fill:#d6d6d6,stroke:#5a5a5a,color:#000
+ classDef gold fill:#ffd166,stroke:#c79a00,color:#000
+ classDef source fill:#cfe2f3,stroke:#3c78d8,color:#000
+ classDef sink fill:#f8cecc,stroke:#b85450,color:#000
+
+ subgraph SRC [Source Systems]
+ FIX["FIX 4.4 / 5.0 SP2\n(NewOrderSingle, Execution)"]
+ CAT["CAT 4.1.0r9\n(MEIR, MENO, MEOT, MEPA)"]
+ CRM["CRM / Party master"]
+ RMS["Reference data\n(LEI, ISIN, MIC)"]
+ MKT["Market data / ISDA"]
+ end
+
+ subgraph B [Bronze - Raw Landing]
+ BR_RAW["auto_loader -> Delta raw tables\nschema-on-read, append-only"]
+ end
+
+ subgraph S [Silver - Data Vault 2.0]
+ S_HUB["Hubs\n18 hubs (order, execution,\n allocation, party, instrument,\n venue, agreement, clearing,\n settlement,...)"]
+ S_LINK["Links\n22 links (link_order_execution,\n link_execution_allocation,\n link_party_account,...)"]
+ S_SAT["Satellites\n52 satellites (44 hub + 8 link)\nSCD2 + 23 append-only"]
+ S_PIT["PITs\n16 point-in-time tables"]
+ S_BR["Bridges\n8 bridges (trade_lifecycle,\n routing_chain,...)"]
+ S_BV["Business Vault\n5 computed sats +\n 2 derived links +\n 4 aggregated bridges"]
+ S_REF["Reference (DV form)\n16 ref_*_dv tables +\n 3 reference hubs"]
+ end
+
+ subgraph G [Gold - Star Schema]
+ G_DIM["8 conformed dims (SCD2)\ndim_date, dim_party,\n dim_instrument, dim_venue,\n dim_account, dim_event_type,\n dim_desk, dim_trader"]
+ G_FCT["4 fact tables\nfact_cat_order_events,\nfact_cat_allocations,\nfact_cat_quotes,\nfact_cat_customer_records"]
+ G_OPS["Operational tables\ncat_submission_batch,\ncat_feedback_error"]
+ G_VW["Consumption views\nv_cat_order_reconstruction,\nv_cat_daily_submission_status,\nv_cat_best_execution_audit"]
+ end
+
+ subgraph K [Consumption]
+ BI["Power BI Direct Lake"]
+ FINRA["FINRA CAT SFTP\n(JSON + BZip2)"]
+ SUR["Surveillance / Best-Ex"]
+ end
+
+ FIX --> BR_RAW
+ CAT --> BR_RAW
+ CRM --> BR_RAW
+ RMS --> BR_RAW
+ MKT --> BR_RAW
+
+ BR_RAW --> S_HUB
+ BR_RAW --> S_LINK
+ BR_RAW --> S_SAT
+ BR_RAW --> S_REF
+ S_HUB --> S_PIT
+ S_SAT --> S_PIT
+ S_HUB --> S_BR
+ S_LINK --> S_BR
+ S_SAT --> S_BR
+ S_PIT --> S_BV
+ S_BR --> S_BV
+
+ S_BV --> G_DIM
+ S_BV --> G_FCT
+ S_PIT --> G_DIM
+ S_BR --> G_FCT
+ S_REF --> G_DIM
+
+ G_FCT --> G_VW
+ G_DIM --> G_VW
+ G_FCT --> G_OPS
+
+ G_DIM --> BI
+ G_FCT --> BI
+ G_VW --> SUR
+ G_FCT --> FINRA
+ G_OPS --> FINRA
+
+ class FIX,CAT,CRM,RMS,MKT source
+ class BR_RAW bronze
+ class S_HUB,S_LINK,S_SAT,S_PIT,S_BR,S_BV,S_REF silver
+ class G_DIM,G_FCT,G_OPS,G_VW gold
+ class BI,FINRA,SUR sink

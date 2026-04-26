@@ -1,0 +1,162 @@
+%% instrument_model_er.mmd - Enterprise Instrument Model ER
+%% Subject Area: Instrument (light green #d5e8d4)
+%% Entities: 14 - polymorphic instrument supertype + 6 asset-class subtypes + attributes
+
+classDiagram
+ direction LR
+
+ class instrument {
+ <<entity supertype>>
+ +instrument_id : PK
+ instrument_type : ENUM
+ asset_class : ENUM
+ isin : ISO6166
+ cusip : STRING
+ figi : STRING
+ cfi_code : ISO10962
+ primary_exchange_mic : ISO10383
+ issuer_party_id : FK party
+ currency : ISO4217
+ issue_date : DATE
+ maturity_date : DATE
+ }
+
+ class equity_attributes {
+ <<entity subtype>>
+ +instrument_id : PK,FK instrument
+ listing_type : ENUM
+ shares_outstanding : BIGINT
+ par_value : DECIMAL
+ voting_rights : BOOLEAN
+ adr_ratio : DECIMAL
+ }
+
+ class option_attributes {
+ <<entity subtype>>
+ +instrument_id : PK,FK instrument
+ option_style : ENUM
+ option_type : ENUM
+ strike_price : DECIMAL
+ expiration_date : DATE
+ underlying_instrument_id : FK instrument
+ contract_size : DECIMAL
+ }
+
+ class fixed_income_attributes {
+ <<entity subtype>>
+ +instrument_id : PK,FK instrument
+ bond_type : ENUM
+ coupon_rate : DECIMAL
+ coupon_frequency : ENUM
+ day_count : FK ref_day_count
+ call_date : DATE
+ credit_rating : STRING
+ }
+
+ class digital_asset_attributes {
+ <<entity subtype>>
+ +instrument_id : PK,FK instrument
+ blockchain_network : ENUM
+ token_standard : ENUM
+ contract_address : STRING
+ decimals : INT
+ }
+
+ class derivative_contract {
+ <<entity subtype>>
+ +instrument_id : PK,FK instrument
+ contract_type : ENUM
+ clearing_house_party_id : FK party
+ isda_product_id : STRING
+ notional_currency : ISO4217
+ settlement_type : ENUM
+ }
+
+ class structured_product {
+ <<entity subtype>>
+ +instrument_id : PK,FK instrument
+ product_structure : ENUM
+ principal_protection : BOOLEAN
+ participation_rate : DECIMAL
+ underlying_basket : STRING
+ }
+
+ class instrument_leg {
+ <<entity>>
+ +leg_id : PK
+ instrument_id : FK instrument
+ leg_number : INT
+ leg_type : ENUM
+ notional : DECIMAL
+ currency : ISO4217
+ }
+
+ class instrument_underlying {
+ <<entity>>
+ +underlying_id : PK
+ instrument_id : FK instrument
+ underlying_instrument_id : FK instrument
+ underlying_type : ENUM
+ weight : DECIMAL
+ }
+
+ class instrument_identifier {
+ <<entity>>
+ +identifier_id : PK
+ instrument_id : FK instrument
+ id_type : ENUM
+ id_value : STRING
+ id_issuer : STRING
+ }
+
+ class instrument_classification {
+ <<entity>>
+ +classification_id : PK
+ instrument_id : FK instrument
+ classification_scheme : ENUM
+ classification_code : STRING
+ }
+
+ class instrument_listing {
+ <<entity>>
+ +listing_id : PK
+ instrument_id : FK instrument
+ venue_id : FK venue
+ listing_type : ENUM
+ primary_listing_flag : BOOLEAN
+ first_trade_date : DATE
+ }
+
+ class corporate_action_linkage {
+ <<entity>>
+ +linkage_id : PK
+ instrument_id : FK instrument
+ event_type : ENUM
+ ex_date : DATE
+ record_date : DATE
+ payment_date : DATE
+ }
+
+ class instrument_risk_classification {
+ <<entity>>
+ +risk_classification_id : PK
+ instrument_id : FK instrument
+ risk_framework : ENUM
+ risk_category : ENUM
+ mifid_ii_complexity : ENUM
+ }
+
+ instrument <|-- equity_attributes : inherits
+ instrument <|-- option_attributes : inherits
+ instrument <|-- fixed_income_attributes : inherits
+ instrument <|-- digital_asset_attributes : inherits
+ instrument <|-- derivative_contract : inherits
+ instrument <|-- structured_product : inherits
+ instrument "1" --> "*" instrument_leg : has
+ instrument "1" --> "*" instrument_underlying : references
+ instrument "1" --> "*" instrument_identifier : identified_by
+ instrument "1" --> "*" instrument_classification : classified_as
+ instrument "1" --> "*" instrument_listing : listed_on
+ instrument "1" --> "*" corporate_action_linkage : affected_by
+ instrument "1" --> "*" instrument_risk_classification : classified_by_risk
+ instrument..> instrument : underlying (self-ref)

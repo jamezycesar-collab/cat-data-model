@@ -1,0 +1,63 @@
+%% trade_lifecycle_sequence.mmd - Sequence diagram for end-to-end trade lifecycle
+%% Actors: Client -> Broker -> RFQ Dealer -> Venue -> CCP -> Custodian -> DTCC -> CAT
+%% Covers: RFQ -> RFE -> Order -> Execution -> Allocation -> Confirmation -> Clearing -> Settlement -> CAT submission
+
+sequenceDiagram
+ autonumber
+ participant C as Client / Buy-side
+ participant B as Broker / Sell-side
+ participant D as RFQ Dealer
+ participant V as Venue
+ participant X as CCP
+ participant U as Custodian
+ participant T as DTCC / CSD
+ participant R as FINRA CAT
+
+ Note over C,B: Pre-trade
+ C->>B: IOI posted
+ C->>D: quote_request (MEQR)
+ D-->>C: quote_event (MEQS) - bid/ask
+ C->>D: quote_response (HIT/LIFT)
+ C->>B: request_for_execution (RFE)
+
+ Note over C,B: Order request (MEIR/MOIR)
+ C->>B: order_request (cat_order_id)
+ B->>R: MEIR event
+
+ Note over B,V: Order open (MENO) and routing
+ B->>V: order_event (MENO)
+ B->>R: MENO event
+ V-->>B: order acknowledged
+ B->>V: order_route (MECO)
+ B->>R: MECO event
+
+ Note over V: Execution (MEOT)
+ V-->>B: execution (MEOT) partial fill
+ B->>R: MEOT event
+ V-->>B: execution (MEOT) terminal fill
+ B->>R: MEOT event
+
+ Note over B,C: Allocation (MEPA / MEAA)
+ B->>B: allocation split
+ B->>R: MEPA event
+ B-->>C: allocation_instruction
+ C-->>B: affirm (CTM/DTCC-OASYS)
+ B->>R: MEAA event
+
+ Note over B,X: Clearing
+ B->>X: trade for novation
+ X-->>B: clearing_record accepted
+
+ Note over B,U: Confirmation / Affirmation (Rule 15c6-2)
+ B->>C: trade_confirmation sent
+ C-->>B: affirmation_status = AFFIRMED
+
+ Note over B,T: Settlement (T+1)
+ B->>U: settlement_instruction
+ U->>T: DVP settlement
+ T-->>U: settlement_obligation = SETTLED
+ U-->>B: settlement_status = SETTLED
+
+ Note over R: T+1 08:00 - CAT deadline
+ R-->>B: feedback file (errors/warnings)
+ B->>R: MEOJ / MEOC corrections as needed (T+3)

@@ -1,0 +1,78 @@
+%% party_hierarchy_class.mmd - Beneficial Ownership / Party Hierarchy class diagram
+%% Stereotypes: <<root>>, <<subsidiary>>, <<UBO>>, <<natural_person>>
+
+classDiagram
+ direction TB
+
+ class party {
+ <<abstract>>
+ +party_id : PK
+ +party_type : ENUM
+ +party_status : ENUM
+ +ultimate_parent_party_id : FK
+ +domicile_country : ISO3166
+ +tax_residency : ISO3166
+ +get_ubo party
+ +ownership_chain List~party_relationship~
+ }
+
+ class legal_entity {
+ <<subtype>>
+ +lei : ISO17442
+ +legal_form : ISO20275
+ +incorporation_country : ISO3166
+ +g_sib_flag : BOOLEAN
+ +mifid_ii_category : ENUM
+ +is_regulated : BOOLEAN
+ }
+
+ class natural_person {
+ <<subtype>>
+ +given_name_hash : SHA256
+ +family_name_hash : SHA256
+ +date_of_birth_hash : SHA256
+ +citizenship_country : ISO3166
+ +pep_flag : BOOLEAN
+ +kyc_status : ENUM
+ }
+
+ class ultimate_beneficial_owner {
+ <<derived role>>
+ +get_control_path List~beneficial_ownership~
+ +effective_control_percentage DECIMAL
+ }
+
+ class beneficial_ownership {
+ <<recursive edge>>
+ +ownership_id : PK
+ +owned_party_id : FK party
+ +owner_party_id : FK party
+ +ownership_percentage : DECIMAL
+ +control_type : ENUM
+ +ultimate_beneficial_owner_flag : BOOLEAN
+ +effective_start : DATE
+ +effective_end : DATE
+ }
+
+ class party_relationship {
+ <<association>>
+ +parent_party_id : FK party
+ +child_party_id : FK party
+ +relationship_type : ENUM
+ +ownership_percentage : DECIMAL
+ +voting_percentage : DECIMAL
+ }
+
+ party <|-- legal_entity
+ party <|-- natural_person
+ legal_entity <|.. ultimate_beneficial_owner : implements
+ natural_person <|.. ultimate_beneficial_owner : implements
+
+ party "1" -- "*" beneficial_ownership : owned_by
+ party "1" -- "*" beneficial_ownership : owns
+ party "1" -- "*" party_relationship : parent_of
+ party "1" -- "*" party_relationship : child_of
+ party "1"..> "0..1" party : ultimate_parent
+
+ note for beneficial_ownership "Recursive CTE walks owner_party_id\n -> owned_party_id edges until\nultimate_beneficial_owner_flag = TRUE."
+ note for party "FATF 25% threshold triggers\nUBO designation. BCBS 239 requires\nfull ownership traceability."

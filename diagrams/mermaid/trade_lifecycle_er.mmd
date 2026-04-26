@@ -1,0 +1,229 @@
+%% trade_lifecycle_er.mmd - End-to-end Trade Lifecycle ER
+%% Subject Area: Trade Lifecycle (light red #f8cecc)
+%% Entities: 20 - Pre-trade -> Order -> Execution -> Allocation -> Post-trade -> Position
+%% 5 Pretrade (quote_request, quote_event, quote_response, request_for_execution, indication_of_interest)
+%% 1 OrderRequest (order_request)
+%% 4 OrderStage (order_event, order_route, order_modification, order_leg)
+%% 2 Execution (execution, execution_leg)
+%% 2 Allocation (allocation, allocation_instruction)
+%% 4 Posttrade (trade_confirmation, clearing_record, settlement_instruction, settlement_obligation)
+%% 2 Position (position, position_break)
+
+classDiagram
+ direction LR
+
+ class quote_request {
+ <<entity pretrade>>
+ +quote_request_id : PK
+ rfq_type : ENUM
+ requesting_party_id : FK party
+ instrument_id : FK instrument
+ quantity : DECIMAL
+ side : ENUM
+ request_timestamp : TIMESTAMP
+ }
+ class quote_event {
+ <<entity pretrade>>
+ +quote_id : PK
+ quote_request_id : FK quote_request
+ quoting_party_id : FK party
+ bid_price : DECIMAL
+ ask_price : DECIMAL
+ quote_timestamp : TIMESTAMP
+ }
+ class quote_response {
+ <<entity pretrade>>
+ +response_id : PK
+ quote_request_id : FK quote_request
+ quote_id : FK quote_event
+ responding_party_id : FK party
+ response_status : ENUM
+ response_timestamp : TIMESTAMP
+ }
+ class request_for_execution {
+ <<entity pretrade>>
+ +rfe_id : PK
+ quote_id : FK quote_event
+ instrument_id : FK instrument
+ quantity : DECIMAL
+ limit_price : DECIMAL
+ rfe_timestamp : TIMESTAMP
+ }
+ class indication_of_interest {
+ <<entity pretrade>>
+ +ioi_id : PK
+ ioi_type : ENUM
+ party_id : FK party
+ instrument_id : FK instrument
+ side : ENUM
+ posted_timestamp : TIMESTAMP
+ }
+
+ class order_request {
+ <<entity MEIR_MOIR>>
+ +order_request_id : PK
+ cat_order_id : STRING
+ originator_party_id : FK party
+ account_id : FK account
+ instrument_id : FK instrument
+ request_type : ENUM
+ quantity : DECIMAL
+ order_type : FK ref_order_type
+ time_in_force : FK ref_time_in_force
+ received_timestamp : TIMESTAMP
+ }
+
+ class order_event {
+ <<entity MENO>>
+ +order_id : PK
+ order_request_id : FK order_request
+ cat_order_id : STRING
+ parent_order_id : FK order_event
+ event_type : ENUM
+ venue_id : FK venue
+ order_status : ENUM
+ event_timestamp : TIMESTAMP
+ }
+ class order_route {
+ <<entity MECO_MLCO>>
+ +route_id : PK
+ order_id : FK order_event
+ route_sequence : INT
+ destination_venue_id : FK venue
+ routing_broker_party_id : FK party
+ algo_strategy : STRING
+ route_timestamp : TIMESTAMP
+ }
+ class order_modification {
+ <<entity MEOM>>
+ +modification_id : PK
+ order_id : FK order_event
+ modification_type : ENUM
+ old_quantity : DECIMAL
+ new_quantity : DECIMAL
+ event_timestamp : TIMESTAMP
+ }
+ class order_leg {
+ <<entity>>
+ +order_leg_id : PK
+ order_id : FK order_event
+ leg_number : INT
+ instrument_id : FK instrument
+ quantity : DECIMAL
+ }
+
+ class execution {
+ <<entity MEOT>>
+ +execution_id : PK
+ order_id : FK order_event
+ cat_order_id : STRING
+ venue_id : FK venue
+ executed_quantity : DECIMAL
+ executed_price : DECIMAL
+ execution_timestamp : TIMESTAMP
+ trade_date : DATE
+ }
+ class execution_leg {
+ <<entity>>
+ +execution_leg_id : PK
+ execution_id : FK execution
+ leg_number : INT
+ instrument_id : FK instrument
+ leg_quantity : DECIMAL
+ }
+
+ class allocation {
+ <<entity MEPA>>
+ +allocation_id : PK
+ execution_id : FK execution
+ account_id : FK account
+ allocated_quantity : DECIMAL
+ allocation_pct : DECIMAL
+ allocation_timestamp : TIMESTAMP
+ }
+ class allocation_instruction {
+ <<entity>>
+ +instruction_id : PK
+ allocation_id : FK allocation
+ allocation_rule : ENUM
+ instruction_status : ENUM
+ instruction_timestamp : TIMESTAMP
+ }
+
+ class trade_confirmation {
+ <<entity>>
+ +confirmation_id : PK
+ execution_id : FK execution
+ allocation_id : FK allocation
+ confirmation_status : ENUM
+ affirmation_status : ENUM
+ confirmed_timestamp : TIMESTAMP
+ }
+ class clearing_record {
+ <<entity>>
+ +clearing_id : PK
+ execution_id : FK execution
+ ccp_party_id : FK party
+ clearing_status : ENUM
+ novation_timestamp : TIMESTAMP
+ }
+ class settlement_instruction {
+ <<entity>>
+ +instruction_id : PK
+ allocation_id : FK allocation
+ custodian_party_id : FK party
+ contractual_settle_date : DATE
+ delivery_type : ENUM
+ }
+ class settlement_obligation {
+ <<entity>>
+ +obligation_id : PK
+ instruction_id : FK settlement_instruction
+ actual_settle_date : DATE
+ settlement_status : ENUM
+ fail_reason : ENUM
+ }
+
+ class position {
+ <<entity>>
+ +position_id : PK
+ account_id : FK account
+ instrument_id : FK instrument
+ position_date : DATE
+ quantity : DECIMAL
+ cost_basis : DECIMAL
+ market_value : DECIMAL
+ }
+ class position_break {
+ <<entity>>
+ +break_id : PK
+ position_id : FK position
+ break_detected_date : DATE
+ break_type : ENUM
+ break_amount : DECIMAL
+ resolution_status : ENUM
+ }
+
+ quote_request "1" --> "*" quote_event : elicits
+ quote_event "1" --> "*" quote_response : receives
+ quote_event "1" --> "*" request_for_execution : converts_to
+ indication_of_interest..> quote_request : may_trigger
+
+ order_request "1" --> "*" order_event : spawns
+ order_event..> order_event : parent_child
+ order_event "1" --> "*" order_route : routed_via
+ order_event "1" --> "*" order_modification : amended_by
+ order_event "1" --> "*" order_leg : decomposed_into
+ order_event "1" --> "*" execution : fills_via
+ execution "1" --> "*" execution_leg : legs
+ execution "1" --> "*" allocation : split_to
+ allocation "1" --> "1" allocation_instruction : instructs
+
+ execution "1" --> "*" trade_confirmation : confirmed_as
+ execution "1" --> "*" clearing_record : cleared_via
+ allocation "1" --> "*" trade_confirmation : confirmed_at_alloc
+ allocation "1" --> "*" settlement_instruction : settled_via
+ settlement_instruction "1" --> "1" settlement_obligation : produces
+
+ allocation "1" --> "*" position : updates
+ position "1" --> "*" position_break : flags

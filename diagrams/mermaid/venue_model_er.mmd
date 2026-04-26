@@ -1,0 +1,52 @@
+%% venue_model_er.mmd - Enterprise Venue Model ER
+%% Subject Area: Venue (light yellow #fff2cc)
+%% Entities: 4 - venue + trading capabilities
+
+classDiagram
+ direction LR
+
+ class venue {
+ <<entity>>
+ +venue_id : PK
+ mic : ISO10383
+ venue_name : STRING
+ venue_type : ENUM
+ country_code : ISO3166
+ operating_mic : ISO10383
+ market_category : ENUM
+ reg_status : ENUM
+ }
+
+ class venue_asset_class {
+ <<entity>>
+ +venue_asset_class_id : PK
+ venue_id : FK venue
+ asset_class : ENUM
+ supported_flag : BOOLEAN
+ effective_start : DATE
+ }
+
+ class venue_trading_session {
+ <<entity>>
+ +session_id : PK
+ venue_id : FK venue
+ session_type : ENUM
+ session_start_time : TIME
+ session_end_time : TIME
+ timezone : STRING
+ effective_date : DATE
+ }
+
+ class venue_connectivity {
+ <<entity>>
+ +connectivity_id : PK
+ venue_id : FK venue
+ connection_type : ENUM
+ protocol : ENUM
+ endpoint_url : STRING
+ auth_method : ENUM
+ }
+
+ venue "1" --> "*" venue_asset_class : supports
+ venue "1" --> "*" venue_trading_session : operates
+ venue "1" --> "*" venue_connectivity : reachable_via
