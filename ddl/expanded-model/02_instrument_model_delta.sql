@@ -1,0 +1,605 @@
+-- SPDX-License-Identifier: Apache-2.0
+-- Copyright 2026 cat-pretrade-data-model contributors
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+-- http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+-- ============================================================================
+-- File: 02a_instrument_core_delta.sql
+-- Purpose: Enterprise Instrument Model - Core + Cash Subtypes (5 entities, Delta Lake)
+-- equity_attributes, option_attributes, fixed_income_attributes enriched;
+-- digital_asset_attributes retained.
+-- Inheritance: every subtype has instrument_id BIGINT/STRING NOT NULL FK to instrument.
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Entity 1 of 5: instrument (supertype) - ENHANCED
+-- instrument_group (CASH/DERIVATIVE/STRUCTURED),
+-- isda_product_type, notional_currency, is_otc
+-- (maturity_date already present; retained)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS instrument (
+ instrument_id STRING NOT NULL COMMENT 'UUID v4 - Instrument supertype primary key',
+ instrument_type STRING NOT NULL COMMENT 'Discriminator: EQUITY, OPTION, FIXED_INCOME, DIGITAL_ASSET, FX, COMMODITY, DERIVATIVE, STRUCTURED (FK-enforceable to ref_instrument_type)',
+ instrument_group STRING COMMENT 'NEW - High-level group: CASH (spot securities), DERIVATIVE (OTC/listed contracts), STRUCTURED (multi-component products); drives capital treatment and trade reporting routing',
+ primary_symbol STRING NOT NULL COMMENT 'Primary trading symbol (e.g., AAPL, SPY, ES= for futures)',
+ instrument_name STRING COMMENT 'Full descriptive name (e.g., Apple Inc. Common Stock)',
+ instrument_status STRING NOT NULL COMMENT 'Lifecycle: ACTIVE, SUSPENDED, HALTED, DELISTED, MATURED, DEFAULTED, BANKRUPTCY',
+ isda_product_type STRING COMMENT 'NEW - ISDA FpML product taxonomy value (e.g., VanillaOption, IRSwap, CreditDefaultSwap, TotalReturnSwap, FXForward); canonical product ID for OTC derivatives',
+ is_otc BOOLEAN DEFAULT false COMMENT 'NEW - TRUE if OTC (off-exchange, bilateral); FALSE for exchange-listed',
+ issue_date DATE COMMENT 'Original issue date (IPO for equities, issuance for bonds, trade date for OTC derivatives)',
+ maturity_date DATE COMMENT 'Maturity / expiration date (null for perpetual equities)',
+ primary_currency STRING NOT NULL DEFAULT 'USD' COMMENT 'ISO 4217 primary trading currency',
+ notional_currency STRING COMMENT 'NEW - ISO 4217 currency for notional amount (may differ from trading currency for cross-currency swaps, FX forwards)',
+ country_of_risk STRING COMMENT 'ISO 3166-1 alpha-2 country code for credit/political risk',
+ created_date DATE NOT NULL COMMENT 'Record creation date',
+ effective_date DATE NOT NULL COMMENT 'SCD2 effective date',
+ end_date DATE NOT NULL DEFAULT DATE'9999-12-31' COMMENT 'SCD2 end date',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Instrument supertype (ISO 20022 Security) - enriched with instrument_group (CASH/DERIVATIVE/STRUCTURED), ISDA product taxonomy, notional currency, and OTC indicator for enterprise coverage'
+PARTITIONED BY (instrument_type)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Instrument supertype with ISDA/FpML product taxonomy and OTC flag',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'instrument',
+ 'source_lineage' = 'instrument'
+);
+
+-- Z-ORDER BY (instrument_id, primary_symbol)
+-- LIQUID CLUSTERING BY (instrument_group, instrument_status, is_otc)
+
+-- ----------------------------------------------------------------------------
+-- Entity 2 of 5: equity_attributes (subtype) - ENHANCED
+-- dividend_frequency, voting_rights (already boolean - renamed), free_float_pct, index_membership
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS equity_attributes (
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id - PK of 1:1 subtype (inheritance)',
+ share_class STRING COMMENT 'Share class: A, B, C, D, COMMON, PREFERRED, TRACKING, CUMULATIVE_PREFERRED, CONVERTIBLE_PREFERRED',
+ voting_rights_flag BOOLEAN COMMENT 'Whether shares carry voting rights (renamed from voting_rights_indicator boolean convention)',
+ dividend_type STRING COMMENT 'CASH, STOCK, NONE, SPECIAL, SPECIAL_RECURRING',
+ dividend_frequency STRING COMMENT 'NEW - Declared cadence: QUARTERLY, SEMI_ANNUAL, ANNUAL, MONTHLY, IRREGULAR, NONE',
+ par_value DECIMAL(18,8) COMMENT 'Par / stated value per share',
+ shares_outstanding BIGINT COMMENT 'Total shares outstanding (as of reference date)',
+ shares_float BIGINT COMMENT 'Public float shares (excludes restricted/insiders)',
+ free_float_pct DECIMAL(7,4) COMMENT 'NEW - Free float percentage (0.0000 to 100.0000); drives index eligibility and liquidity assessment',
+ market_cap_tier STRING COMMENT 'Category: MEGA (>200B), LARGE (10-200B), MID (2-10B), SMALL (300M-2B), MICRO (50-300M), NANO (<50M)',
+ index_membership STRING COMMENT 'NEW - Comma-separated list of major index memberships (SP500, RUSSELL2000, DJIA, NASDAQ100, FTSE100, STOXX50); stored as string due to small, slowly-changing cardinality',
+ primary_exchange_mic STRING NOT NULL COMMENT 'ISO 10383 Market Identifier Code (e.g., XNYS for NYSE); FK to ref_mic',
+ nms_indicator BOOLEAN NOT NULL DEFAULT true COMMENT 'NMS stock flag; required for CAT reporting (Rule 613)',
+ reg_sho_threshold_flag BOOLEAN DEFAULT false COMMENT 'Reg SHO threshold security flag (renamed)',
+ adr_flag BOOLEAN DEFAULT false COMMENT 'American Depositary Receipt flag (renamed)',
+ etf_flag BOOLEAN DEFAULT false COMMENT 'Exchange-Traded Fund/Product flag (renamed)',
+ effective_date DATE NOT NULL COMMENT 'SCD2 effective date',
+ end_date DATE NOT NULL DEFAULT DATE'9999-12-31' COMMENT 'SCD2 end date',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Equity-specific attributes (inheritance subtype) - enriched with dividend frequency, free float %, and index membership for liquidity / index attribution'
+PARTITIONED BY (primary_exchange_mic)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Equity dimension with dividend frequency, free float, and index membership',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'instrument',
+ 'source_lineage' = 'instrument'
+);
+
+-- Inheritance FK: CONSTRAINT fk_equity_instrument FOREIGN KEY (instrument_id) REFERENCES instrument(instrument_id) [enforced in ]
+-- Z-ORDER BY (instrument_id, primary_exchange_mic)
+-- LIQUID CLUSTERING BY (nms_indicator, market_cap_tier, etf_flag)
+
+-- ----------------------------------------------------------------------------
+-- Entity 3 of 5: option_attributes (subtype) - ENHANCED
+-- exercise_style (already present), settlement_method (rename settlement_type),
+-- contract_multiplier (already present), barrier_type, barrier_level
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS option_attributes (
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id - PK of 1:1 subtype',
+ underlying_instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id - underlying security (self-ref via instrument)',
+ strike_price DECIMAL(18,8) NOT NULL COMMENT 'Strike / exercise price (absolute, not adjusted for splits/dividends)',
+ expiration_date DATE NOT NULL COMMENT 'Option expiration date',
+ put_call_indicator STRING NOT NULL COMMENT 'PUT or CALL',
+ exercise_style STRING NOT NULL COMMENT 'AMERICAN (anytime before expiry), EUROPEAN (at expiry only), BERMUDAN (discrete dates)',
+ contract_multiplier DECIMAL(18,4) NOT NULL DEFAULT 100 COMMENT 'Contract multiplier (100 for standard equity options, 10 for mini, 1000 for some FX)',
+ settlement_method STRING NOT NULL COMMENT 'Renamed from settlement_type per : PHYSICAL (deliver underlying) or CASH (cash settle intrinsic)',
+ option_type STRING NOT NULL COMMENT 'STANDARD, NON_STANDARD, FLEX, BINARY, MINI, WEEKLY, QUARTERLY, LEAPS',
+ barrier_type STRING COMMENT 'NEW - For exotic/barrier options: KNOCK_IN, KNOCK_OUT, UP_AND_IN, UP_AND_OUT, DOWN_AND_IN, DOWN_AND_OUT, DOUBLE_BARRIER, NONE',
+ barrier_level DECIMAL(18,8) COMMENT 'NEW - Barrier trigger level (null for vanilla options); used with barrier_type for exotic pricing',
+ occ_symbol STRING COMMENT 'OCC clearing symbol (21-char format: ROOT[6] + YYMMDD[6] + C/P[1] + STRIKE[8])',
+ series_name STRING COMMENT 'Full series description with maturity + strike',
+ open_interest BIGINT COMMENT 'Current open interest in contracts',
+ effective_date DATE NOT NULL COMMENT 'SCD2 effective date',
+ end_date DATE NOT NULL DEFAULT DATE'9999-12-31' COMMENT 'SCD2 end date',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Option-specific attributes (inheritance subtype) - enriched with barrier_type / barrier_level for exotic options (knock-in/out)'
+PARTITIONED BY (expiration_date)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Option dimension with exercise style, settlement method, and barrier features',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'instrument',
+ 'source_lineage' = 'instrument'
+);
+
+-- Inheritance FK: CONSTRAINT fk_option_instrument FOREIGN KEY (instrument_id) REFERENCES instrument(instrument_id)
+-- Self-FK: CONSTRAINT fk_option_underlying FOREIGN KEY (underlying_instrument_id) REFERENCES instrument(instrument_id)
+-- Z-ORDER BY (underlying_instrument_id, expiration_date, strike_price, put_call_indicator)
+
+-- ----------------------------------------------------------------------------
+-- Entity 4 of 5: fixed_income_attributes (subtype) - ENHANCED
+-- day_count_convention (already present), payment_frequency (rename coupon_frequency),
+-- accrued_interest_calc, callable_flag (rename), puttable_flag (rename), benchmark_spread (already via spread_bps)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS fixed_income_attributes (
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id - PK of 1:1 subtype',
+ issuer_party_id STRING COMMENT 'FK to party.party_id - bond issuer',
+ coupon_rate DECIMAL(10,6) COMMENT 'Annual coupon rate as decimal (e.g., 0.052500 for 5.25%)',
+ payment_frequency STRING COMMENT 'Renamed from coupon_frequency per : ANNUAL, SEMI_ANNUAL, QUARTERLY, MONTHLY, ZERO_COUPON, FLOATING, VARIABLE',
+ face_value DECIMAL(18,4) COMMENT 'Par / face value per unit (typically 1000 or 100)',
+ day_count_convention STRING COMMENT 'ISDA 2006 day count (FK to ref_day_count): 30_360, ACT_360, ACT_365_FIXED, ACT_ACT_ISDA, ACT_365L, 30E_360, BUS_252',
+ accrued_interest_calc STRING COMMENT 'NEW - Method for accrued interest: LINEAR, COMPOUNDED, YIELD_BASED, MARKET_CONVENTION; interacts with day_count for settlement calc',
+ credit_rating STRING COMMENT 'Composite credit rating (denormalized snapshot; authoritative data in party_credit_rating/instrument rating)',
+ rating_agency STRING COMMENT 'Rating agency for credit_rating snapshot: SP, MOODYS, FITCH, DBRS, JCRA',
+ seniority STRING COMMENT 'SENIOR_SECURED, SENIOR_UNSECURED, SUBORDINATED, JUNIOR, MEZZANINE, EQUITY_TRANCHE',
+ callable_flag BOOLEAN DEFAULT false COMMENT 'Whether bond is callable by issuer (renamed from callable_indicator)',
+ puttable_flag BOOLEAN DEFAULT false COMMENT 'Whether bondholder has put option (renamed from puttable_indicator)',
+ convertible_flag BOOLEAN DEFAULT false COMMENT 'Convertible to equity flag (renamed from convertible_indicator)',
+ bond_type STRING COMMENT 'TREASURY, AGENCY, CORPORATE, MUNICIPAL, SOVEREIGN, STRUCTURED, COVERED, PERPETUAL, MBS, ABS',
+ benchmark_index STRING COMMENT 'Reference rate (for FRN): SOFR, EURIBOR, SONIA, TONA, CDOR, LIBOR (legacy)',
+ benchmark_spread DECIMAL(10,4) COMMENT 'NEW - Benchmark spread as decimal (e.g., 0.0150 for +150 bps); supersedes spread_bps naming; spread_bps retained for backward compat',
+ spread_bps INT COMMENT 'DEPRECATED - retained for source compat; prefer benchmark_spread (decimal)',
+ effective_date DATE NOT NULL COMMENT 'SCD2 effective date',
+ end_date DATE NOT NULL DEFAULT DATE'9999-12-31' COMMENT 'SCD2 end date',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Fixed income attributes (inheritance subtype) - enriched with payment_frequency, accrued_interest_calc, and benchmark_spread'
+PARTITIONED BY (bond_type)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Fixed income dimension with day count, payment frequency, and call/put features',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'instrument',
+ 'source_lineage' = 'instrument'
+);
+
+-- Inheritance FK: CONSTRAINT fk_fi_instrument FOREIGN KEY (instrument_id) REFERENCES instrument(instrument_id)
+-- Issuer FK: CONSTRAINT fk_fi_issuer FOREIGN KEY (issuer_party_id) REFERENCES party(party_id)
+-- Z-ORDER BY (instrument_id, maturity_date, coupon_rate)
+
+-- ----------------------------------------------------------------------------
+-- Entity 5 of 5: digital_asset_attributes (subtype) - UNCHANGED PER 
+-- Retained from source with inheritance FK discipline documented
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS digital_asset_attributes (
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id - PK of 1:1 subtype',
+ blockchain_network STRING NOT NULL COMMENT 'ETHEREUM, BITCOIN, SOLANA, POLYGON, AVALANCHE, CARDANO, NEAR, APTOS, ARBITRUM, OPTIMISM, BASE',
+ token_standard STRING COMMENT 'ERC20, ERC721, ERC1155, SPL, BEP20, TRC20, NATIVE',
+ contract_address STRING COMMENT 'Smart contract address on-chain (e.g., 0x-prefixed 40-char for EVM)',
+ consensus_mechanism STRING COMMENT 'PROOF_OF_STAKE, PROOF_OF_WORK, DELEGATED_POS, HYBRID, BYZANTINE_FAULT_TOLERANT',
+ total_supply DECIMAL(38,18) COMMENT 'Maximum token supply (null = uncapped)',
+ circulating_supply DECIMAL(38,18) COMMENT 'Current circulating supply',
+ security_classification STRING COMMENT 'SEC classification: SECURITY, COMMODITY, UTILITY, MIXED, UNDETERMINED; drives Howey / Reves analysis',
+ decimal_precision INT COMMENT 'Token decimals (18 for ETH, 8 for BTC, 6 for USDC on some chains)',
+ effective_date DATE NOT NULL COMMENT 'SCD2 effective date',
+ end_date DATE NOT NULL DEFAULT DATE'9999-12-31' COMMENT 'SCD2 end date',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Digital asset attributes (inheritance subtype) - unchanged per ; retained for tokens, crypto, NFTs'
+PARTITIONED BY (blockchain_network)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Digital asset dimension (tokens, crypto, NFTs)',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'instrument',
+ 'source_lineage' = 'instrument'
+);
+
+-- Inheritance FK: CONSTRAINT fk_da_instrument FOREIGN KEY (instrument_id) REFERENCES instrument(instrument_id)
+-- Z-ORDER BY (blockchain_network, contract_address)
+
+-- ============================================================================
+-- END OF FILE - 5 CREATE TABLE statements
+-- Inheritance preserved: all 4 subtypes have instrument_id NOT NULL with FK
+-- ============================================================================
+-- ============================================================================
+-- File: 02b_instrument_derivatives_delta.sql
+-- Purpose: Enterprise Instrument Model - Derivative + Structured (4 NEW entities, Delta Lake)
+-- Net New: derivative_contract, structured_product, instrument_leg, instrument_underlying
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Entity 1 of 4: derivative_contract (NEW)
+-- OTC derivative master terms (not exchange-listed)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS derivative_contract (
+ derivative_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id - 1:1 OTC derivative subtype',
+ contract_type STRING NOT NULL COMMENT 'OTC derivative type: SWAP, FORWARD, SWAPTION, CDS, TRS, IRS, OIS, CCS, FRA, COMMODITY_FORWARD, FX_FORWARD, VARIANCE_SWAP',
+ contract_subtype STRING COMMENT 'Further classification: RECEIVER_SWAP, PAYER_SWAP, SINGLE_NAME_CDS, INDEX_CDS, STANDARDIZED_CDS, BESPOKE_CDS',
+ trade_date DATE NOT NULL COMMENT 'Trade execution date (when contract was entered into)',
+ effective_date DATE NOT NULL COMMENT 'Effective date (when legs start accruing)',
+ termination_date DATE COMMENT 'Termination / maturity date (null for open repo / perpetual)',
+ notional_amount DECIMAL(28,6) NOT NULL COMMENT 'Notional principal amount (drives payment calc; not a cash exchange amount)',
+ notional_currency STRING NOT NULL COMMENT 'ISO 4217 currency of notional_amount',
+ day_count STRING COMMENT 'ISDA day count convention (FK to ref_day_count): ACT_360, ACT_365_FIXED, 30_360, ACT_ACT_ISDA',
+ payment_frequency STRING COMMENT 'Fixed leg payment cadence: ANNUAL, SEMI_ANNUAL, QUARTERLY, MONTHLY, AT_MATURITY',
+ underlying_instrument_id STRING COMMENT 'FK to instrument.instrument_id - underlying (self-reference via instrument); null for rates products, populated for equity/credit/commodity derivatives',
+ fixed_rate DECIMAL(12,8) COMMENT 'Fixed leg rate (e.g., 0.04500000 for 4.5%); null for float-float swaps',
+ floating_index STRING COMMENT 'Floating leg reference (SOFR, ESTR, SONIA, TONA, EURIBOR, CDOR)',
+ spread DECIMAL(10,6) COMMENT 'Spread over floating index (e.g., 0.002500 for +25 bps)',
+ clearing_venue STRING COMMENT 'CCP if centrally cleared (LCH, CME, ICE_CLEAR, JSCC, EUREX); null for bilateral',
+ isda_master_agreement_id STRING COMMENT 'FK to agreement.agreement_id for governing ISDA Master; enforces netting set membership',
+ effective_start_date DATE NOT NULL COMMENT 'SCD2 effective start',
+ effective_end_date DATE NOT NULL DEFAULT DATE'9999-12-31' COMMENT 'SCD2 effective end',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'OTC derivative master terms - swaps, forwards, CDS, TRS; governed by ISDA Master; supports SA-CCR capital, EMIR/CFTC trade reporting, and SEF/MTF routing decisions'
+PARTITIONED BY (contract_type)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'OTC derivative contract master terms (ISDA taxonomy)',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'instrument',
+ 'source_lineage' = 'instrument'
+);
+
+-- Inheritance FK: CONSTRAINT fk_deriv_instrument FOREIGN KEY (instrument_id) REFERENCES instrument(instrument_id)
+-- Self-reference FK: CONSTRAINT fk_deriv_underlying FOREIGN KEY (underlying_instrument_id) REFERENCES instrument(instrument_id)
+-- Agreement FK: CONSTRAINT fk_deriv_isda FOREIGN KEY (isda_master_agreement_id) REFERENCES agreement(agreement_id)
+-- Z-ORDER BY (instrument_id, contract_type, trade_date)
+
+-- ----------------------------------------------------------------------------
+-- Entity 2 of 4: structured_product (NEW)
+-- Multi-component structured notes, CLNs, CDOs
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS structured_product (
+ structured_product_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id - 1:1 subtype',
+ product_structure STRING NOT NULL COMMENT 'Structure type: PRINCIPAL_PROTECTED, REVERSE_CONVERTIBLE, CLN (Credit-Linked Note), CDO, CLO, AUTOCALLABLE, ELN (Equity-Linked Note), RANGE_ACCRUAL, YIELD_ENHANCEMENT, CAPITAL_PROTECTED',
+ issue_price DECIMAL(18,8) COMMENT 'Initial issue price per unit',
+ issue_date DATE COMMENT 'Product issue date',
+ issuer_party_id STRING NOT NULL COMMENT 'FK to party.party_id - issuing entity',
+ arranger_party_id STRING COMMENT 'FK to party.party_id - arranger / structurer (may differ from issuer)',
+ payoff_formula STRING COMMENT 'Plain-text or formal (e.g., MathML) description of payoff; critical for pricing reproducibility',
+ principal_protection_pct DECIMAL(5,2) COMMENT 'Percentage of principal protected at maturity (0.00 to 100.00)',
+ barrier_level DECIMAL(18,8) COMMENT 'Barrier level for knock-in/knock-out features',
+ coupon_formula STRING COMMENT 'Coupon formula for structured notes (e.g., max(0, ref_return - strike))',
+ strike_level DECIMAL(18,8) COMMENT 'Strike for embedded option',
+ observation_frequency STRING COMMENT 'Frequency of observation for autocallables: DAILY, WEEKLY, MONTHLY, QUARTERLY, ANNUAL',
+ effective_start_date DATE NOT NULL COMMENT 'SCD2 effective start',
+ effective_end_date DATE NOT NULL DEFAULT DATE'9999-12-31' COMMENT 'SCD2 effective end',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Structured products - principal-protected, reverse convertible, CLN, CDO, autocallable; each links to multiple underlyings via instrument_underlying'
+PARTITIONED BY (product_structure)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Structured product dimension with issuer and payoff metadata',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'instrument',
+ 'source_lineage' = 'instrument'
+);
+
+-- FK: CONSTRAINT fk_sp_instrument FOREIGN KEY (instrument_id) REFERENCES instrument(instrument_id)
+-- FK: CONSTRAINT fk_sp_issuer FOREIGN KEY (issuer_party_id) REFERENCES party(party_id)
+-- Z-ORDER BY (instrument_id, issue_date)
+
+-- ----------------------------------------------------------------------------
+-- Entity 3 of 4: instrument_leg (NEW)
+-- Individual legs of multi-leg instruments (IR swap pay/receive legs, spread legs)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS instrument_leg (
+ leg_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id - parent multi-leg instrument',
+ leg_number INT NOT NULL COMMENT 'Sequential leg number within parent instrument (1, 2, 3,...)',
+ leg_type STRING NOT NULL COMMENT 'Leg role: PAY (outgoing cashflow leg), RECEIVE (incoming cashflow leg), BUY, SELL',
+ notional_amount DECIMAL(28,6) COMMENT 'Leg-specific notional (may differ across legs, e.g., amortizing swap)',
+ rate_type STRING NOT NULL COMMENT 'Interest rate nature: FIXED, FLOATING, INFLATION_LINKED, ZERO_COUPON, EQUITY_LINKED',
+ fixed_rate DECIMAL(12,8) COMMENT 'Fixed rate for FIXED legs (e.g., 0.04500000 for 4.5%)',
+ floating_index STRING COMMENT 'Floating rate reference: SOFR, ESTR, SONIA, TONA, EURIBOR (FK-enforceable to ref_benchmark_index)',
+ spread DECIMAL(10,6) COMMENT 'Spread over floating index in decimal (0.0025 = +25 bps)',
+ currency STRING NOT NULL COMMENT 'ISO 4217 leg currency (may differ across legs for cross-currency swaps)',
+ day_count STRING COMMENT 'ISDA day count for this leg (can differ per leg)',
+ payment_frequency STRING COMMENT 'Leg payment cadence: ANNUAL, SEMI_ANNUAL, QUARTERLY, MONTHLY',
+ side STRING COMMENT 'BUY, SELL - for spread/option legs (option combos)',
+ ratio DECIMAL(10,6) COMMENT 'Leg ratio for ratio spreads (e.g., 2 for a 1-by-2 call spread)',
+ effective_start_date DATE NOT NULL COMMENT 'SCD2 effective start',
+ effective_end_date DATE NOT NULL DEFAULT DATE'9999-12-31' COMMENT 'SCD2 effective end',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Individual legs of multi-leg instruments - swap pay/receive legs, option spread legs, futures spreads; drives leg-level cashflow projection and leg-level risk decomposition'
+PARTITIONED BY (leg_type)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Instrument leg detail for multi-leg products',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'instrument',
+ 'source_lineage' = 'instrument'
+);
+
+-- FK: CONSTRAINT fk_leg_instrument FOREIGN KEY (instrument_id) REFERENCES instrument(instrument_id)
+-- Z-ORDER BY (instrument_id, leg_number)
+
+-- ----------------------------------------------------------------------------
+-- Entity 4 of 4: instrument_underlying (NEW)
+-- Links derivatives / structured products to their underlyings (self-ref via instrument)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS instrument_underlying (
+ underlying_linkage_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id - derivative / structured product (parent)',
+ underlying_instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id - underlying (self-reference via instrument)',
+ underlying_type STRING NOT NULL COMMENT 'Relationship type: SINGLE (single-name), BASKET (weighted basket of components), INDEX (indexed to published index), CORRELATION, WORST_OF, BEST_OF',
+ weight DECIMAL(12,8) COMMENT 'Component weight in basket (0.00000000 to 1.00000000); sum across basket should = 1',
+ reference_price DECIMAL(18,8) COMMENT 'Reference / initial price used for strike calc or barrier assessment',
+ reference_date DATE COMMENT 'Date reference_price was fixed (strike date or inception)',
+ observation_source STRING COMMENT 'Source for observed prices: BLOOMBERG, REFINITIV, EXCHANGE_CLOSE, OFFICIAL_FIXING',
+ effective_start_date DATE NOT NULL COMMENT 'SCD2 effective start',
+ effective_end_date DATE NOT NULL DEFAULT DATE'9999-12-31' COMMENT 'SCD2 effective end',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Links derivatives and structured products to their underlyings with weight and reference price; supports SINGLE / BASKET / INDEX and WORST_OF / BEST_OF relationships via self-reference to instrument'
+PARTITIONED BY (underlying_type)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Instrument underlying linkage (basket / index / single-name)',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'instrument',
+ 'source_lineage' = 'instrument'
+);
+
+-- Self-reference FKs to instrument:
+-- CONSTRAINT fk_under_instrument FOREIGN KEY (instrument_id) REFERENCES instrument(instrument_id)
+-- CONSTRAINT fk_under_underlying FOREIGN KEY (underlying_instrument_id) REFERENCES instrument(instrument_id)
+-- Z-ORDER BY (instrument_id, underlying_instrument_id)
+
+-- ============================================================================
+-- END OF FILE - 4 CREATE TABLE statements
+-- Verification: derivative_contract has underlying_instrument_id (self-ref) ✓
+-- Verification: instrument_leg has instrument_id FK ✓
+-- Verification: instrument_underlying self-refs via instrument_id + underlying_instrument_id ✓
+-- ============================================================================
+-- ============================================================================
+-- File: 02c_instrument_classification_delta.sql
+-- Purpose: Enterprise Instrument Model - Identification + Classification (5 entities, Delta Lake)
+-- instrument_listing, corporate_action_linkage - all enhanced)
+-- Net New: instrument_risk_classification (FRTB/SA-CCR/CRR risk bucketing)
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Entity 1 of 5: instrument_identifier (enriched) - ENHANCED
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS instrument_identifier (
+ identifier_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id',
+ id_type STRING NOT NULL COMMENT 'Identifier scheme: CUSIP (ISO 6166 NA), ISIN (ISO 6166 global), SEDOL, FIGI (OpenFIGI), RIC (Refinitiv), OCC_SYMBOL, TICKER, BLOOMBERG_ID, CIK, VALOR, WKN, COMMON_CODE, SWIFT_ISIN, WPK, QUIK',
+ id_value STRING NOT NULL COMMENT 'Identifier value (e.g., US0378331005 for AAPL ISIN)',
+ id_source STRING COMMENT 'Data source / vendor: S&P, BLOOMBERG, REFINITIV, OCC, ANNA, OPENFIGI, ISO',
+ is_primary BOOLEAN DEFAULT false COMMENT 'Primary identifier flag for this id_type within the instrument',
+ identifier_status STRING COMMENT 'NEW - Identifier lifecycle status: ACTIVE (current/valid), SUPERSEDED (replaced by a newer one), DELETED (removed/invalid); drives point-in-time cross-reference accuracy',
+ effective_date DATE NOT NULL COMMENT 'SCD2 effective date',
+ end_date DATE NOT NULL DEFAULT DATE'9999-12-31' COMMENT 'SCD2 end date',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Instrument identifiers (CUSIP/ISIN/SEDOL/FIGI/RIC/OCC) with identifier_status for lifecycle tracking (ACTIVE/SUPERSEDED/DELETED); supports point-in-time cross-reference and CAT identifier lineage'
+PARTITIONED BY (id_type)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Instrument identifier mapping with status lifecycle',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'instrument',
+ 'source_lineage' = 'instrument'
+);
+
+-- Z-ORDER BY (instrument_id, id_type)
+-- LIQUID CLUSTERING BY (id_type, identifier_status)
+
+-- ----------------------------------------------------------------------------
+-- Entity 2 of 5: instrument_classification (enriched) - ENHANCED
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS instrument_classification (
+ classification_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id',
+ classification_scheme STRING NOT NULL COMMENT 'Scheme: ISDA_PRODUCT, CFI_ISO_10962, GICS, SIC, NAICS, BICS, ICB, FIGI_CLASSIFICATION',
+ asset_class STRING NOT NULL COMMENT 'Top-level asset class: EQUITY, CREDIT, RATES, FX, COMMODITY, DIGITAL_ASSET, ALTERNATIVE',
+ product_type STRING COMMENT 'ISDA product type (e.g., COMMON_STOCK, CORPORATE_BOND, VANILLA_OPTION, EQUITY_OPTION, INTEREST_RATE_SWAP, CDS_SINGLE_NAME)',
+ product_subtype STRING COMMENT 'ISDA product subtype (e.g., LARGE_CAP, INVESTMENT_GRADE, WEEKLY_OPTION)',
+ cfi_code STRING COMMENT 'NEW - ISO 10962 Classification of Financial Instruments 6-character code (e.g., ESVUFR = Equity Shares Voting Free Registered); FK to ref_cfi_category (first char) in ',
+ fisn STRING COMMENT 'NEW - ISO 18774 Financial Instrument Short Name (35-char abbreviation, e.g., "APPLE/COMM STK"); supplements ISIN for instrument identification',
+ sector STRING COMMENT 'GICS / SIC sector (e.g., 45 Information Technology)',
+ industry_group STRING COMMENT 'GICS / ICB industry group (e.g., 4510 Software & Services)',
+ effective_date DATE NOT NULL COMMENT 'SCD2 effective date',
+ end_date DATE NOT NULL DEFAULT DATE'9999-12-31' COMMENT 'SCD2 end date',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Instrument classifications with ISO 10962 cfi_code and ISO 18774 fisn; supports ISDA / CFI / GICS taxonomy cross-walks; cfi_code first character FK-enforceable against ref_cfi_category'
+PARTITIONED BY (asset_class)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Instrument classification (ISDA FpML, CFI ISO 10962, FISN ISO 18774)',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'instrument',
+ 'source_lineage' = 'instrument'
+);
+
+-- Z-ORDER BY (instrument_id, classification_scheme)
+-- LIQUID CLUSTERING BY (asset_class, cfi_code)
+
+-- ----------------------------------------------------------------------------
+-- Entity 3 of 5: instrument_listing (enriched) - ENHANCED
+-- primary_listing_flag, listing_date (already present), delisting_date (already present)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS instrument_listing (
+ listing_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id',
+ venue_id STRING NOT NULL COMMENT 'FK to venue.venue_id',
+ listing_type STRING NOT NULL COMMENT 'PRIMARY, SECONDARY, UTP (Unlisted Trading Privileges), DUAL_LISTED, CROSS_LISTED, MULTI_LISTED',
+ primary_listing_flag BOOLEAN DEFAULT false COMMENT 'NEW - TRUE for the single primary listing of the instrument; exactly one TRUE expected per instrument (enforced by DLT expectation)',
+ listing_date DATE COMMENT 'Date listed on venue',
+ delisting_date DATE COMMENT 'Date delisted (null if active)',
+ trading_currency STRING NOT NULL DEFAULT 'USD' COMMENT 'ISO 4217 trading currency on this venue',
+ lot_size INT DEFAULT 1 COMMENT 'Round lot size (shares for equities, contracts for options)',
+ tick_size DECIMAL(10,8) COMMENT 'Minimum price increment (e.g., 0.01 for USD cents)',
+ trading_hours_profile STRING COMMENT 'REGULAR, EXTENDED, GLOBAL_24H, AUCTION, RFQ, PRE_MARKET_ONLY, CONTINUOUS',
+ effective_date DATE NOT NULL COMMENT 'SCD2 effective date',
+ end_date DATE NOT NULL DEFAULT DATE'9999-12-31' COMMENT 'SCD2 end date',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Instrument listing on venues with primary_listing_flag; drives consolidated tape attribution and primary-listing exchange logic (e.g., consolidating opening/closing crosses)'
+PARTITIONED BY (listing_type)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Instrument listing relationships with primary flag',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'instrument',
+ 'source_lineage' = 'instrument'
+);
+
+-- Z-ORDER BY (instrument_id, venue_id)
+-- LIQUID CLUSTERING BY (listing_type, primary_listing_flag)
+
+-- ----------------------------------------------------------------------------
+-- Entity 4 of 5: corporate_action_linkage (enriched) - ENHANCED
+-- ex_date (present), record_date (present), payment_date, adjustment_factor (present)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS corporate_action_linkage (
+ action_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id',
+ action_type STRING NOT NULL COMMENT 'Action: DIVIDEND, STOCK_SPLIT, REVERSE_SPLIT, MERGER, ACQUISITION, SPINOFF, RIGHTS_ISSUE, TENDER_OFFER, NAME_CHANGE, SYMBOL_CHANGE, DELISTING, BANKRUPTCY, RECAPITALIZATION, EXCHANGE_OFFER, RETURN_OF_CAPITAL, CASH_DIVIDEND, STOCK_DIVIDEND',
+ ex_date DATE COMMENT 'Ex-dividend / ex-action date (cutoff: buyers on or after no longer entitled)',
+ record_date DATE COMMENT 'Record date (who is eligible as shareholder)',
+ payment_date DATE COMMENT 'NEW - Pay date (when cash/stock is distributed); distinct from effective_date which tracks SCD2',
+ effective_date DATE COMMENT 'Corporate-action effective date (when market price adjusts)',
+ adjustment_factor DECIMAL(18,10) COMMENT 'Price / quantity adjustment factor (e.g., 0.5 for 2:1 split, 0.9524 for 5% cash div on 100-day high)',
+ announcement_date DATE COMMENT 'Date the action was publicly announced',
+ description STRING COMMENT 'Action description (e.g., 2:1 stock split, $0.25 quarterly dividend)',
+ new_instrument_id STRING COMMENT 'FK to instrument.instrument_id - resulting instrument for splits/mergers/spinoffs (self-ref via instrument)',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Corporate action linkage (dividends, splits, mergers, spinoffs) - enriched with explicit payment_date; drives position adjustments and historical price back-propagation'
+PARTITIONED BY (action_type)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Corporate action linkage with ex/record/payment dates',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'instrument',
+ 'source_lineage' = 'instrument'
+);
+
+-- Z-ORDER BY (instrument_id, ex_date, action_type)
+
+-- ----------------------------------------------------------------------------
+-- Entity 5 of 5: instrument_risk_classification (NEW)
+-- FRTB / SA-CCR / CRR risk bucket classification
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS instrument_risk_classification (
+ risk_classification_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id',
+ risk_framework STRING NOT NULL COMMENT 'Regulatory framework: FRTB (Fundamental Review of the Trading Book - BCBS 352), SA_CCR (Standardised Approach for Counterparty Credit Risk - BCBS 279), CRR (EU Capital Requirements Regulation). CHECK (risk_framework IN (''FRTB'', ''SA_CCR'', ''CRR''))',
+ risk_class STRING NOT NULL COMMENT 'Risk class within framework: GIRR (General Interest Rate Risk), CSR (Credit Spread Risk - Non-securitization), CSRS (CSR - Securitization), CSRC (CSR - Correlation Trading), EQUITY, COMMODITY, FX - for FRTB; INTEREST_RATE, EQUITY, CREDIT, FX, COMMODITY - for SA-CCR',
+ risk_bucket STRING COMMENT 'Granular bucket within risk_class (e.g., FRTB GIRR bucket 1-10 by currency; SA-CCR equity bucket by market cap and sector)',
+ risk_weight DECIMAL(9,6) COMMENT 'Applicable risk weight (decimal; e.g., 0.015000 for 1.5%)',
+ correlation_parameter DECIMAL(9,6) COMMENT 'Intra-bucket / cross-bucket correlation (for FRTB-SA aggregation formulas)',
+ effective_date DATE NOT NULL COMMENT 'SCD2 effective date',
+ end_date DATE NOT NULL DEFAULT DATE'9999-12-31' COMMENT 'SCD2 end date',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Instrument risk classification for Basel FRTB / SA-CCR / CRR capital calculation; one row per (instrument, framework, effective period); drives RWA aggregation and capital floor calc'
+PARTITIONED BY (risk_framework)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'FRTB / SA-CCR / CRR risk classification',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'instrument',
+ 'source_lineage' = 'instrument'
+);
+
+-- CHECK: risk_framework restricted to FRTB / SA_CCR / CRR (enforced inline in comment; full CHECK DDL in)
+-- FK: CONSTRAINT fk_risk_instrument FOREIGN KEY (instrument_id) REFERENCES instrument(instrument_id)
+-- Z-ORDER BY (instrument_id, risk_framework, effective_date)
+
+-- ============================================================================
+-- END OF FILE - 5 CREATE TABLE statements
+-- Verification: instrument_classification includes cfi_code ✓
+-- Verification: instrument_risk_classification has risk_framework FRTB/SA_CCR/CRR ✓
+-- ============================================================================

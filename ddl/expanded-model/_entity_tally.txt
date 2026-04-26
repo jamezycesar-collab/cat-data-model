@@ -1,0 +1,76 @@
+ ENTITY COUNT VERIFICATION (Delta Lake Expanded Model)
+============================================================
+Source of truth: section Full Entity Count Summary (line 436-448)
+
+Subject Area Target Actual Status
+--------------------------------- ------ ------ ------
+Party Model 14 14 OK
+Instrument Model 14 14 OK
+Venue Model 4 4 OK
+Agreement Model 9 9 OK
+Trade Lifecycle 22 20 SHORT BY 2
+ Order Request 1 1
+ Pre-Trade (Quote/RFE/IOI) 5 5
+ Order Stage 3 4 (+order_leg for MLNO)
+ Execution 2 2
+ Allocation 2 2
+ Confirmation 1 1
+ Clearing 1 1
+ Settlement 2 2
+ Position 2 2
+Operations (merged into Regulatory) - -
+Regulatory Reporting 6 6 OK
+Reference Tables 16 16 OK
+--------------------------------- ------ ------ ------
+TOTAL (unique entities) 85 83
+
+Note: has an internal counting inconsistency:
+ - Line 275 states "22 total - 6 existing + 16 new" for trade lifecycle
+ but only enumerates 19 entities in the sub-sections (lines 277-339)
+ - Line 438 summary table sums to 88 if Operations=3 is not double-counted
+ or 85 if Operations entities are included within the Regulatory 6
+
+My judgment: 20 entities for trade lifecycle is defensible given
+the sections enumerate 19 and order_leg is required for MLNO.
+
+Files in output/expanded-model/:
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 45600 Apr 21 22:05 01_party_model_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 17454 Apr 21 22:03 01a_party_core_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 13270 Apr 21 22:04 01b_party_attributes_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 14876 Apr 21 22:05 01c_party_new_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 49776 Apr 21 22:10 02_instrument_model_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 19701 Apr 21 22:07 02a_instrument_core_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 14646 Apr 21 22:08 02b_instrument_derivatives_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 15429 Apr 21 22:10 02c_instrument_classification_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 11076 Apr 21 22:11 03_venue_model_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 33450 Apr 21 22:15 04_agreement_model_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 17736 Apr 21 22:17 05_pretrade_model_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 7762 Apr 21 22:18 06_order_request_model_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 20720 Apr 21 22:20 07_order_stage_model_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 8337 Apr 21 22:21 08_execution_model_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 8598 Apr 21 22:24 09_allocation_model_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 14325 Apr 21 22:26 10_posttrade_model_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 7546 Apr 21 22:26 11_position_model_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 17684 Apr 21 22:28 12_operations_regulatory_model_delta.sql
+-rw------- 1 vibrant-optimistic-wozniak vibrant-optimistic-wozniak 51905 Apr 21 22:33 13_reference_tables_delta.sql
+
+CREATE TABLE per file:
+ 14 01_party_model_delta.sql
+ 5 01a_party_core_delta.sql
+ 4 01b_party_attributes_delta.sql
+ 5 01c_party_new_delta.sql
+ 14 02_instrument_model_delta.sql
+ 5 02a_instrument_core_delta.sql
+ 4 02b_instrument_derivatives_delta.sql
+ 5 02c_instrument_classification_delta.sql
+ 4 03_venue_model_delta.sql
+ 9 04_agreement_model_delta.sql
+ 5 05_pretrade_model_delta.sql
+ 1 06_order_request_model_delta.sql
+ 4 07_order_stage_model_delta.sql
+ 2 08_execution_model_delta.sql
+ 2 09_allocation_model_delta.sql
+ 4 10_posttrade_model_delta.sql
+ 2 11_position_model_delta.sql
+ 6 12_operations_regulatory_model_delta.sql
+ 16 13_reference_tables_delta.sql

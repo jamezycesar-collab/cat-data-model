@@ -1,0 +1,115 @@
+-- SPDX-License-Identifier: Apache-2.0
+-- Copyright 2026 cat-pretrade-data-model contributors
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+-- http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+-- ============================================================================
+-- File: 06_order_request_model_delta.sql
+-- Purpose: Enterprise Order Request Model (1 entity, Delta Lake)
+-- Source: cat-refactor-skill/references/cat-order-request.md
+-- Scope: MEIR / MOIR - initial receipt of customer order intent
+-- CAT Events Covered: MEIR (Electronic Internal Route Accepted),
+-- MOIR (Manual Internal Route Accepted)
+-- Notes: VARCHAR(n) -> STRING; BIGINT IDs normalized to STRING (UUID v4) to
+-- preserve FK type integrity across subject areas. Audit columns
+-- standardized to _created_at / _updated_at GENERATED ALWAYS AS.
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Entity 1 of 1: order_request (NEW - CAT MEIR / MOIR)
+-- First touchpoint in CAT audit trail - captures receipt of customer intent
+-- BEFORE the order is systematized into the OMS
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS order_request (
+ order_request_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ cat_event_type STRING NOT NULL COMMENT 'CAT event: MEIR (electronic) or MOIR (manual)',
+
+ -- Timestamps (critical for CAT - receipt vs. systematization)
+ received_timestamp TIMESTAMP NOT NULL COMMENT 'When firm first received the order from customer (CAT: orderReceivedTimestamp). Electronic = FIX message arrival; Manual = time of phone/chat/verbal instruction',
+ systematized_timestamp TIMESTAMP COMMENT 'When order was entered into electronic system (CAT: electronicTimestamp). NULL if order remains manual throughout',
+ event_timestamp TIMESTAMP NOT NULL COMMENT 'CAT eventTimestamp - the reportable time for this event',
+
+ -- Request origin
+ receipt_method STRING NOT NULL COMMENT 'How order was received: FIX, API, PHONE, CHAT, FAX, WALK_IN, ALGORITHMIC',
+ manual_flag BOOLEAN NOT NULL COMMENT 'TRUE = manual event (MOIR), subject to 1-second clock sync; FALSE = electronic (MEIR), subject to 50ms clock sync',
+ manual_order_id STRING COMMENT 'For manual orders: links MOIR to the subsequent MONO event. CAT field: manualOrderID',
+ dept_type STRING NOT NULL COMMENT 'Receiving department: T=Trading, A=Algorithm, O=Other, S=Sales, X=External (customer DMA)',
+
+ -- Parties
+ requesting_party_role_id STRING NOT NULL COMMENT 'FK to party_role.party_role_id - the customer/client who initiated the request',
+ receiving_party_role_id STRING NOT NULL COMMENT 'FK to party_role.party_role_id - the sales trader / desk / system that received the request',
+ reporter_imid STRING NOT NULL COMMENT 'CAT Reporter IMID (Industry Member ID) - CRD number or exchange code',
+
+ -- Instrument
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id - what the customer wants to trade',
+
+ -- Request details
+ side STRING NOT NULL COMMENT 'BUY, SELL, SELL_SHORT, SELL_SHORT_EXEMPT, CROSS',
+ requested_quantity DECIMAL(18,4) NOT NULL COMMENT 'Quantity requested by customer',
+ price_type STRING COMMENT 'MARKET, LIMIT, STOP, VWAP, TWAP, NOT_HELD, CARE',
+ limit_price DECIMAL(18,6) COMMENT 'Limit price if specified',
+ time_in_force STRING COMMENT 'DAY, GTC, IOC, FOK, GTD, OPG, CLO',
+ handling_instruction STRING COMMENT 'CAT handlingInstructions: ALG, DIR, DMA, RAO, CMPX, etc.',
+
+ -- Request instructions
+ instruction_text STRING COMMENT 'Free-form customer instructions (e.g., "work the order over 2 hours")',
+ algo_strategy STRING COMMENT 'If algorithmic: VWAP, TWAP, IS, POV, PAIRS, CUSTOM',
+ urgency STRING COMMENT 'NORMAL, URGENT, FLASH',
+
+ -- Solicitation
+ solicitation_flag BOOLEAN NOT NULL COMMENT 'TRUE if order resulted from broker solicitation (CAT: solicitationFlag)',
+
+ -- Customer identification (CAIS)
+ firm_designated_id STRING NOT NULL COMMENT 'CAT FDID - Firm Designated ID for the customer; links to CAIS customer record',
+ account_holder_type STRING NOT NULL COMMENT 'CAT accountHolderType: A=Individual, J=Joint, O=Org, P=Plan, T=Trust, F=FDID',
+
+ -- Linkage
+ order_event_id STRING COMMENT 'FK to order_event.order_event_id - resulting order created from this request; NULL if still pending or rejected',
+ rfe_id STRING COMMENT 'FK to request_for_execution.rfe_id - if this order request was triggered by an RFE',
+ ioi_id STRING COMMENT 'FK to indication_of_interest.ioi_id - if this request was triggered by an IOI',
+ quote_event_id STRING COMMENT 'FK to quote_event.quote_event_id - if this order request was created from a selected quote (RFQ -> Quote -> Order)',
+ prior_order_request_id STRING COMMENT 'Self-FK to order_request.order_request_id - for aggregated/disaggregated order chains (CAT: priorOrderID)',
+
+ -- Status
+ request_status STRING NOT NULL COMMENT 'RECEIVED, ACCEPTED, REJECTED, ORDER_CREATED, EXPIRED',
+ rejection_reason STRING COMMENT 'Reason for rejection if applicable',
+
+ -- CAT-specific fields
+ firm_roe_id STRING NOT NULL COMMENT 'Firm Reportable Order Event ID - unique within the reporting firm for this event',
+ order_key_date DATE NOT NULL COMMENT 'CAT orderKeyDate - date component of the order identifier',
+
+ -- Audit
+ event_date DATE NOT NULL COMMENT 'Business date (partition key)',
+ record_source STRING NOT NULL COMMENT 'Source system: OMS_FIDESSA, OMS_LSEG, FIX_GATEWAY, MANUAL_ENTRY',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Initial receipt of customer order intent - first event in CAT audit trail. Maps to MEIR (electronic) / MOIR (manual). Immutable - append-only. Receipt timestamp vs. systematized timestamp gap is auditable per SEC Rule 613'
+PARTITIONED BY (event_date)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Order Request - MEIR/MOIR first touchpoint',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'order',
+ 'source_lineage' = 'references/cat-order-request.md section order_request'
+);
+
+-- Z-ORDER BY (firm_roe_id, requesting_party_role_id, instrument_id, request_status)
+
+-- ============================================================================
+-- END OF FILE - 1 CREATE TABLE statement
+-- ============================================================================

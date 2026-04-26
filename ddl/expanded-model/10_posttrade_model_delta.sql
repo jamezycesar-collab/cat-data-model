@@ -1,0 +1,191 @@
+-- SPDX-License-Identifier: Apache-2.0
+-- Copyright 2026 cat-pretrade-data-model contributors
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+-- http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+-- ============================================================================
+-- File: 10_posttrade_model_delta.sql
+-- Purpose: Post-Trade Lifecycle Model - Confirmation/Clearing/Settlement (4 entities, Delta Lake)
+-- Scope: trade_confirmation, clearing_record, settlement_instruction, settlement_obligation
+-- FIX: 35=AK (Confirmation), 35=AU (ConfirmationAck)
+-- Systems: DTCC CTM, Omgeo, SWIFT MT515, OCC, ICE Clear, CME, Euroclear, Clearstream, Fed
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Entity 1 of 4: trade_confirmation (NEW)
+-- Affirmation/confirmation between counterparties - DTCC CTM / Omgeo / manual
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS trade_confirmation (
+ confirmation_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ allocation_id STRING NOT NULL COMMENT 'FK to allocation.allocation_id',
+ execution_id STRING NOT NULL COMMENT 'FK to execution.execution_id',
+ confirming_party_role_id STRING NOT NULL COMMENT 'FK to party_role.party_role_id - our side sending/receiving confirmation',
+ counterparty_role_id STRING NOT NULL COMMENT 'FK to party_role.party_role_id - counterparty',
+ confirmation_method STRING NOT NULL COMMENT 'DTCC_CTM, OMGEO, SWIFT_MT515, MANUAL, FIX, OASYS',
+ confirmation_status STRING NOT NULL COMMENT 'UNCONFIRMED, AFFIRMED, DK (Don''t Know), DISPUTED, CANCELLED, MATCHED',
+ sent_timestamp TIMESTAMP COMMENT 'When confirmation was sent to counterparty',
+ received_timestamp TIMESTAMP COMMENT 'When confirmation was received from counterparty',
+ affirmed_timestamp TIMESTAMP COMMENT 'When counterparty affirmed (T+0 / T+1 / T+2 for SEC Rule 15c6-2)',
+ match_status STRING COMMENT 'MATCHED, UNMATCHED, ALLEGED (counterparty alleged but we have no record), DISPUTED',
+ settlement_instruction_id STRING COMMENT 'FK to settlement_instruction.settlement_id - downstream SSI reference',
+ confirmation_reference STRING COMMENT 'External confirmation reference (DTCC CTM TAID, Omgeo OASYS trade number)',
+ mismatch_fields STRING COMMENT 'JSON array of fields with mismatches (quantity, price, settlement_date, etc.)',
+ dispute_reason STRING COMMENT 'Reason when confirmation_status = DISPUTED',
+ event_date DATE NOT NULL COMMENT 'Partition key',
+ record_source STRING NOT NULL COMMENT 'Source system lineage identifier',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Trade confirmation/affirmation between counterparties - DTCC CTM, Omgeo CTM, SWIFT MT515, FIX Confirmation 35=AK; drives SEC Rule 15c6-2 same-day affirmation tracking'
+PARTITIONED BY (event_date)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Trade confirmation - DTCC CTM/Omgeo/FIX',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'posttrade',
+ 'source_lineage' = ' section Confirmation Stage - trade_confirmation'
+);
+
+-- Z-ORDER BY (allocation_id, confirmation_status, match_status)
+
+-- ----------------------------------------------------------------------------
+-- Entity 2 of 4: clearing_record (NEW)
+-- CCP clearing - novation from bilateral to CCP-cleared
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS clearing_record (
+ clearing_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ execution_id STRING NOT NULL COMMENT 'FK to execution.execution_id',
+ allocation_id STRING COMMENT 'FK to allocation.allocation_id (NULL if clearing happens pre-allocation)',
+ ccp_party_id STRING NOT NULL COMMENT 'FK to party.party_id - the CCP (e.g., OCC, ICE Clear, CME, LCH, DTCC-NSCC)',
+ clearing_member_party_id STRING NOT NULL COMMENT 'FK to party.party_id - our clearing member (self-clearing) or our Futures Commission Merchant',
+ clearing_status STRING NOT NULL COMMENT 'SUBMITTED, ACCEPTED, REJECTED, NOVATED, UNWOUND',
+ clearing_timestamp TIMESTAMP NOT NULL COMMENT 'When trade was submitted to CCP',
+ novation_timestamp TIMESTAMP COMMENT 'When CCP novated the trade (accepted and became legal counterparty)',
+ netting_set_id STRING COMMENT 'FK to agreement_netting_set.netting_set_id - for SA-CCR capital',
+ original_trade_id STRING COMMENT 'Bilateral trade reference before novation',
+ cleared_trade_id STRING COMMENT 'CCP-assigned trade ID after novation',
+ initial_margin DECIMAL(18,2) COMMENT 'Initial margin required by CCP at trade date',
+ variation_margin DECIMAL(18,2) COMMENT 'Variation margin posted (daily P&L settlement)',
+ default_fund_contribution DECIMAL(18,2) COMMENT 'Allocated default fund contribution (mutualized loss sharing)',
+ clearing_fee DECIMAL(18,4) COMMENT 'CCP clearing fee',
+ give_up_firm_id STRING COMMENT 'FK to party.party_id - give-up/carry firm (for executing broker -> clearing broker hand-offs)',
+ clearing_status_reason STRING COMMENT 'Reason code when clearing_status = REJECTED',
+ event_date DATE NOT NULL COMMENT 'Partition key',
+ record_source STRING NOT NULL COMMENT 'Source system lineage identifier',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'CCP clearing records - tracks novation from bilateral to CCP-cleared; supports OCC (options), ICE Clear (credit/IR), CME (futures), LCH (IRS/FX), DTCC-NSCC (equities CNS); captures IM/VM/default fund allocations'
+PARTITIONED BY (event_date)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'CCP clearing - novation + margin',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'posttrade',
+ 'source_lineage' = ' section Clearing Stage - clearing_record'
+);
+
+-- Z-ORDER BY (execution_id, ccp_party_id, clearing_status)
+
+-- ----------------------------------------------------------------------------
+-- Entity 3 of 4: settlement_instruction (NEW)
+-- Settlement instructions to custodian/CSD
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS settlement_instruction (
+ settlement_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ allocation_id STRING NOT NULL COMMENT 'FK to allocation.allocation_id',
+ clearing_id STRING COMMENT 'FK to clearing_record.clearing_id (NULL for bilateral OTC settlements)',
+ settlement_type STRING NOT NULL COMMENT 'DVP (Delivery vs Payment), FOP (Free of Payment), DAP (Delivery against Payment), RVP (Receive vs Payment), RFP (Receive Free of Payment)',
+ settlement_venue STRING NOT NULL COMMENT 'DTCC, EUROCLEAR, CLEARSTREAM, FED, CDS (Canada), JASDEC (Japan), HKSCC (HK)',
+ settlement_currency STRING NOT NULL COMMENT 'ISO 4217 settlement currency',
+ settlement_amount DECIMAL(18,2) NOT NULL COMMENT 'Principal amount to settle',
+ accrued_interest DECIMAL(18,4) COMMENT 'Accrued interest component (fixed income)',
+ net_settlement_amount DECIMAL(18,2) COMMENT 'Net amount (principal + accrued ± fees)',
+ settlement_date DATE NOT NULL COMMENT 'Contractual settlement date',
+ actual_settlement_date DATE COMMENT 'Actual settlement date (may differ from contractual if failed)',
+ settlement_status STRING NOT NULL COMMENT 'INSTRUCTED, MATCHED, SETTLING, SETTLED, FAILED, PARTIAL, CANCELLED',
+ custodian_party_id STRING COMMENT 'FK to party.party_id - custodian (State Street, BNY Mellon, JPM Custody)',
+ counterparty_custodian_party_id STRING COMMENT 'FK to party.party_id - counterparty custodian (for matching)',
+ depository_account STRING COMMENT 'DTCC participant number / Euroclear account / Clearstream account',
+ bic_code STRING COMMENT 'SWIFT BIC of custodian (ISO 9362)',
+ failing_reason STRING COMMENT 'Reason code for failed settlements: LACK_OF_SECURITIES, LACK_OF_CASH, MISMATCHED_DATA, CP_INSTRUCTION_DELAYED',
+ fails_penalty_amount DECIMAL(18,4) COMMENT 'CSDR penalty charge (for EU T2S fails)',
+ event_date DATE NOT NULL COMMENT 'Partition key',
+ record_source STRING NOT NULL COMMENT 'Source system lineage identifier',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Settlement instructions to custodians/CSDs - DTCC, Euroclear, Clearstream, Fed; DVP/FOP/DAP/RVP; tracks SEC T+1 (2024), CSDR penalties, and settlement fails'
+PARTITIONED BY (event_date)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Settlement instructions - SSI to custodian/CSD',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'posttrade',
+ 'source_lineage' = ' section Settlement Stage - settlement_instruction'
+);
+
+-- Z-ORDER BY (allocation_id, settlement_status, settlement_date)
+
+-- ----------------------------------------------------------------------------
+-- Entity 4 of 4: settlement_obligation (NEW)
+-- Net settlement obligations after CNS netting (NSCC)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS settlement_obligation (
+ obligation_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ netting_set_id STRING COMMENT 'FK to agreement_netting_set.netting_set_id (NULL for CNS which nets at CUSIP × account)',
+ party_role_id STRING NOT NULL COMMENT 'FK to party_role.party_role_id - party with the obligation',
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id',
+ net_quantity DECIMAL(18,4) NOT NULL COMMENT 'Net quantity to deliver (positive) or receive (negative)',
+ net_amount DECIMAL(18,2) NOT NULL COMMENT 'Net cash amount',
+ settlement_date DATE NOT NULL COMMENT 'Settlement date for this netted obligation',
+ obligation_status STRING NOT NULL COMMENT 'PENDING, NETTED, SETTLED, FAILED, SUBSTITUTED (stock loan substitution)',
+ csd_reference STRING COMMENT 'CSD-assigned reference (DTC position movement ID, Euroclear/Clearstream transaction ref)',
+ settlement_currency STRING COMMENT 'ISO 4217 currency',
+ netting_cycle_id STRING COMMENT 'CNS/SDFS batch cycle identifier (e.g., NSCC end-of-day CNS cycle)',
+ event_date DATE NOT NULL COMMENT 'Partition key',
+ record_source STRING NOT NULL COMMENT 'Source system lineage identifier',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Net settlement obligations - post-netting view at CSD level; supports CNS (NSCC continuous net settlement) and bilateral netting sets; drives custodian reconciliation'
+PARTITIONED BY (event_date)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Settlement obligations - CNS/netted',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'posttrade',
+ 'source_lineage' = ' section Settlement Stage - settlement_obligation'
+);
+
+-- Z-ORDER BY (party_role_id, instrument_id, settlement_date, obligation_status)
+
+-- ============================================================================
+-- END OF FILE - 4 CREATE TABLE statements
+-- ============================================================================

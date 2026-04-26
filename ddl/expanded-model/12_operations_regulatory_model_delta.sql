@@ -1,0 +1,249 @@
+-- SPDX-License-Identifier: Apache-2.0
+-- Copyright 2026 cat-pretrade-data-model contributors
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+-- http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+-- ============================================================================
+-- File: 12_operations_regulatory_model_delta.sql
+-- Purpose: Operations + Expanded Regulatory Reporting Model (6 entities, Delta Lake)
+-- Existing (retained from baseline; unchanged per):
+-- error_correction, reporting_submission, clock_sync_audit
+-- Net New:
+-- regulatory_report, regulatory_hold, audit_trail_event
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Entity 1 of 6: error_correction (EXISTING - retained from baseline)
+-- Reference: ddl/CAT_PreTrade_DDL_DeltaLake.sql line 843
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS error_correction (
+ correction_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ original_record_id STRING NOT NULL COMMENT 'record_id of the original event being corrected',
+ correction_type STRING NOT NULL COMMENT 'REPAIR (fix fields), DELETE (remove record), REREPORT (resubmit)',
+ original_event_type STRING NOT NULL COMMENT 'CAT event type of original record (e.g., MENO, MEOR)',
+ corrected_fields STRING COMMENT 'JSON map of field -> {old_value, new_value} for REPAIR',
+ correction_timestamp TIMESTAMP NOT NULL COMMENT 'When correction was made',
+ reporter_party_role_id STRING NOT NULL COMMENT 'FK to party_role.party_role_id - firm making correction',
+ correction_reason STRING COMMENT 'Reason for correction (e.g., Data Entry Error, System Error, Regulatory Requirement)',
+ regulatory_deadline DATE COMMENT 'T+3 correction deadline per FINRA 4530',
+ correction_date DATE NOT NULL COMMENT 'Partition key',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Error corrections - tracks corrections to reported events (retained unchanged per)'
+PARTITIONED BY (correction_date)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Error corrections and restatements',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'operations',
+ 'source_lineage' = 'baseline DDL retained per '
+);
+
+-- Z-ORDER BY (original_record_id, correction_timestamp)
+
+-- ----------------------------------------------------------------------------
+-- Entity 2 of 6: reporting_submission (EXISTING - retained from baseline)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS reporting_submission (
+ submission_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ reporter_party_role_id STRING NOT NULL COMMENT 'FK to party_role.party_role_id - submitting firm',
+ submission_date DATE NOT NULL COMMENT 'Partition key - date submitted to CAT',
+ submission_type STRING NOT NULL COMMENT 'INITIAL, CORRECTION, RESUBMISSION, LATE, AMENDED',
+ file_name STRING NOT NULL COMMENT 'Submitted file name (e.g., FIRM123_20260101_001.csv)',
+ record_count INT NOT NULL COMMENT 'Total records in submission',
+ accepted_count INT COMMENT 'Records accepted by CAT',
+ rejected_count INT COMMENT 'Records rejected by CAT',
+ warning_count INT COMMENT 'Records accepted with warnings',
+ status STRING NOT NULL COMMENT 'PENDING, ACCEPTED, PARTIALLY_REJECTED, REJECTED, PROCESSING, FAILED',
+ cat_feedback_id STRING COMMENT 'CAT processor feedback reference ID',
+ submitted_timestamp TIMESTAMP COMMENT 'Actual submission time',
+ acknowledged_timestamp TIMESTAMP COMMENT 'CAT acknowledgement time',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'CAT submissions - tracks all reporting batches to CAT (retained unchanged per)'
+PARTITIONED BY (submission_date)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'CAT reporting submissions',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'operations',
+ 'source_lineage' = 'baseline DDL retained per '
+);
+
+-- Z-ORDER BY (reporter_party_role_id, submission_date)
+
+-- ----------------------------------------------------------------------------
+-- Entity 3 of 6: clock_sync_audit (EXISTING - retained from baseline)
+-- FINRA Rule 4590 clock synchronization
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS clock_sync_audit (
+ audit_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ party_role_id STRING NOT NULL COMMENT 'FK to party_role.party_role_id',
+ system_name STRING NOT NULL COMMENT 'Name of the clock-synced system (e.g., OMS-PROD-01, TRADE-ENGINE-02)',
+ sync_timestamp TIMESTAMP NOT NULL COMMENT 'Time of sync check - UTC',
+ reference_source STRING NOT NULL COMMENT 'NTP server or NIST reference used',
+ offset_ms DECIMAL(10,3) NOT NULL COMMENT 'Clock offset in milliseconds (positive = ahead, negative = behind)',
+ tolerance_ms DECIMAL(10,3) NOT NULL DEFAULT 50.0 COMMENT 'Allowed tolerance in milliseconds (50ms per FINRA 4590 for electronic)',
+ compliance_status STRING NOT NULL COMMENT 'COMPLIANT, NON_COMPLIANT, WARNING',
+ sync_date DATE NOT NULL COMMENT 'Partition key',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Clock synchronization audit - FINRA Rule 4590 compliance (retained unchanged per)'
+PARTITIONED BY (sync_date)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Clock sync audit - FINRA 4590',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'operations',
+ 'source_lineage' = 'baseline DDL retained per '
+);
+
+-- Z-ORDER BY (party_role_id, sync_timestamp)
+
+-- ----------------------------------------------------------------------------
+-- Entity 4 of 6: regulatory_report (NEW)
+-- Cross-regime regulatory report tracking - CAT, OATS, TRF, APA, ARM, EMIR, MiFIR
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS regulatory_report (
+ report_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ report_type STRING NOT NULL COMMENT 'CAT, OATS (legacy), TRF, APA, ARM, EMIR, MiFIR, SFTR, CFTC_SWAP, 13F, 13H, BLUESHEETS',
+ regime STRING NOT NULL COMMENT 'SEC, FINRA, ESMA, FCA, BaFin, CFTC, MAS, HKMA, ASIC, FSA',
+ submission_id STRING COMMENT 'FK to reporting_submission.submission_id (if linked to a batch)',
+ reporting_party_role_id STRING NOT NULL COMMENT 'FK to party_role.party_role_id - reporting firm',
+ report_reference STRING NOT NULL COMMENT 'Report reference number / UTI (Unique Transaction Identifier)',
+ report_status STRING NOT NULL COMMENT 'GENERATED, SUBMITTED, ACCEPTED, PARTIALLY_ACCEPTED, REJECTED, CORRECTED, AMENDED, WITHDRAWN',
+ generation_timestamp TIMESTAMP NOT NULL COMMENT 'When report was generated',
+ submission_timestamp TIMESTAMP COMMENT 'When report was submitted to regulator/TR',
+ acknowledgement_timestamp TIMESTAMP COMMENT 'When regulator/TR acknowledged',
+ rejection_reason STRING COMMENT 'Reason for rejection (regulator-specific error codes)',
+ trade_repository STRING COMMENT 'TR identifier: DTCC_GTR, CME_TR, UnaVista, REGIS-TR (for EMIR/SFTR)',
+ record_count INT COMMENT 'Number of events/trades in this report',
+ related_entity_type STRING COMMENT 'ORDER, EXECUTION, ALLOCATION, POSITION, HOLDING - what kind of activity is being reported',
+ event_date DATE NOT NULL COMMENT 'Partition key - business date covered by report',
+ record_source STRING NOT NULL COMMENT 'Source system lineage identifier',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Cross-regime regulatory reports - CAT, TRF, APA, ARM (MiFIR), EMIR, SFTR, CFTC Swap Data, 13F/13H, Blue Sheets; unified tracking across regimes for status, acknowledgements, and amendments'
+PARTITIONED BY (event_date)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Regulatory reports - cross-regime',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'regulatory',
+ 'source_lineage' = ' section Expanded Regulatory Reporting - regulatory_report'
+);
+
+-- Z-ORDER BY (report_type, report_status, reporting_party_role_id)
+
+-- ----------------------------------------------------------------------------
+-- Entity 5 of 6: regulatory_hold (NEW)
+-- Regulatory hold/freeze - litigation, exam, investigation, sanction
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS regulatory_hold (
+ hold_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ hold_type STRING NOT NULL COMMENT 'LITIGATION, EXAM, INVESTIGATION, SANCTION, OFAC, AML, MARKET_ABUSE, TAX_SEIZURE',
+ order_event_id STRING COMMENT 'FK to order_event.order_event_id (scope to specific order)',
+ execution_id STRING COMMENT 'FK to execution.execution_id (scope to specific fill)',
+ account_id STRING COMMENT 'FK to account.account_id (scope to full account)',
+ party_id STRING COMMENT 'FK to party.party_id (scope to full party / counterparty)',
+ instrument_id STRING COMMENT 'FK to instrument.instrument_id (scope to specific security)',
+ hold_start_date DATE NOT NULL COMMENT 'Effective start date of hold',
+ hold_end_date DATE COMMENT 'Effective end date (NULL = indefinite)',
+ hold_reason STRING NOT NULL COMMENT 'Free-text reason / legal case reference',
+ regulator_code STRING COMMENT 'Issuing regulator: SEC, FINRA, DOJ, CFTC, OFAC, IRS, HMRC, ESMA, FCA',
+ case_number STRING COMMENT 'Regulator case / exam / litigation reference number',
+ hold_status STRING NOT NULL COMMENT 'ACTIVE, RELEASED, EXPIRED, APPEALED, PENDING',
+ released_date DATE COMMENT 'When hold was released (NULL if still active)',
+ released_by_party_role_id STRING COMMENT 'FK to party_role.party_role_id - who released',
+ record_source STRING NOT NULL COMMENT 'Source system lineage identifier',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Regulatory holds/freezes - litigation holds, regulatory exams, investigations, sanctions, OFAC, AML freezes, market-abuse suspensions, tax seizures; scoped at order/execution/account/party/instrument level'
+PARTITIONED BY (hold_type)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Regulatory holds - litigation/exam/investigation/sanction',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'regulatory',
+ 'source_lineage' = ' section Expanded Regulatory Reporting - regulatory_hold'
+);
+
+-- Z-ORDER BY (hold_status, hold_type, regulator_code)
+
+-- ----------------------------------------------------------------------------
+-- Entity 6 of 6: audit_trail_event (NEW)
+-- Unified audit trail - all state changes across lifecycle entities (append-only)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS audit_trail_event (
+ audit_event_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ entity_type STRING NOT NULL COMMENT 'ORDER_REQUEST, ORDER, ORDER_ROUTE, ORDER_MODIFICATION, EXECUTION, ALLOCATION, CONFIRMATION, CLEARING, SETTLEMENT, POSITION, PARTY, INSTRUMENT, AGREEMENT',
+ entity_id STRING NOT NULL COMMENT 'ID of the entity row being changed (polymorphic - joins via entity_type)',
+ event_type STRING NOT NULL COMMENT 'CREATE, UPDATE, STATUS_CHANGE, CANCEL, AMEND, DELETE, APPROVE, REJECT',
+ field_name STRING COMMENT 'Name of the field that changed (NULL for CREATE / DELETE)',
+ old_value STRING COMMENT 'Previous value (stringified; NULL for CREATE)',
+ new_value STRING COMMENT 'New value (stringified; NULL for DELETE)',
+ changed_by_party_role_id STRING COMMENT 'FK to party_role.party_role_id - who made the change',
+ changed_by_user_id STRING COMMENT 'System user ID (if differs from party_role_id - e.g., batch jobs)',
+ change_timestamp TIMESTAMP NOT NULL COMMENT 'When the change occurred (microsecond precision)',
+ change_source STRING NOT NULL COMMENT 'SYSTEM (automated), USER (manual), ALGO (algorithmic), COMPLIANCE (override), EXTERNAL (counterparty), RECONCILIATION',
+ change_reason STRING COMMENT 'Optional free-text reason',
+ correlation_id STRING COMMENT 'Groups related audit events (e.g., a single business transaction generates multiple entity changes)',
+ source_system STRING COMMENT 'Originating system (OMS, SETTLEMENT_ENGINE, ACCOUNT_MGMT)',
+ event_date DATE NOT NULL COMMENT 'Partition key - derived from change_timestamp',
+ record_source STRING NOT NULL COMMENT 'Source system lineage identifier',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Unified audit trail - all state changes across all lifecycle entities; append-only; supports SOX, SEC Rule 17a-4, MiFID II record-keeping, and forensic investigation via correlation_id'
+PARTITIONED BY (event_date)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Unified audit trail - append-only',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'regulatory',
+ 'source_lineage' = ' section Expanded Regulatory Reporting - audit_trail_event'
+);
+
+-- Z-ORDER BY (entity_type, entity_id, change_timestamp)
+
+-- ============================================================================
+-- END OF FILE - 6 CREATE TABLE statements
+-- ============================================================================

@@ -1,0 +1,101 @@
+gold_table,gold_column,cat_json_field,cat_submission_file_type,cat_event_codes,data_type,required,max_length,description
+fact_cat_order_events,firm_roe_id,firmROEID,OrderEvents,"MEIR,MOIR,MENO,MEOA,MEOM,MEOR,MEOC,MEOE,MECO,MLCO,MOCO,MEOT,MEOTQ,MEOTS,MEOF,MEOJ",STRING,Y,40,Firm Reporter Order Event ID (unique per day per IMID)
+fact_cat_order_events,cat_order_id,orderID,OrderEvents,ALL,STRING,Y,40,Firm-assigned order identifier (same across lifecycle)
+fact_cat_order_events,cat_event_code,eventType,OrderEvents,ALL,STRING,Y,7,CAT event type code
+fact_cat_order_events,event_timestamp,eventTimestamp,OrderEvents,ALL,DATETIME,Y,30,ISO 8601 with timezone; nanosecond precision for MEOTQ
+fact_cat_order_events,event_nanos,nanosecondPrecision,OrderEvents,"MEOTQ",INT,N,9,Sub-second nanosecond component
+fact_cat_order_events,received_timestamp,receiveDateTime,OrderEvents,"MENO,MEOA",DATETIME,N,30,Firm receive time
+fact_cat_order_events,side,side,OrderEvents,ALL,STRING,Y,18,"BUY | SELL | SELL_SHORT | SELL_SHORT_EXEMPT"
+fact_cat_order_events,order_type,orderType,OrderEvents,"MENO,MEOM",STRING,N,12,"MARKET | LIMIT | STOP | STOP_LIMIT | PEGGED"
+fact_cat_order_events,order_capacity,orderCapacity,OrderEvents,"MENO,MEOM",STRING,N,20,"AGENCY | PRINCIPAL | RISKLESS_PRINCIPAL"
+fact_cat_order_events,time_in_force,timeInForce,OrderEvents,"MENO,MEOM",STRING,N,3,"DAY | IOC | FOK | GTC | GTD | OPG | CLS"
+fact_cat_order_events,quantity,quantity,OrderEvents,"MENO,MEOM,MEOT,MEOTQ",DECIMAL,N,15,Order or fill quantity
+fact_cat_order_events,leaves_quantity,leavesQty,OrderEvents,"MEOM,MEOT",DECIMAL,N,15,Open remaining quantity
+fact_cat_order_events,cumulative_filled_quantity,cumQty,OrderEvents,"MEOT,MEOF",DECIMAL,N,15,Cumulative filled
+fact_cat_order_events,price,price,OrderEvents,"MENO,MEOM",DECIMAL,N,18,Limit or stop price
+fact_cat_order_events,execution_price,executionPrice,OrderEvents,"MEOT,MEOTQ,MEOTS",DECIMAL,N,18,Fill price
+fact_cat_order_events,execution_quantity,executionQuantity,OrderEvents,"MEOT,MEOTQ,MEOTS",DECIMAL,N,15,Fill quantity
+fact_cat_order_events,currency_code,currencyCode,OrderEvents,ALL,STRING,N,3,ISO 4217
+fact_cat_order_events,handling_instructions,handlingInstructions,OrderEvents,"MENO",STRING,N,10,"NOT_HELD | HELD | DNR | DNI"
+fact_cat_order_events,special_handling_codes,specialHandlingCode,OrderEvents,"MENO",STRING,N,80,"Comma-delimited codes (ISO, DIR, etc.)"
+fact_cat_order_events,display_instruction,displayInstruction,OrderEvents,"MENO,MEOM",STRING,N,15,"DISPLAY | NON_DISPLAY | RESERVE"
+fact_cat_order_events,iso_flag,isoFlag,OrderEvents,"MENO",BOOLEAN,N,1,Intermarket Sweep Order (Rule 611)
+fact_cat_order_events,short_sale_exempt_flag,shortSaleExempt,OrderEvents,"MENO,MEOM",BOOLEAN,N,1,Reg SHO exempt
+fact_cat_order_events,solicited_flag,solicitedFlag,OrderEvents,"MENO",BOOLEAN,N,1,Solicited order
+fact_cat_order_events,directed_flag,directedOrderFlag,OrderEvents,"MENO",BOOLEAN,N,1,Customer-directed
+fact_cat_order_events,parent_order_id,parentOrderID,OrderEvents,"MENO,MEOM",STRING,N,40,Parent order link
+fact_cat_order_events,routed_to_venue_mic,destinationMIC,OrderEvents,"MECO,MLCO,MOCO",STRING,N,4,ISO 10383 MIC of destination
+fact_cat_order_events,routed_to_firm_imid,destinationIMID,OrderEvents,"MECO,MOCO",STRING,N,8,Destination firm IMID
+fact_cat_order_events,original_event_ref,originalFirmROEID,OrderEvents,"MEOJ",STRING,N,40,firmROEID of event being corrected
+fact_cat_order_events,correction_reason,correctionReason,OrderEvents,"MEOJ",STRING,N,255,Reason for MEOJ correction
+fact_cat_order_events,cancel_reason,cancelReason,OrderEvents,"MEOC",STRING,N,255,Cancel reason
+fact_cat_order_events,rejection_reason,rejectionReason,OrderEvents,"MEOR",STRING,N,255,Rejection reason
+dim_party (via party_sk join),cat_imid,firmIMID,OrderEvents,ALL,STRING,Y,8,FINRA CAT IMID
+dim_party (via party_sk join),cat_imid,reportingFirmIMID,OrderEvents,ALL,STRING,Y,8,Reporting firm IMID (alias)
+dim_instrument (via join),symbol,symbol,OrderEvents,ALL,STRING,Y,14,Exchange-listed symbol
+dim_instrument (via join),security_id,securityID,OrderEvents,ALL,STRING,N,12,"ISIN / CUSIP / FIGI"
+dim_instrument (via join),security_id_source,securityIDSource,OrderEvents,ALL,STRING,N,4,"ISIN | CUSIP | FIGI"
+dim_venue (via join),mic,marketCenterID,OrderEvents,"MEOT,MEOTQ,MEOTS,MLCO",STRING,N,4,ISO 10383 MIC
+dim_account (via join),account_id_bk,accountHolderType,OrderEvents,"MENO",STRING,N,10,Account type code
+dim_trader (via join),cat_trader_id,representativeID,OrderEvents,"MENO,MEOT",STRING,N,40,CAT Trader ID
+fact_cat_allocations,firm_roe_id,firmROEID,Allocations,"MEPA,MEAA,MOFA",STRING,Y,40,Firm ROE ID
+fact_cat_allocations,cat_order_id,orderID,Allocations,"MEPA,MEAA,MOFA",STRING,Y,40,Parent order ID
+fact_cat_allocations,cat_allocation_id,allocationID,Allocations,"MEPA,MEAA,MOFA",STRING,Y,40,Firm allocation identifier
+fact_cat_allocations,cat_event_code,eventType,Allocations,"MEPA,MEAA,MOFA",STRING,Y,4,Event type
+fact_cat_allocations,parent_execution_id,executionID,Allocations,"MEPA,MOFA",STRING,Y,40,FK to MEOT/MEOTQ execution
+fact_cat_allocations,allocation_method,allocationMethod,Allocations,"MEPA",STRING,N,12,"PRO_RATA | MANUAL | FIFO | LIFO | AVG_PRICE"
+fact_cat_allocations,allocation_status,allocationStatus,Allocations,"MEAA",STRING,N,12,"PROPOSED | AFFIRMED | CONFIRMED | REJECTED"
+fact_cat_allocations,allocated_quantity,allocatedQuantity,Allocations,"MEPA,MEAA,MOFA",DECIMAL,Y,15,Allocated units
+fact_cat_allocations,allocated_price,allocatedPrice,Allocations,"MEPA,MOFA",DECIMAL,N,18,Allocated price
+fact_cat_allocations,allocation_pct,allocationPercent,Allocations,"MEPA",DECIMAL,N,18,Percentage of parent
+fact_cat_allocations,gross_amount,grossAmount,Allocations,"MEPA,MOFA",DECIMAL,N,20,Gross $ amount
+fact_cat_allocations,commission,commission,Allocations,"MEPA",DECIMAL,N,18,Commission $
+fact_cat_allocations,net_amount,netAmount,Allocations,"MEPA",DECIMAL,N,20,Net $ amount
+fact_cat_allocations,settlement_date,settlementDate,Allocations,"MEPA",DATE,N,10,T+1 per SEC 15c6-1
+fact_cat_allocations,affirmation_timestamp,affirmationTimestamp,Allocations,"MEAA",DATETIME,N,30,Affirmation time
+fact_cat_allocations,allocation_timestamp,eventTimestamp,Allocations,ALL,DATETIME,Y,30,ISO 8601 with TZ
+dim_account (via join),account_id_bk,accountID,Allocations,ALL,STRING,Y,40,Sub-account identifier
+fact_cat_quotes,firm_roe_id,firmROEID,QuoteEvents,"MEQR,MEQS",STRING,Y,40,Firm ROE ID
+fact_cat_quotes,cat_quote_id,quoteID,QuoteEvents,"MEQR,MEQS",STRING,Y,40,Quote identifier
+fact_cat_quotes,cat_rfq_id,rfqID,QuoteEvents,"MEQS",STRING,N,40,Linked RFQ identifier
+fact_cat_quotes,cat_event_code,eventType,QuoteEvents,"MEQR,MEQS",STRING,Y,4,Event type
+fact_cat_quotes,quote_side,quoteSide,QuoteEvents,"MEQS",STRING,Y,8,"BID | OFFER | TWO_WAY"
+fact_cat_quotes,bid_price,bidPrice,QuoteEvents,"MEQS",DECIMAL,N,18,Bid price
+fact_cat_quotes,ask_price,askPrice,QuoteEvents,"MEQS",DECIMAL,N,18,Ask price
+fact_cat_quotes,bid_size,bidSize,QuoteEvents,"MEQS",DECIMAL,N,15,Bid size
+fact_cat_quotes,ask_size,askSize,QuoteEvents,"MEQS",DECIMAL,N,15,Ask size
+fact_cat_quotes,currency_code,currencyCode,QuoteEvents,"MEQS",STRING,N,3,ISO 4217
+fact_cat_quotes,quote_status,quoteStatus,QuoteEvents,"MEQS",STRING,N,12,"ACTIVE | EXPIRED | CANCELLED | EXECUTED"
+fact_cat_quotes,quote_type,quoteType,QuoteEvents,"MEQS",STRING,N,12,"INDICATIVE | FIRM | TRADEABLE"
+fact_cat_quotes,min_quote_life_ms,minQuoteLife,QuoteEvents,"MEQS",INT,N,10,Minimum quote life (millis)
+fact_cat_quotes,quote_expiry_timestamp,quoteExpiryTimestamp,QuoteEvents,"MEQS",DATETIME,N,30,Expiry time
+fact_cat_quotes,rfq_expiry_timestamp,rfqExpiryTimestamp,QuoteEvents,"MEQR",DATETIME,N,30,RFQ expiry
+fact_cat_quotes,quote_timestamp,eventTimestamp,QuoteEvents,ALL,DATETIME,Y,30,ISO 8601 with TZ
+dim_venue (via join),mic,marketCenterID,QuoteEvents,"MEQS",STRING,N,4,ISO 10383 MIC
+fact_cat_customer_records,firm_roe_id,submissionID,CAIS,ALL,STRING,Y,40,CAIS submission identifier
+fact_cat_customer_records,fdid,fdid,CAIS,ALL,STRING,Y,40,CAT Firm Designated ID
+fact_cat_customer_records,cat_event_code,recordType,CAIS,ALL,STRING,Y,10,"CAIS_C | CAIS_A | CAIS_R"
+fact_cat_customer_records,action_type,action,CAIS,ALL,STRING,Y,8,"INSERT | UPDATE | DELETE"
+fact_cat_customer_records,customer_type,customerType,CAIS,"CAIS_C",STRING,Y,12,"INDIVIDUAL | ENTITY"
+fact_cat_customer_records,natural_person_flag,naturalPersonFlag,CAIS,"CAIS_C",BOOLEAN,Y,1,Natural person indicator
+fact_cat_customer_records,primary_identifier_type,primaryIDType,CAIS,"CAIS_C",STRING,N,10,"SSN | EIN | ITIN | TIN | PASSPORT"
+fact_cat_customer_records,primary_identifier_hash,primaryIDHash,CAIS,"CAIS_C",STRING,N,64,SHA-256 of SSN/EIN (privacy)
+fact_cat_customer_records,birth_year,birthYear,CAIS,"CAIS_C",INT,N,4,Year only (CAT privacy rule)
+fact_cat_customer_records,residence_country,residenceCountry,CAIS,"CAIS_C",STRING,N,2,ISO 3166-1 alpha-2
+fact_cat_customer_records,postal_code,postalCode,CAIS,"CAIS_C",STRING,N,5,First 5 digits (privacy)
+fact_cat_customer_records,account_type,accountType,CAIS,"CAIS_A",STRING,N,20,Account type code
+fact_cat_customer_records,account_status,accountStatus,CAIS,"CAIS_A",STRING,N,12,"ACTIVE | INACTIVE | CLOSED"
+fact_cat_customer_records,account_open_date,accountOpenDate,CAIS,"CAIS_A",DATE,N,10,Open date
+fact_cat_customer_records,account_close_date,accountCloseDate,CAIS,"CAIS_A",DATE,N,10,Close date
+fact_cat_customer_records,trading_authorization,tradingAuthorization,CAIS,"CAIS_R",STRING,N,20,Authorization level
+fact_cat_customer_records,authorized_trader_fdid,authorizedTraderFDID,CAIS,"CAIS_R",STRING,N,40,Linked trader FDID
+fact_cat_customer_records,relationship_start_date,relationshipStartDate,CAIS,"CAIS_R",DATE,N,10,Relationship start
+fact_cat_customer_records,relationship_end_date,relationshipEndDate,CAIS,"CAIS_R",DATE,N,10,Relationship end
+fact_cat_customer_records,large_trader_flag,largeTraderFlag,CAIS,"CAIS_C,CAIS_A",BOOLEAN,N,1,SEC Reg 13H flag
+fact_cat_customer_records,large_trader_id,largeTraderID,CAIS,"CAIS_C",STRING,N,8,First 8 chars of LTID
+cat_submission_batch,batch_id,submissionBatchID,ALL,ALL,STRING,Y,36,UUID
+cat_submission_batch,cat_reporter_imid,reporterIMID,ALL,ALL,STRING,Y,8,CAT IMID
+cat_submission_batch,submission_file_type,fileType,ALL,ALL,STRING,Y,12,"OrderEvents | QuoteEvents | Allocations | CAIS"
+cat_submission_batch,record_count,recordCount,ALL,ALL,INT,Y,10,Number of records
+cat_submission_batch,sha256_checksum,checksum,ALL,ALL,STRING,Y,64,SHA-256 digest
+cat_submission_batch,submission_timestamp,submittedDateTime,ALL,ALL,DATETIME,Y,30,ISO 8601 with TZ

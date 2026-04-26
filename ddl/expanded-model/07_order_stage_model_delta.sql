@@ -1,0 +1,247 @@
+-- SPDX-License-Identifier: Apache-2.0
+-- Copyright 2026 cat-pretrade-data-model contributors
+--
+-- Licensed under the Apache License, Version 2.0 (the "License");
+-- you may not use this file except in compliance with the License.
+-- You may obtain a copy of the License at
+--
+-- http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+
+-- ============================================================================
+-- File: 07_order_stage_model_delta.sql
+-- Purpose: Enterprise Order Stage Model (4 entities, Delta Lake)
+-- order_modification)
+-- Enhanced: order_event, order_route, order_modification - new columns
+-- Net New: order_leg (multi-leg spread/combo orders)
+-- CAT Events: MENO, MEOA, MEOJ, MECO, MECOC, MEOC, MEOCR, MENOS, MLNO,
+-- MLOA, MLOC, MLCO, MONO, MOOA, MOOC, MONOS, MOCO, MOCOC, MOCOM,
+-- MEOR, MEIR, MEIC, MEIM, MLOR, MOOR, MOFA, MEOM, MEOMR, MECOM,
+-- MLOM, MLICR, MOOM, MOCOM
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Entity 1 of 4: order_event (ENHANCED)
+-- Source: existing in baseline DDL; enhancements per Line 297
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS order_event (
+ -- === BASELINE (retained) ===
+ order_event_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ cat_event_type STRING NOT NULL COMMENT 'CAT event type: MENO, MEOA, MEOJ, MECO, MECOC, MEOC, MEOCR, MENOS, MLNO, MLOA, MLOC, MLCO, MONO, MOOA, MOOC, MONOS, MOCO, MOCOC, MOCOM, EOA, EOC (see references/fix-protocol-mappings.md)',
+ event_timestamp TIMESTAMP NOT NULL COMMENT 'Event time - microsecond precision per CAT (50ms for electronic, 1s for manual)',
+ event_date DATE NOT NULL COMMENT 'Partition key - derived from event_timestamp at Eastern time',
+ cat_order_id STRING NOT NULL COMMENT 'CAT-assigned unique order lifecycle ID (persistent across modifications)',
+ original_order_id STRING COMMENT 'Prior order ID when modifying/cancelling existing order',
+ parent_order_id STRING COMMENT 'ENHANCED - FK to order_event.order_event_id; populated for MECO/MLCO combined and child algorithmic orders',
+ reporter_party_role_id STRING NOT NULL COMMENT 'FK to party_role.party_role_id - the firm reporting this event to CAT',
+ customer_account_id STRING COMMENT 'FK to account.account_id - customer account (null for proprietary/market-making)',
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id - the security being ordered',
+ symbol STRING NOT NULL COMMENT 'Denormalized trading symbol for query efficiency',
+ security_id STRING COMMENT 'CUSIP, ISIN, or OCC symbol',
+ security_id_type STRING COMMENT 'Type of security_id: CUSIP, ISIN, OCC',
+ asset_class STRING NOT NULL COMMENT 'Denormalized asset class (from instrument): EQUITY, OPTION, FIXED_INCOME, DIGITAL_ASSET, DERIVATIVE, STRUCTURED',
+ side STRING NOT NULL COMMENT 'BUY, SELL, SELL_SHORT, SELL_SHORT_EXEMPT, CROSS, CROSS_SELL, BUY_MINUS, SELL_PLUS',
+ order_type STRING NOT NULL COMMENT 'MKT, LMT, STP, STPLMT, PEG, MKT_ON_CLOSE, LMT_ON_CLOSE, VWAP, TWAP, ICEBERG, HIDDEN',
+ price DECIMAL(18,8) COMMENT 'Limit/stop price (null for market orders)',
+ stop_price DECIMAL(18,8) COMMENT 'Stop trigger price (for stop/stop-limit orders)',
+ quantity DECIMAL(18,4) NOT NULL COMMENT 'Order quantity in shares/contracts/units',
+ min_quantity DECIMAL(18,4) COMMENT 'Minimum execution quantity (all-or-none)',
+ display_quantity DECIMAL(18,4) COMMENT 'Displayed quantity for iceberg/reserve orders',
+ leaves_qty DECIMAL(18,4) COMMENT 'Remaining open quantity after executions',
+ time_in_force STRING NOT NULL COMMENT 'DAY, GTC, IOC, FOK, GTD, OPG, CLO, GTX',
+ expire_timestamp TIMESTAMP COMMENT 'Expiration timestamp for GTD orders',
+ handling_instructions STRING COMMENT 'ENHANCED - CAT handlingInstructions (FIX tag 21): ALG, DIR, DMA, RAO, CMPX; also pipe-delimited: DNR, AON, NH, ISO, DIR, STP, PNP, ADD',
+ desk_type STRING COMMENT 'AGENCY, PRINCIPAL, MARKET_MAKING, ALGO, PROGRAM, ELECTRONIC, SYSTEMATIC_INTERNALIZER',
+ capacity STRING NOT NULL COMMENT 'A=Agent, P=Principal, R=Riskless_Principal, M=Mixed (CAT + FIX tag 528)',
+ account_type STRING COMMENT 'C=Customer, F=Firm/Proprietary, M=Market_Maker, E=Error, A=Average_Price',
+ sender_party_role_id STRING COMMENT 'FK to party_role.party_role_id - sending broker (for routed orders)',
+ destination_venue_id STRING COMMENT 'FK to venue.venue_id - destination for routed orders',
+ destination_type STRING COMMENT 'EXCHANGE, ATS, BROKER_DEALER, FOREIGN, INTERNAL, OTC_MARKET',
+ ats_display_ind STRING COMMENT 'Y/N - required when destination is ATS (shows intent to display)',
+ manual_order_ind STRING NOT NULL COMMENT 'Y/N - indicates manual entry; affects timestamp precision (CAT requires 50ms electronic / 1s manual)',
+ electronic_timestamp TIMESTAMP COMMENT 'Electronic entry time for manual orders (user pressed submit)',
+ routed_order_id STRING COMMENT 'Order ID at destination firm for cross-firm order linkage',
+ aggregated_orders STRING COMMENT 'JSON array of constituent order IDs (e.g., for block orders, MECO)',
+ special_price_condition STRING COMMENT 'VWAP, TWAP, BENCHMARK, AVG_PRC',
+ algo_id STRING COMMENT 'Algorithm identifier for algorithmic orders (internal)',
+ strategy_code STRING COMMENT 'Trading strategy code (internal classification)',
+
+ -- === NEW ENHANCEMENTS (per) ===
+ order_request_id STRING COMMENT 'NEW - FK to order_request.order_request_id; links MENO/MONO back to originating MEIR/MOIR',
+ rfe_id STRING COMMENT 'NEW - FK to request_for_execution.rfe_id; populated when order originated from an RFE',
+ order_handling_instruction STRING COMMENT 'NEW - FIX tag 21 OrderHandlingInstructions (distinct from legacy handling_instructions free-text)',
+ algo_strategy STRING COMMENT 'NEW - VWAP, TWAP, IS (Implementation Shortfall), POV, PAIRS, CUSTOM (complements algo_id)',
+ manual_flag BOOLEAN COMMENT 'NEW - Boolean mirror of manual_order_ind for downstream analytics',
+ affiliate_flag BOOLEAN COMMENT 'NEW - CAT affiliateFlag: TRUE if counterparty is an affiliate of the reporter',
+ solicitation_flag BOOLEAN COMMENT 'NEW - CAT solicitationFlag: TRUE if order resulted from broker solicitation',
+ multi_leg_flag BOOLEAN COMMENT 'NEW - TRUE for MLNO/MLOA/MLOC/MLCO multi-leg orders (-> join order_leg)',
+ info_barrier_id STRING COMMENT 'NEW - CAT information-barrier identifier (supports MAR surveillance and info-barrier compliance)',
+
+ -- === Audit ===
+ record_id STRING NOT NULL COMMENT 'Physical record ID for CAT error correction and linkage',
+ ingestion_timestamp TIMESTAMP NOT NULL COMMENT 'Platform ingestion timestamp - UTC, when record entered data lake (renamed from ingestion_ts)',
+ source_system STRING NOT NULL COMMENT 'Originating system identifier (e.g., OMS-PROD-01, FIX-GATEWAY-NYSE)',
+ batch_id STRING COMMENT 'FK to reporting_submission.submission_id - links to CAT batch submission',
+ data_quality_score DECIMAL(5,2) COMMENT 'DQ validation score 0-100 from platform validation pipeline',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Order events - core CAT pre-trade reporting (MENO/MONO/MEOA/MEOC/MLNO/MECO etc.); enhanced with order_request_id linkage, CAT flags (manual/affiliate/solicitation), multi-leg flag, and info-barrier'
+PARTITIONED BY (event_date)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'delta.logRetentionDuration' = 'interval 365 days',
+ 'delta.deletedFileRetentionDuration' = 'interval 90 days',
+ 'description' = 'Order events - CAT MENO/MEOA/MEOC/MEOJ + multi-leg + manual variants',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'order',
+ 'source_lineage' = 'baseline + section Order Stage'
+);
+
+-- Z-ORDER BY (cat_event_type, cat_order_id, event_timestamp)
+-- LIQUID CLUSTERING BY (cat_event_type, asset_class, reporter_party_role_id)
+
+-- ----------------------------------------------------------------------------
+-- Entity 2 of 4: order_route (ENHANCED)
+-- Source: existing in baseline; enhancements per Line 298
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS order_route (
+ -- === BASELINE (retained) ===
+ route_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ order_event_id STRING NOT NULL COMMENT 'FK to order_event.order_event_id',
+ sender_party_role_id STRING NOT NULL COMMENT 'FK to party_role.party_role_id - sending/originating firm',
+ receiver_party_role_id STRING COMMENT 'FK to party_role.party_role_id - receiving firm (null if routed to venue)',
+ destination_venue_id STRING COMMENT 'FK to venue.venue_id - destination exchange/ATS',
+ destination_type STRING NOT NULL COMMENT 'EXCHANGE, ATS, BROKER_DEALER, FOREIGN, INTERNAL',
+ routed_order_id STRING NOT NULL COMMENT 'Order ID at receiving firm for cross-firm order linkage',
+ route_timestamp TIMESTAMP NOT NULL COMMENT 'Time of route with microsecond precision',
+ route_reason STRING COMMENT 'Reason for route: BEST_EX, DIRECTED, INTERNALIZED, MAKER_TAKER, CLIENT_INSTRUCTION, ALGORITHMIC',
+ session_id STRING COMMENT 'FIX session identifier (links to venue_connectivity.fix_sender_comp_id)',
+
+ -- === NEW ENHANCEMENTS (per) ===
+ cat_event_type STRING NOT NULL COMMENT 'NEW - CAT event: MEOR (external route), MEIR (internal desk-to-desk), MEIC (internal cancel), MEIM (internal modify), MLOR (multi-leg route), MOOR (manual route), MOFA (manual fulfillment)',
+ routing_strategy STRING COMMENT 'NEW - SOR (Smart Order Router), DMA (Direct Market Access), ALGO, INTERNAL, DIRECTED',
+ latency_ms DECIMAL(10,3) COMMENT 'NEW - Outbound latency in milliseconds (route_timestamp to destination acknowledgement)',
+ route_status STRING COMMENT 'NEW - SENT, ACKNOWLEDGED, REJECTED, MODIFIED, CANCELLED',
+ manual_flag BOOLEAN COMMENT 'NEW - TRUE for MOOR/MOFA manual routes',
+ affiliate_flag BOOLEAN COMMENT 'NEW - CAT affiliateFlag on route',
+ prior_routed_order_id STRING COMMENT 'NEW - CAT linkage: prior routed_order_id (for modified / re-routed orders)',
+ iso_indicator BOOLEAN COMMENT 'NEW - Intermarket Sweep Order flag (ISO) - TRUE if route is an ISO per Rule 611',
+ info_barrier_id STRING COMMENT 'NEW - CAT information-barrier identifier',
+
+ -- === Audit ===
+ event_date DATE NOT NULL COMMENT 'Partition key - derived from route_timestamp',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Order routes - CAT MEOR/MEIR/MEIC/MEIM/MLOR/MOOR; tracks orders routed between firms and to venues; enhanced with routing_strategy, latency, ISO indicator, and info-barrier'
+PARTITIONED BY (event_date)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Order routing events - MEOR/MEIR + multi-leg + manual',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'order',
+ 'source_lineage' = 'baseline + section Order Stage'
+);
+
+-- Z-ORDER BY (order_event_id, cat_event_type, route_status)
+
+-- ----------------------------------------------------------------------------
+-- Entity 3 of 4: order_modification (ENHANCED)
+-- Source: existing in baseline; enhancements per Line 299
+-- Phase 2d: Separate capture of customer request timestamp (MEOMR)
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS order_modification (
+ -- === BASELINE (retained) ===
+ modification_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ order_event_id STRING NOT NULL COMMENT 'FK to order_event.order_event_id',
+ modified_field STRING NOT NULL COMMENT 'Field name that was changed (e.g., quantity, price, time_in_force)',
+ prior_value STRING NOT NULL COMMENT 'Value before modification (stringified)',
+ new_value STRING NOT NULL COMMENT 'Value after modification (stringified)',
+ modification_timestamp TIMESTAMP NOT NULL COMMENT 'Timestamp of modification (broker accepted - CAT eventTimestamp)',
+ modification_reason STRING COMMENT 'Reason: CLIENT_REQUEST, SYSTEM, REGULATORY, RISK, PARTIAL_FILL',
+
+ -- === NEW ENHANCEMENTS (per) ===
+ cat_event_type STRING NOT NULL COMMENT 'NEW - CAT event: MEOM (accepted mod), MEOMR (customer request - Phase 2d), MECOM (combined mod), MLOM (multi-leg mod), MLICR (multi-leg internal cancel request), MOOM (manual mod), MOCOM (manual combined mod)',
+ modification_source STRING COMMENT 'NEW - CLIENT, ALGO, COMPLIANCE, MARKET (market-driven, e.g., limit up/down)',
+ request_timestamp TIMESTAMP COMMENT 'NEW - CAT requestTimestamp: when customer requested the modification (Phase 2d field, for MEOMR)',
+ event_timestamp TIMESTAMP COMMENT 'NEW - CAT eventTimestamp when broker accepted the modification (mirrors modification_timestamp; retained for schema symmetry with order_event)',
+ prior_order_id STRING COMMENT 'NEW - CAT linkage: prior order_event_id before modification',
+ manual_order_id STRING COMMENT 'NEW - For MOOM: manualOrderID linkage across manual mod events',
+ manual_flag BOOLEAN COMMENT 'NEW - TRUE for MOOM/MOCOM manual modifications',
+
+ -- === Audit ===
+ event_date DATE COMMENT 'Partition key - derived from modification_timestamp',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Order modifications - CAT MEOM/MEOMR/MECOM/MLOM/MOOM; audit trail of order changes with Phase 2d customer request timestamp separation'
+PARTITIONED BY (event_date)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Order modifications - MEOM/MEOMR + multi-leg + manual',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'order',
+ 'source_lineage' = 'baseline + section Order Stage'
+);
+
+-- Z-ORDER BY (order_event_id, cat_event_type, modification_timestamp)
+
+-- ----------------------------------------------------------------------------
+-- Entity 4 of 4: order_leg (NEW)
+-- Multi-leg order legs - spreads, combos, butterflies, straddles
+-- Associated CAT events: MLNO, MLOA, MLOC, MLCO, MLOM, MLOR
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS order_leg (
+ order_leg_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
+ order_event_id STRING NOT NULL COMMENT 'FK to order_event.order_event_id (multi_leg_flag = TRUE)',
+ leg_number INT NOT NULL COMMENT 'Sequential leg number (1, 2, 3...) within the order',
+ instrument_id STRING NOT NULL COMMENT 'FK to instrument.instrument_id - instrument on this leg',
+ leg_side STRING NOT NULL COMMENT 'BUY, SELL, SELL_SHORT (leg-specific side; may differ per leg in spreads)',
+ leg_quantity DECIMAL(18,4) NOT NULL COMMENT 'Leg quantity (usually same units as order.quantity × leg_ratio)',
+ leg_ratio DECIMAL(10,4) COMMENT 'Leg ratio (e.g., 1:1 for vertical spread, 1:2:1 for butterfly); signed for buy/sell directionality',
+ leg_price DECIMAL(18,8) COMMENT 'Leg-specific price (null for market legs)',
+ leg_order_type STRING COMMENT 'MKT, LMT, STP (typically inherits from parent but can override)',
+ leg_reference_id STRING COMMENT 'FIX tag 654 LegRefID - reference ID from FIX leg definitions',
+ settlement_currency STRING COMMENT 'ISO 4217 settlement currency for this leg (may differ in FX legs)',
+ strategy_code STRING COMMENT 'SPREAD, BUTTERFLY, STRADDLE, STRANGLE, CONDOR, CALENDAR, COLLAR, RISK_REVERSAL, CUSTOM',
+ record_source STRING NOT NULL COMMENT 'Source system lineage identifier',
+ _created_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit',
+ _updated_at TIMESTAMP GENERATED ALWAYS AS (current_timestamp) COMMENT 'CDF audit'
+)
+USING DELTA
+COMMENT 'Multi-leg order legs - spreads, combos, butterflies, straddles; associated with MLNO/MLOA/MLOC/MLCO CAT events and FIX NewOrderMultileg (35=AB)'
+PARTITIONED BY (strategy_code)
+TBLPROPERTIES (
+ 'delta.autoOptimize.optimizeWrite' = 'true',
+ 'delta.autoOptimize.autoCompact' = 'true',
+ 'delta.columnMapping.mode' = 'name',
+ 'delta.enableChangeDataFeed' = 'true',
+ 'description' = 'Multi-leg order legs',
+ 'compression.codec' = 'zstd',
+ 'subject_area' = 'order',
+ 'source_lineage' = ' section Order Stage (multi-leg support)'
+);
+
+-- Z-ORDER BY (order_event_id, leg_number)
+
+-- ============================================================================
+-- END OF FILE - 4 CREATE TABLE statements
+-- ============================================================================
