@@ -1,0 +1,155 @@
+cat-pretrade-data-model
+Copyright 2026 cat-pretrade-data-model contributors
+
+Licensed under the Apache License, Version 2.0 (the "License").
+See the LICENSE file distributed with this work for the full license text.
+
+
+================================================================================
+  Third-Party Attributions
+================================================================================
+
+This distribution redistributes, references, or interoperates with the following
+third-party works. See THIRD_PARTY_LICENSES.md for full attribution detail. The
+inclusion of an item below is an acknowledgement of that work's contribution and
+does not imply endorsement.
+
+
+--------------------------------------------------------------------------------
+  Regulatory and Industry Specifications
+--------------------------------------------------------------------------------
+
+  FINRA Consolidated Audit Trail (CAT) - Industry Member Technical Specifications
+    Copyright FINRA CAT, LLC.
+    Used under fair-use for regulatory compliance implementation by registered
+    broker-dealers. See https://www.catnmsplan.com/specifications.
+    No FINRA CAT source code is redistributed; only the event code taxonomy
+    (50 event codes, v4.1.0r9) is seeded for submission generation.
+
+  U.S. Securities and Exchange Commission (SEC) Rule 613
+    17 CFR 242.613 - public law of the United States, not copyrighted.
+    The pre-trade data model in this repository implements Rule 613 compliance
+    requirements.
+
+  International Swaps and Derivatives Association (ISDA)
+    Copyright International Swaps and Derivatives Association, Inc.
+    ISDA 2006 and 2021 Interest Rate Derivatives Definitions, ISDA Master
+    Agreements, CSA templates are referenced as conceptual inputs to the
+    agreement model. Day-count convention codes (15 canonical conventions)
+    are seeded. No ISDA proprietary legal text is redistributed.
+
+  Financial Information eXchange (FIX) Protocol
+    Copyright FIX Protocol Limited.
+    FIX Protocol Specification - referenced for order/quote/execution tag
+    mappings. Tag-to-column mappings (60+ FIX tags) are included as
+    machine-readable CSV under expanded-model/fix_tag_mappings.csv. No FIX
+    Protocol source is redistributed.
+
+  Financial products Markup Language (FpML)
+    Copyright International Swaps and Derivatives Association, Inc.
+    FpML 5.x Recommendation - referenced for derivative contract schema
+    elements. No FpML XSD is redistributed.
+
+
+--------------------------------------------------------------------------------
+  ISO Standards (Registered via SWIFT, SIX, ISO)
+--------------------------------------------------------------------------------
+
+  ISO 3166-1 Country Codes
+    Copyright International Organization for Standardization (ISO).
+    Country-code seed data is fetched from the ISO publication at runtime by
+    the reference-data ingestion pipeline (see ref-data-pipelines/ingestion/
+    dlt_ref_iso_codes.py). No ISO-published CSV is redistributed within this
+    repository.
+
+  ISO 4217 Currency Codes
+    Copyright International Organization for Standardization (ISO).
+    Currency-code seed data is fetched from the SIX Group publication at
+    runtime. No ISO-published list is redistributed.
+
+  ISO 10383 Market Identifier Codes (MIC)
+    Copyright International Organization for Standardization (ISO); published
+    by SWIFT. MIC seed data is fetched from the ISO20022 registry at runtime.
+
+  ISO 10962 Classification of Financial Instruments (CFI)
+    Copyright International Organization for Standardization (ISO).
+    CFI category mappings are referenced in the instrument model.
+
+  ISO 17442 Legal Entity Identifier (LEI)
+    Copyright International Organization for Standardization (ISO).
+    LEI format validation is implemented in the party model; LEIs are
+    resolved at runtime via the GLEIF concatenated file.
+
+  ISO 20275 Entity Legal Form (ELF) Code List
+    Copyright International Organization for Standardization (ISO).
+    ELF code seed data is fetched at runtime.
+
+
+--------------------------------------------------------------------------------
+  Regulatory Frameworks Referenced (Non-Copyrighted Public Law)
+--------------------------------------------------------------------------------
+
+  Basel Committee on Banking Supervision (BCBS)
+    BCBS 239, BCBS 279, Basel III Capital Framework
+    Public regulatory documents of the Bank for International Settlements.
+
+  EU Markets in Financial Instruments Directive II (MiFID II / MiFIR)
+    Public EU regulation.
+
+  Dodd-Frank Wall Street Reform and Consumer Protection Act
+    Public US law.
+
+  Global Master Repurchase Agreement (GMRA)
+    Copyright International Capital Market Association (ICMA).
+    Referenced conceptually in the agreement model.
+
+  Global Master Securities Lending Agreement (GMSLA)
+    Copyright International Securities Lending Association (ISLA).
+    Referenced conceptually in the agreement model.
+
+
+--------------------------------------------------------------------------------
+  Platform and Tooling (Used but not redistributed)
+--------------------------------------------------------------------------------
+
+  Apache Spark
+    Copyright The Apache Software Foundation.
+    Licensed under Apache License 2.0.
+
+  Delta Lake
+    Copyright The Delta Lake Project Authors.
+    Licensed under Apache License 2.0.
+
+  Databricks Delta Live Tables (DLT)
+    Copyright Databricks, Inc.
+    Used as an execution platform; no Databricks source is redistributed.
+
+  Microsoft Fabric (OneLake, Lakehouse, Warehouse)
+    Copyright Microsoft Corporation.
+    Used as an execution platform; no Microsoft source is redistributed.
+
+
+--------------------------------------------------------------------------------
+  Data Modeling Patterns and Methodologies (Referenced)
+--------------------------------------------------------------------------------
+
+  Data Vault 2.0 (Dan Linstedt)
+    Copyright Genesee Academy.
+    Methodology is referenced for the Silver layer hub/link/satellite pattern.
+
+  Dimensional Modeling (Ralph Kimball)
+    Copyright The Kimball Group.
+    Methodology is referenced for the Gold layer star schema.
+
+  DAMA-DMBOK Data Management Body of Knowledge
+    Copyright DAMA International.
+    Governance principles are referenced in operating documentation.
+
+  BCBS 239 Principles for Effective Risk Data Aggregation and Risk Reporting
+    Copyright Bank for International Settlements.
+    Column-level lineage implemented per BCBS 239 Principle 2.
+
+
+================================================================================
+  End of NOTICE
+================================================================================
