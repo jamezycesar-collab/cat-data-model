@@ -1,0 +1,21 @@
+{
+  "cat_im_spec": {
+    "filename": "03.06.26_CAT_Reporting_Technical_Specifications_for_Industry_Members_v4.1.0r15_CLEAN.pdf",
+    "version": "4.1.0r15",
+    "effective_date": "2026-03-06",
+    "sha256": "f2147aea55f048aa9c85b3d53633eaa573d9889b50e7f08decb2d242b035a625",
+    "expected_event_count": 99,
+    "source_url": "https://www.catnmsplan.com/specifications/im",
+    "ignored_codes": [
+      "MEMX",
+      "MEMXOP"
+    ]
+  },
+  "cais_spec": {
+    "filename": "08.14.25_Full_CAIS_Technical_Specifications_2.2.0_r4_CLEAN.pdf",
+    "version": "2.2.0r4",
+    "effective_date": "2025-08-14",
+    "sha256": "42e3e007d369960e1bbadaf62e1bdb56ec2bda17994f9bf271696824a880c17b",
+    "source_url": "https://www.catnmsplan.com/specifications/im"
+  }
+}

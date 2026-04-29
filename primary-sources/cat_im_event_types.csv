@@ -1,0 +1,100 @@
+section,event_name,message_type,category,phase,description
+4.1,New Order,MENO,EQUITY_ORDER,ORDER,Reported when an Industry Member originates an order receives a customer order originates a bunched representative or proprietary order or receives an order from a non-reporting foreign entity.
+4.2,New Order Supplement,MENOS,EQUITY_ORDER,ORDER,Supplement to the New Order event.
+4.3,Order Route,MEOR,EQUITY_ORDER,ROUTING,Reported when an Industry Member routes an order to another broker-dealer exchange or ATS.
+4.3.1,Route Modified,MEMR,EQUITY_ORDER,ROUTING,Reported when an Industry Member modifies a route that was sent to another broker-dealer exchange or ATS.
+4.3.2,Route Cancelled,MECR,EQUITY_ORDER,ROUTING,Reported when an Industry Member cancels a route that was sent to another broker-dealer exchange or ATS.
+4.3.3,Order Route Supplement,MEORS,EQUITY_ORDER,ROUTING,Supplement to the Order Route event.
+4.3.4,Route Modified Supplement,MEMRS,EQUITY_ORDER,ROUTING,Supplement to the Route Modified event.
+4.3.5,Route Cancelled Supplement,MECRS,EQUITY_ORDER,ROUTING,Supplement to the Route Cancelled event.
+4.4,Order Accepted,MEOA,EQUITY_ORDER,ROUTING,Reported when an Industry Member including an ATS accepts a routed order that originated at another broker-dealer.
+4.5.1,Order Internal Route Accepted,MEIR,EQUITY_ORDER,INTERNAL_ROUTE,Reported when an order moves within an Industry Member to another desk or other department.
+4.5.2,Order Internal Route Modified,MEIM,EQUITY_ORDER,INTERNAL_ROUTE,Reported when an Order Internal Route Accepted was modified.
+4.5.3,Order Internal Route Cancelled,MEIC,EQUITY_ORDER,INTERNAL_ROUTE,Reported when an Order Internal Route Accepted was cancelled.
+4.5.4,Order Internal Route Modification Request,MEIMR,EQUITY_ORDER,INTERNAL_ROUTE,Reported when a modification to an internal route was requested.
+4.5.5,Order Internal Route Cancel Request,MEICR,EQUITY_ORDER,INTERNAL_ROUTE,Reported when the cancellation of an internal route was requested.
+4.6.1,Child Order,MECO,EQUITY_ORDER,CHILD_ORDER,Reported when an order is sliced within the desk or department it is being worked and is assigned a new order identifier.
+4.6.2,Child Order Modified,MECOM,EQUITY_ORDER,CHILD_ORDER,Reported when a Child Order is modified.
+4.6.3,Child Order Cancelled,MECOC,EQUITY_ORDER,CHILD_ORDER,Reported when a Child Order is cancelled.
+4.7,Order Modified,MEOM,EQUITY_ORDER,MODIFICATION,Reported when changes to the Material Terms of an order are made or an order is cancel/replaced.
+4.7.1,Order Modified Supplement,MEOMS,EQUITY_ORDER,MODIFICATION,Supplement to the Order Modified event.
+4.7.2,Order Modification Request,MEOMR,EQUITY_ORDER,MODIFICATION,Reported when a request to modify an order is received.
+4.8,Order Adjusted,MEOJ,EQUITY_ORDER,MODIFICATION,Used to report simple order modifications including changes to the price or quantity of the order.
+4.9,Order Cancelled,MEOC,EQUITY_ORDER,MODIFICATION,Reported when an Industry Member fully or partially cancels an order.
+4.9.1,Order Cancel Request,MEOCR,EQUITY_ORDER,MODIFICATION,Reported when a request to cancel an order is received.
+4.10.1,New Quote,MENQ,EQUITY_QUOTE,QUOTE,Reported when quotations in equity Eligible Securities are originated.
+4.10.2,New Quote Supplement,MENQS,EQUITY_QUOTE,QUOTE,Supplement to the New Quote event.
+4.10.3,Routed Quote,MERQ,EQUITY_QUOTE,QUOTE,Reported when quotations in equity Eligible Securities are sent to a quote display facility RFQ platform or quote driven ATS.
+4.10.4,Routed Quote Supplement,MERQS,EQUITY_QUOTE,QUOTE,Supplement to the Routed Quote event.
+4.10.5,Quote Received,MEQR,EQUITY_QUOTE,QUOTE,Reported when a quote is received by an Industry Member.
+4.10.6,Quote Cancelled,MEQC,EQUITY_QUOTE,QUOTE,Reported when a quote is cancelled.
+4.10.7,Quote Modified,MEQM,EQUITY_QUOTE,QUOTE,Reported when a quote is modified.
+4.10.8,Quote Status,MEQS,EQUITY_QUOTE,QUOTE,Reported when the status of a quote is changed.
+4.11.1,Trade,MEOT,EQUITY_EXECUTION,EXECUTION,Reported by the executing venue where the trade occurred.
+4.11.2,Trade Supplement,MEOTS,EQUITY_EXECUTION,EXECUTION,Reported when there is more than one order associated with one side of a trade.
+4.12.1,Order Fulfillment,MEOF,EQUITY_EXECUTION,FULFILLMENT,Reported when the execution of a customer/client order is not required to be reported for public dissemination.
+4.12.2,Order Fulfillment Supplement,MEOFS,EQUITY_EXECUTION,FULFILLMENT,Reported when there is more than one representative proprietary order associated with the fill of a customer/client order.
+4.12.3,Order Fulfillment Amendment,MEFA,EQUITY_EXECUTION,FULFILLMENT,Reports the amendment of a previously reported fulfillment.
+4.13.1,Post-Trade Allocation,MEPA,EQUITY_ALLOCATION,POST_TRADE,Reported when executed shares are allocated to end customer accounts during post-trade processing.
+4.13.2,Amended Allocation,MEAA,EQUITY_ALLOCATION,POST_TRADE,Reported when an amendment occurs to a previously reported post-trade allocation.
+4.14,Order Effective,MEOE,EQUITY_ORDER,LIFECYCLE,Reported when an order or an underlying condition of an order becomes effective.
+5.1.1,New Option Order,MONO,SIMPLE_OPTION,ORDER,Event used to report new option orders to CAT.
+5.1.2,Option Order Supplement,MONOS,SIMPLE_OPTION,ORDER,Supplement to the New Option Order event.
+5.1.3,Option Order Route,MOOR,SIMPLE_OPTION,ROUTING,Reported to CAT by an Industry Member that has routed an option order to another Industry Member or an exchange.
+5.1.3.1,Option Route Modified,MOMR,SIMPLE_OPTION,ROUTING,Reported when an Industry Member modifies a simple option route.
+5.1.3.2,Option Route Cancelled,MOCR,SIMPLE_OPTION,ROUTING,Reported when an Industry Member cancels a simple option route.
+5.1.3.3,Option Order Route Supplement,MOORS,SIMPLE_OPTION,ROUTING,Supplement to the Option Order Route event.
+5.1.3.4,Option Route Modified Supplement,MOMRS,SIMPLE_OPTION,ROUTING,Supplement to the Option Route Modified event.
+5.1.3.5,Option Route Cancelled Supplement,MOCRS,SIMPLE_OPTION,ROUTING,Supplement to the Option Route Cancelled event.
+5.1.4,Option Order Accepted,MOOA,SIMPLE_OPTION,ROUTING,Reported when an Industry Member accepts a single-leg option order.
+5.1.5.1,Option Order Internal Route Accepted,MOIR,SIMPLE_OPTION,INTERNAL_ROUTE,Reported when an order is internally routed.
+5.1.5.2,Option Order Internal Route Modified,MOIM,SIMPLE_OPTION,INTERNAL_ROUTE,Reported when an Industry Member modifies an option internal route.
+5.1.5.3,Option Order Internal Route Cancelled,MOIC,SIMPLE_OPTION,INTERNAL_ROUTE,Reported when an Industry Member cancels an option internal route.
+5.1.5.4,Option Order Internal Route Modification Request,MOIMR,SIMPLE_OPTION,INTERNAL_ROUTE,Reported when a modification to an internal route was requested.
+5.1.5.5,Option Order Internal Route Cancel Request,MOICR,SIMPLE_OPTION,INTERNAL_ROUTE,Reported when the cancellation of an internal route was requested.
+5.1.6.1,Child Option Order,MOCO,SIMPLE_OPTION,CHILD_ORDER,Reported when an order is sliced within the desk or department.
+5.1.6.2,Child Option Order Modified,MOCOM,SIMPLE_OPTION,CHILD_ORDER,Reported when a Child Option Order is modified.
+5.1.6.3,Child Option Order Cancelled,MOCOC,SIMPLE_OPTION,CHILD_ORDER,Reported when a Child Option Order is cancelled.
+5.1.7,Option Order Modified,MOOM,SIMPLE_OPTION,MODIFICATION,Reported when changes to the Material Terms of an order are made.
+5.1.7.1,Option Order Modified Supplement,MOOMS,SIMPLE_OPTION,MODIFICATION,Used for certain aggregated orders in addition to the Option Order Modified event.
+5.1.7.2,Option Order Modification Request,MOOMR,SIMPLE_OPTION,MODIFICATION,Reported when a request to modify a simple option order is received.
+5.1.8,Option Order Adjusted,MOOJ,SIMPLE_OPTION,MODIFICATION,Used to report simple order modifications including changes to the price or quantity of the order.
+5.1.9,Option Order Cancelled,MOOC,SIMPLE_OPTION,MODIFICATION,Reported when an order is fully or partially cancelled.
+5.1.9.1,Option Order Cancel Request,MOOCR,SIMPLE_OPTION,MODIFICATION,Reported when a request to cancel a simple option order is received.
+5.1.10.1,New Option Quote,MONQ,SIMPLE_OPTION_QUOTE,QUOTE,Reported when quotations in options Eligible Securities are originated.
+5.1.10.2,Option Routed Quote,MORQ,SIMPLE_OPTION_QUOTE,QUOTE,Reported when quotations in option Eligible Securities are sent to a quote display facility or RFQ platform.
+5.1.10.3,Option Quote Received,MOQR,SIMPLE_OPTION_QUOTE,QUOTE,Reported when an option quote is received by an Industry Member.
+5.1.10.4,Option Quote Cancelled,MOQC,SIMPLE_OPTION_QUOTE,QUOTE,Reported when an option quote is cancelled.
+5.1.10.5,Option Quote Modified,MOQM,SIMPLE_OPTION_QUOTE,QUOTE,Reported when an option quote is modified.
+5.1.11,Option Trade,MOOT,SIMPLE_OPTION_EXECUTION,EXECUTION,Reported when a simple option order or the option leg of a multi-leg order is manually executed on an options trading floor.
+5.1.13.1,Option Order Fulfillment,MOOF,SIMPLE_OPTION_EXECUTION,FULFILLMENT,Reports the fill of a customer/client order in a combined option order scenario.
+5.1.13.2,Option Order Fulfillment Supplement,MOOFS,SIMPLE_OPTION_EXECUTION,FULFILLMENT,Reported when there is more than one options combined order associated with the fill of a customer/client order.
+5.1.14,Option Order Fulfillment Amendment,MOFA,SIMPLE_OPTION_EXECUTION,FULFILLMENT,Reports how an order fulfillment was amended.
+5.1.14,Option Post-Trade Allocation,MOPA,SIMPLE_OPTION_ALLOCATION,POST_TRADE,Reports how option positions are allocated to end customer accounts.
+5.1.15,Option Amended Allocation,MOAA,SIMPLE_OPTION_ALLOCATION,POST_TRADE,Reports an amendment to a previously reported allocation.
+5.1.16,Option Order Effective,MOOE,SIMPLE_OPTION,LIFECYCLE,Reported when an order or an underlying condition of an order becomes effective.
+5.2.1,Multi-Leg New Order,MLNO,MULTILEG_OPTION,ORDER,Event used to report new Multi-Leg option orders to CAT.
+5.2.2,Multi-Leg Order Route,MLOR,MULTILEG_OPTION,ROUTING,Reported to CAT by an Industry Member that has routed a Multi-Leg option order.
+5.2.2.1,Multi-Leg Route Modified,MLMR,MULTILEG_OPTION,ROUTING,Reported when an Industry Member modifies a Multi-Leg option route.
+5.2.2.2,Multi-Leg Route Cancelled,MLCR,MULTILEG_OPTION,ROUTING,Reported when an Industry Member cancels a Multi-Leg option route.
+5.2.3,Multi-Leg Order Accepted,MLOA,MULTILEG_OPTION,ROUTING,Reported when an Industry Member accepts a Multi-Leg option order.
+5.2.4.1,Multi-Leg Order Internal Route Accepted,MLIR,MULTILEG_OPTION,INTERNAL_ROUTE,Reported when changes to the Material Terms of an order are made.
+5.2.4.2,Multi-Leg Order Internal Route Modified,MLIM,MULTILEG_OPTION,INTERNAL_ROUTE,Reported when an Industry Member modifies a Multi-Leg option internal route.
+5.2.4.3,Multi-Leg Order Internal Route Cancelled,MLIC,MULTILEG_OPTION,INTERNAL_ROUTE,Reported when an Industry Member cancels a Multi-Leg option internal route.
+5.2.4.4,Multi-Leg Order Internal Route Modification Request,MLIMR,MULTILEG_OPTION,INTERNAL_ROUTE,Reported when a modification to an internal route was requested.
+5.2.4.5,Multi-Leg Order Internal Route Cancel Request,MLICR,MULTILEG_OPTION,INTERNAL_ROUTE,Reported when the cancellation of an internal route was requested.
+5.2.5.1,Multi-Leg Child Order,MLCO,MULTILEG_OPTION,CHILD_ORDER,Reported to represent instances when a Multi-Leg order is sliced within the desk or department.
+5.2.5.2,Multi-Leg Child Order Modified,MLCOM,MULTILEG_OPTION,CHILD_ORDER,Reported when a Multi-Leg Child Order is modified.
+5.2.5.3,Multi-Leg Child Order Cancelled,MLCOC,MULTILEG_OPTION,CHILD_ORDER,Reported when a Multi-Leg Child Order is cancelled.
+5.2.6,Multi-Leg Order Modified,MLOM,MULTILEG_OPTION,MODIFICATION,Reported when changes to the Material Terms of a Multi-Leg order are made.
+5.2.6.1,Multi-Leg Order Modification Request,MLOMR,MULTILEG_OPTION,MODIFICATION,Reported when the modification of a Multi-Leg options order was requested.
+5.2.7,Multi-Leg Order Cancelled,MLOC,MULTILEG_OPTION,MODIFICATION,Reported when an order is fully cancelled.
+5.2.7.1,Multi-Leg Order Cancel Request,MLOCR,MULTILEG_OPTION,MODIFICATION,Reported when the cancellation of a Multi-Leg options order was requested.
+5.2.8.1,Multi-Leg New Quote,MLNQ,MULTILEG_OPTION_QUOTE,QUOTE,Reported when multi-leg quotations in Eligible Securities are originated.
+5.2.8.2,Multi-Leg Routed Quote,MLRQ,MULTILEG_OPTION_QUOTE,QUOTE,Reported when multi-leg quotations in Eligible Securities are sent to a quote display facility or RFQ platform.
+5.2.8.3,Multi-Leg Quote Supplement,MLQS,MULTILEG_OPTION_QUOTE,QUOTE,Reported when a Multi-Leg quote is being supplemented with additional information.
+5.2.8.4,Multi-Leg Quote Received,MLQR,MULTILEG_OPTION_QUOTE,QUOTE,Reported when a multi-leg quote is received by an Industry Member.
+5.2.8.5,Multi-Leg Quote Cancelled,MLQC,MULTILEG_OPTION_QUOTE,QUOTE,Reported when a multi-leg quote is cancelled.
+5.2.8.6,Multi-Leg Quote Modified,MLQM,MULTILEG_OPTION_QUOTE,QUOTE,Reported when a multi-leg quote is modified.
+5.2.9,Multi-Leg Order Supplement,MLOS,MULTILEG_OPTION,ORDER,Reported when a Multi-Leg order is being supplemented with additional information.
+5.2.10,Multi-Leg Order Effective,MLOE,MULTILEG_OPTION,LIFECYCLE,Reported when a Multi-Leg order or an underlying condition becomes effective.

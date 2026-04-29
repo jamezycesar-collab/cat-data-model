@@ -1,0 +1,42 @@
+enum_field,enum_value,description
+fdidType,ACCOUNT,Account type record.
+fdidType,RELATIONSHIP,Relationship type record.
+fdidType,ENTITYID,Entity ID type record. Only allowable when the FDID represents the Entity ID of the firm when an employee is exercising discretion over multiple Customer Accounts.
+accountType,AVERAGE,Industry Member-owned average price account.
+accountType,DVP/RVP,Delivery versus Payment account / Receipt versus Payment account.
+accountType,EDUCATION,Established for education savings including 529 Plan or Coverdale ESA.
+accountType,ENTITYID,Entity ID type record.
+accountType,ERROR,Error account.
+accountType,FIRM,Owned by the reporting firm including proprietary trading accounts and inventory accounts.
+accountType,INSTITUTION,An institutional account as defined in FINRA Rule 4512(c).
+accountType,MARKET,Market Making Account.
+accountType,MARGIN,Approved for trading on margin.
+accountType,OPTION,Approved for trading options.
+accountType,OTHER,Account which does not meet the criteria for any other listed value.
+accountType,RELATIONSHIP,Relationship type record.
+accountType,RETIREMENT,Retirement account as defined by the IRS (IRA Roth IRA 401k 403b SIMPLE IRA SEP SARSEP Payroll Deduction IRA Profit-Sharing Defined Benefit Money Purchase ESOP Governmental 457).
+accountType,UGMA/UTMA,Established as a custodial account under the Uniform Gift to Minors Act or Uniform Transfer to Minors Act.
+fdidEndReason,CORRECTION,FDID was not required to be reported to CAIS.
+fdidEndReason,ENDED,FDID was ended (e.g. account was closed).
+fdidEndReason,INACTIVE,FDID has had no CAT-reportable transaction activity associated in the prior six months.
+fdidEndReason,REPLACED,FDID replaced by another FDID within the Industry Member.
+fdidEndReason,OTHER,Other unlisted reason for ending the FDID.
+fdidEndReason,TRANSFER,FDID was transferred to another Industry Member as part of a mass transfer.
+addrType,ADDRESS1,The mailing Address Record of the FDID or Customer.
+addrType,ADDRESS2,The second Address Record.
+addrType,ADDRESS3,The third Address Record.
+addrType,ADDRESS4,The fourth Address Record.
+customerType,NATURAL_PERSON,Customer Record for a Natural Person.
+customerType,LEGAL_ENTITY,Customer Record for a Legal Entity.
+customerRole,TRDHOLDER,Trading Holder of the Account.
+customerRole,AUTH3RD,Third-party authorized to act on the Account.
+customerRole,AUTHREP,Authorized Representative of the Account.
+fileType,CAIS_DATA_FILE,CAIS Data File containing FDID and Customer records.
+fileType,TRANSFORMED_IDENTIFIERS_FILE,Transformed Identifiers File containing TID values.
+submissionAction,NEW,Original submission of a record.
+submissionAction,UPDATE,Update to a previously submitted record (full state replacement).
+submissionAction,REFRESH,Periodic Customer & Account Information Refresh per Section 3.8.
+submissionAction,FIRM_CORRECTION,Industry Member-initiated correction of a previously submitted record.
+submissionAction,REPAIR,Repair of a CAT-identified error.
+submissionAction,REPLACEMENT,Replacement of FDIDs (per Section 3.1) or TIDs (per Section 3.2).
+submissionAction,MASS_TRANSFER,Mass Transfer of FDIDs across Industry Members (per Section 3.3).

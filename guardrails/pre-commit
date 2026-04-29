@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Pre-commit hook that runs the spec validator.
+#
+# Install with:
+#   ln -sf ../../guardrails/pre-commit .git/hooks/pre-commit
+#
+# This runs every time you `git commit`. If the validator fails, the
+# commit is rejected.
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+# Only run if any tracked file under primary-sources/ or reference-data/ is staged.
+TRIGGER_PATHS="primary-sources/ reference-data/ guardrails/spec_pins.json"
+NEED_RUN=0
+for path in $TRIGGER_PATHS; do
+  if git diff --cached --name-only | grep -q "^$path"; then
+    NEED_RUN=1
+    break
+  fi
+done
+
+if [ "$NEED_RUN" -eq 0 ]; then
+  exit 0
+fi
+
+echo "Running spec validator..."
+python3 guardrails/validate_event_taxonomy.py

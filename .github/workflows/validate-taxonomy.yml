@@ -1,0 +1,28 @@
+# GitHub Actions workflow that runs the spec validator on every PR.
+# Drop this file at .github/workflows/validate-taxonomy.yml in the main repo.
+
+name: Validate event taxonomy
+
+on:
+  pull_request:
+    paths:
+      - 'primary-sources/**'
+      - 'reference-data/**'
+      - 'guardrails/spec_pins.json'
+      - 'guardrails/validate_event_taxonomy.py'
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pypdf
+        run: pip install pypdf
+      - name: Run validator
+        run: python3 guardrails/validate_event_taxonomy.py --strict
