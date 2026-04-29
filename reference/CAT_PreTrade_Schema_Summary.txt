@@ -130,7 +130,7 @@ Specifications v4.1.0r9 taxonomy are mapped to target entities:
  MEQS - Quote response
  MENO / MONO - New Order / Manual New Order
  MEMR / MOMR - Route / Manual Route
- MEOT / MEOTQ/ MEOF - Execution (trade / quote-trade / fulfillment)
+ MEOT / / MEOF - Execution (trade / quote-trade / fulfillment)
  MECR / MOCR - Cancel / Replace
  MEAM / MOAM - Allocation
  MECF - Confirmation... and 38 additional events

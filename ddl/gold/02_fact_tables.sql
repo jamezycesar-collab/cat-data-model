@@ -25,7 +25,7 @@
 -- ----------------------------------------------------------------------------
 -- 1. fact_cat_order_events - Order lifecycle events
 -- Covers CAT events: MEIR, MOIR, MENO, MEOA, MEOM, MEOR, MEOC, MEOE,
--- MECO, MLCO, MOCO, MEOT, MEOTQ, MEOTS, MEOF, MEOJ,
+-- MECO, MLCO, MOCO, MEOT (Trade) and MEOTS (Trade Supplement), MEOTS, MEOF, MEOJ,
 -- and all manual/options counterparts (~40 of 50 CAT events)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS fact_cat_order_events (order_event_fact_sk BIGINT NOT NULL COMMENT 'Monotonically increasing surrogate',
@@ -40,8 +40,8 @@ CREATE TABLE IF NOT EXISTS fact_cat_order_events (order_event_fact_sk BIGINT NOT
  dim_desk_sk BIGINT COMMENT 'FK -> dim_desk',
  dim_trader_sk BIGINT COMMENT 'FK -> dim_trader',
  counterparty_party_sk BIGINT COMMENT 'FK -> dim_party (counterparty, if known)',
- event_timestamp TIMESTAMP NOT NULL COMMENT 'Event time with nanosecond precision (CAT MEOTQ requirement)',
- event_nanos BIGINT COMMENT 'Sub-second nanosecond component for MEOTQ precision',
+ event_timestamp TIMESTAMP NOT NULL COMMENT 'Event time with nanosecond precision (CAT MEOTS requirement)',
+ event_nanos BIGINT COMMENT 'Sub-second nanosecond component for MEOTS precision',
  received_timestamp TIMESTAMP COMMENT 'Firm receive timestamp',
  route_timestamp TIMESTAMP COMMENT 'Route-out timestamp for MECO/MLCO/MOCO',
  side STRING COMMENT 'BUY | SELL | SELL_SHORT | SELL_SHORT_EXEMPT',
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS fact_cat_order_events (order_event_fact_sk BIGINT NOT
  leaves_quantity DECIMAL(38,10) COMMENT 'Open quantity remaining',
  cumulative_filled_quantity DECIMAL(38,10) COMMENT 'Sum of fills to date',
  price DECIMAL(38,10) COMMENT 'Limit or stop price',
- execution_price DECIMAL(38,10) COMMENT 'Fill price (MEOT/MEOTQ/MEOTS only)',
+ execution_price DECIMAL(38,10) COMMENT 'Fill price (MEOT (Trade) and MEOTS (Trade Supplement)/MEOTS only)',
  execution_quantity DECIMAL(38,10) COMMENT 'Fill quantity',
  currency_code STRING COMMENT 'ISO 4217',
  handling_instructions STRING COMMENT 'NOT_HELD | HELD | DNR | DNI',
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS fact_cat_allocations (allocation_fact_sk BIGINT NOT N
  dim_instrument_sk BIGINT NOT NULL COMMENT 'FK -> dim_instrument',
  dim_account_sk BIGINT NOT NULL COMMENT 'FK -> dim_account (sub-account allocation)',
  dim_desk_sk BIGINT COMMENT 'FK -> dim_desk',
- parent_execution_id STRING COMMENT 'FK to MEOT/MEOTQ execution being allocated',
+ parent_execution_id STRING COMMENT 'FK to MEOT (Trade) and MEOTS (Trade Supplement) execution being allocated',
  allocation_method STRING COMMENT 'PRO_RATA | MANUAL | FIFO | LIFO | AVG_PRICE',
  allocation_status STRING COMMENT 'PROPOSED | AFFIRMED | CONFIRMED | REJECTED',
  allocated_quantity DECIMAL(38,10) NOT NULL,
@@ -179,7 +179,7 @@ CREATE TABLE IF NOT EXISTS fact_cat_customer_records (cais_fact_sk BIGINT NOT NU
  event_date DATE NOT NULL COMMENT 'Alias of snapshot_date for submission dispatch',
  firm_roe_id STRING NOT NULL COMMENT 'CAIS submission identifier (firm + date + seq)',
  fdid STRING NOT NULL COMMENT 'CAT Firm Designated ID - natural key of CAIS record',
- cat_event_code STRING NOT NULL COMMENT 'FK -> dim_event_type (CAIS_C|CAIS_A|CAIS_R)',
+ cat_event_code STRING NOT NULL COMMENT 'FK -> dim_event_type (CAIS records moved to fact_cais_* in ddl/cais/)',
  dim_party_sk BIGINT NOT NULL COMMENT 'FK -> dim_party',
  dim_account_sk BIGINT NOT NULL COMMENT 'FK -> dim_account',
  record_type STRING NOT NULL COMMENT 'CUSTOMER | ACCOUNT | TRADING_RELATIONSHIP',

@@ -159,7 +159,7 @@ Normalization rules:
 | sat_order_routing | hub_order | MEOR, MEIR, MLOR |
 | sat_order_status | hub_order | (status events) |
 | sat_order_modification | hub_order | MEOM, MEIM, MLIM, MEOMR |
-| sat_execution_details | hub_execution | MEOT, MEOTQ, MOOT, MLOT, EOT |
+| sat_execution_details | hub_execution | MEOT (Trade) and MEOTS (Trade Supplement), MOOT, Section 5.2 multi-leg events, |
 | sat_execution_classification | hub_execution | (ExecType/Capacity/Liq) |
 | sat_execution_reversal | hub_execution | (BUST/CORRECT) |
 | sat_allocation_details | hub_allocation | MEAA |

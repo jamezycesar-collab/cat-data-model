@@ -199,14 +199,14 @@ TBLPROPERTIES (
 );
 
 -- ----------------------------------------------------------------------------
--- 6. dim_event_type - static taxonomy (exactly 50 rows, SCD Type 0)
+-- 6. dim_event_type - static taxonomy (99 rows from CAT IM v4.1.0r15, SCD Type 0)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS dim_event_type (
- dim_event_type_sk INT NOT NULL COMMENT 'Stable surrogate = 1..50',
+ dim_event_type_sk INT NOT NULL COMMENT 'Stable surrogate = 1..99 ordered by section number',
  cat_event_code STRING NOT NULL COMMENT 'FINRA CAT 4-letter event code (e.g. MENO, MEOT, MEPA)',
  event_name STRING NOT NULL,
  event_description STRING,
- event_phase STRING NOT NULL COMMENT 'PRE_TRADE | ORDER_REQUEST | ORDER_OPEN | ORDER_ROUTING | EXECUTION | ALLOCATION | CORRECTION | CUSTOMER_RECORD',
+ event_phase STRING NOT NULL COMMENT 'ORDER | ROUTING | INTERNAL_ROUTE | CHILD_ORDER | MODIFICATION | QUOTE | EXECUTION | FULFILLMENT | POST_TRADE | LIFECYCLE',
  submission_file_type STRING NOT NULL COMMENT 'OrderEvents | QuoteEvents | Allocations | CAIS',
  order_of_events INT COMMENT 'Canonical lifecycle ordinal for audit',
  is_manual BOOLEAN,
@@ -217,67 +217,21 @@ CREATE TABLE IF NOT EXISTS dim_event_type (
  record_source STRING NOT NULL
 )
 USING DELTA
-COMMENT 'Static 50-row FINRA CAT event taxonomy dimension - SCD Type 0'
+COMMENT 'Conformed FINRA CAT event taxonomy dimension - SCD Type 0 - 99 rows from v4.1.0r15'
 TBLPROPERTIES (
  'delta.enableChangeDataFeed'='false',
  'compression.codec'='zstd',
  'subject_area'='gold_dim',
  'scd_type'='0',
- 'row_count_invariant'='50'
+ 'row_count_invariant'='99'
 );
 
--- Seed: 50 CAT event types - aligned to v4.1.0r9 Industry Member Technical Spec
-INSERT INTO dim_event_type VALUES
- (1, 'MEQR', 'Quote Request (electronic)', 'Request for quotation from client to dealer', 'PRE_TRADE', 'QuoteEvents', 10, FALSE, TRUE, FALSE, TRUE, DATE'2024-01-01', 'SEED'),
- (2, 'MEQS', 'Quote Sent (electronic)', 'Quote response posted to RFQ', 'PRE_TRADE', 'QuoteEvents', 11, FALSE, TRUE, FALSE, TRUE, DATE'2024-01-01', 'SEED'),
- (3, 'MEIR', 'Internal Order Received (electronic)', 'Order received internally from a customer', 'ORDER_REQUEST', 'OrderEvents', 20, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (4, 'MOIR', 'Internal Order Received (manual)', 'Order received internally via manual channel', 'ORDER_REQUEST', 'OrderEvents', 21, TRUE, FALSE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (5, 'MENO', 'New Order', 'Order opened on central book', 'ORDER_OPEN', 'OrderEvents', 30, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (6, 'MEOA', 'Order Accepted', 'Order accepted by trading system', 'ORDER_OPEN', 'OrderEvents', 31, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (7, 'MEOM', 'Order Modified', 'Order attributes modified', 'ORDER_OPEN', 'OrderEvents', 32, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (8, 'MEOR', 'Order Rejected', 'Order rejected by trading system', 'ORDER_OPEN', 'OrderEvents', 33, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (9, 'MEOC', 'Order Cancelled', 'Order cancelled before fill', 'ORDER_OPEN', 'OrderEvents', 34, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (10, 'MEOE', 'Order Expired', 'Order expired per time_in_force', 'ORDER_OPEN', 'OrderEvents', 35, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (11, 'MECO', 'Manual/Electronic Route Out', 'Order routed to external venue', 'ORDER_ROUTING', 'OrderEvents', 40, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (12, 'MLCO', 'Route Out to an Exchange', 'Order routed specifically to an exchange', 'ORDER_ROUTING', 'OrderEvents', 41, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (13, 'MOCO', 'Manual Route Out', 'Order routed via manual channel', 'ORDER_ROUTING', 'OrderEvents', 42, TRUE, FALSE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (14, 'MEOT', 'Order Fulfillment', 'Execution (fill) received', 'EXECUTION', 'OrderEvents', 50, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (15, 'MEOTQ', 'Order Fulfillment Nanosecond', 'Execution with nanosecond timestamp', 'EXECUTION', 'OrderEvents', 51, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (16, 'MEOTS', 'Stopped Order Fulfillment', 'Fulfillment of stopped order', 'EXECUTION', 'OrderEvents', 52, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (17, 'MEOF', 'Order Fulfillment Final', 'Terminal fill - order fully executed', 'EXECUTION', 'OrderEvents', 53, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (18, 'MEPA', 'Post-trade Allocation (prorata)', 'Allocation of fill to customer accounts', 'ALLOCATION', 'Allocations', 60, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (19, 'MEAA', 'Affirmed Allocation', 'Allocation affirmed by customer', 'ALLOCATION', 'Allocations', 61, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (20, 'MOFA', 'Order Fill Allocated to Account', 'Specific fill attributed to one account', 'ALLOCATION', 'Allocations', 62, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (21, 'MEOJ', 'Order Adjustment / Correction', 'Post-event correction / adjustment', 'CORRECTION', 'OrderEvents', 70, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (22, 'MOQR', 'Manual Quote Request', 'Quote request received via manual channel', 'PRE_TRADE', 'QuoteEvents', 12, TRUE, FALSE, FALSE, TRUE, DATE'2024-01-01', 'SEED'),
- (23, 'MOQS', 'Manual Quote Sent', 'Quote sent via manual channel', 'PRE_TRADE', 'QuoteEvents', 13, TRUE, FALSE, FALSE, TRUE, DATE'2024-01-01', 'SEED'),
- (24, 'MONO', 'Manual New Order', 'New order via manual channel', 'ORDER_OPEN', 'OrderEvents', 36, TRUE, FALSE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (25, 'MOOA', 'Manual Order Accepted', 'Order accepted via manual channel', 'ORDER_OPEN', 'OrderEvents', 37, TRUE, FALSE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (26, 'MOOR', 'Manual Order Rejected', 'Order rejected via manual channel', 'ORDER_OPEN', 'OrderEvents', 38, TRUE, FALSE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (27, 'MOOM', 'Manual Order Modification', 'Order modified via manual channel', 'ORDER_OPEN', 'OrderEvents', 39, TRUE, FALSE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (28, 'MOOC', 'Manual Order Cancelled', 'Order cancelled via manual channel', 'ORDER_OPEN', 'OrderEvents', 43, TRUE, FALSE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (29, 'MOOT', 'Manual Order Fulfillment', 'Manual execution record', 'EXECUTION', 'OrderEvents', 54, TRUE, FALSE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (30, 'MEPB', 'Block Order Allocation', 'Block fill allocated across accounts', 'ALLOCATION', 'Allocations', 63, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (31, 'MEOJR', 'Order Adjustment Rejected', 'Adjustment/correction rejected by CAT', 'CORRECTION', 'OrderEvents', 71, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (32, 'MELC', 'Linkage of Child Order', 'Parent-child order linkage', 'ORDER_ROUTING', 'OrderEvents', 44, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (33, 'MELP', 'Linkage of Parent Order', 'Child reports parent linkage', 'ORDER_ROUTING', 'OrderEvents', 45, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (34, 'MEOX', 'Order Expired (exchange-driven)', 'Order expired on venue side', 'ORDER_OPEN', 'OrderEvents', 46, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (35, 'MEOS', 'Stopped Order Stop Price Triggered', 'Stop price condition triggered', 'ORDER_OPEN', 'OrderEvents', 47, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (36, 'MEON', 'Order Notice', 'General notice event on order', 'ORDER_OPEN', 'OrderEvents', 48, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (37, 'MEOK', 'Order Locked / Held', 'Order held by supervisor / compliance', 'ORDER_OPEN', 'OrderEvents', 49, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (38, 'MEPZ', 'Allocation Cancelled', 'Previously reported allocation cancelled', 'ALLOCATION', 'Allocations', 64, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (39, 'MEPM', 'Allocation Modified', 'Allocation attributes modified', 'ALLOCATION', 'Allocations', 65, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (40, 'MEAX', 'Affirmation Cancelled', 'Allocation affirmation withdrawn', 'ALLOCATION', 'Allocations', 66, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (41, 'MECX', 'Cancel Route-out', 'Cancellation of outbound route', 'ORDER_ROUTING', 'OrderEvents', 55, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (42, 'MECM', 'Modified Route', 'Outbound route modified', 'ORDER_ROUTING', 'OrderEvents', 56, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (43, 'MERO', 'Route Out Response', 'Response from downstream venue', 'ORDER_ROUTING', 'OrderEvents', 57, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (44, 'MERR', 'Route Rejection', 'Route was rejected by destination', 'ORDER_ROUTING', 'OrderEvents', 58, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (45, 'MERC', 'Route Cancelled by Venue', 'Destination venue cancelled route', 'ORDER_ROUTING', 'OrderEvents', 59, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (46, 'MEXC', 'Execution Cancelled', 'Previously reported execution cancelled', 'EXECUTION', 'OrderEvents', 72, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (47, 'MEXM', 'Execution Modified', 'Execution fields modified', 'EXECUTION', 'OrderEvents', 73, FALSE, TRUE, TRUE, TRUE, DATE'2024-01-01', 'SEED'),
- (48, 'CAIS_C', 'CAIS Customer Record', 'Customer record for CAIS submission', 'CUSTOMER_RECORD','CAIS', 80, FALSE, TRUE, FALSE, TRUE, DATE'2024-01-01', 'SEED'),
- (49, 'CAIS_A', 'CAIS Account Record', 'Account record for CAIS submission', 'CUSTOMER_RECORD','CAIS', 81, FALSE, TRUE, FALSE, TRUE, DATE'2024-01-01', 'SEED'),
- (50, 'CAIS_R', 'CAIS Trading Relationship', 'Customer-account trading relationship', 'CUSTOMER_RECORD','CAIS', 82, FALSE, TRUE, FALSE, TRUE, DATE'2024-01-01', 'SEED');
+-- Seed: dim_event_type is populated by the DLT pipeline at
+-- dlt-pipelines/dim_pipelines/dlt_dim_event_type.py, which loads from the
+-- verified CSV at primary-sources/cat_im_event_types.csv (CAT IM Tech Specs
+-- v4.1.0r15 Tables 15, 60, 61). 99 rows total: 39 equity + 35 simple option
+-- + 25 multi-leg. Do not hand-INSERT here; that path produced fabrications
+-- in v2.0.0 and is now rejected by the validator.
 
 -- ----------------------------------------------------------------------------
 -- 7. dim_desk - SCD Type 2
@@ -345,5 +299,5 @@ TBLPROPERTIES (
 -- ============================================================================
 -- END - 8 dimensions created (1 static calendar + 1 static taxonomy + 6 SCD2)
 -- Every SCD2 dim has: effective_start_date, effective_end_date, is_current, row_hash
--- Event taxonomy dim seeded with exactly 50 rows.
+-- Event taxonomy dim populated from primary-sources/cat_im_event_types.csv (99 rows).
 -- ============================================================================

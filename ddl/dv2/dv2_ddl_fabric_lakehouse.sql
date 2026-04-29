@@ -693,7 +693,7 @@ CREATE TABLE IF NOT EXISTS hub_execution (
  record_source STRING NOT NULL COMMENT 'Source system (OMS / Matching Engine)'
 )
 USING DELTA
-COMMENT 'Hub for Execution - CAT MEOT/MEOTQ/MEOTS/MEOF/MOOT fills'
+COMMENT 'Hub for Execution - CAT MEOT/MEOTS/MEOF/MOOT fills'
 PARTITIONED BY (record_source)
 TBLPROPERTIES ('delta.enableChangeDataFeed' = 'true', 'compression.codec' = 'zstd', 'subject_area' = 'data_vault_silver');
 
@@ -913,7 +913,7 @@ CREATE TABLE IF NOT EXISTS link_quote_execution (
  record_source STRING NOT NULL
 )
 USING DELTA
-COMMENT 'Execution linked to source quote (CAT MEOTQ quote linkage)'
+COMMENT 'Execution linked to source quote (CAT MEOTS quote linkage)'
 TBLPROPERTIES ('delta.enableChangeDataFeed' = 'true', 'compression.codec' = 'zstd', 'subject_area' = 'data_vault_silver');
 
 -- ----------------------------------------------------------------------------
@@ -2616,7 +2616,7 @@ TBLPROPERTIES ('delta.enableChangeDataFeed'='true', 'compression.codec'='zstd', 
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- Sat 30: sat_execution_details (MEOT/MEOTQ/MOOT/MLOT/EOT)
+-- Sat 30: sat_execution_details (MEOT (Trade) and MEOTS (Trade Supplement)/MOOT/Section 5.2 multi-leg events/)
 -- *** APPEND-ONLY ***
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS sat_execution_details (
@@ -2624,7 +2624,7 @@ CREATE TABLE IF NOT EXISTS sat_execution_details (
  load_date TIMESTAMP NOT NULL,
  hash_diff STRING NOT NULL,
  record_source STRING NOT NULL,
- cat_event_type STRING COMMENT 'MEOT | MEOTQ | MOOT | MLOT | EOT',
+ cat_event_type STRING COMMENT 'MEOT | MEOTS | MOOT | Section 5.2 multi-leg events | ',
  trade_date DATE,
  execution_timestamp TIMESTAMP,
  order_hk STRING,

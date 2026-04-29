@@ -84,7 +84,7 @@ order_leg,order_event_id,order_event,order_event_id,N:1,order,Multi-leg child
 order_leg,instrument_id,instrument,instrument_id,N:1,order,Leg instrument
 order_leg,instrument_leg_id,instrument_leg,leg_id,N:1,order,Canonical leg reference
 execution,order_event_id,order_event,order_event_id,N:1,execution,Parent order
-execution,quote_event_id,quote_event,quote_event_id,N:1,execution,MEOTQ source quote linkage
+execution,quote_event_id,quote_event,quote_event_id,N:1,execution,source quote linkage
 execution,execution_venue_id,venue,venue_id,N:1,execution,Execution venue
 execution,contra_party_role_id,party_role,party_role_id,N:1,execution,Contra party
 execution_leg,execution_id,execution,execution_id,N:1,execution,Parent execution

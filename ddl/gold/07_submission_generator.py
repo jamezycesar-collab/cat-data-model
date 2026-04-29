@@ -18,9 +18,9 @@ to the CAT Plan Processor. Runs daily at 06:00 ET on T+1 against Databricks,
 with the 08:00 ET deadline as a hard cutoff. Reads the four fact tables and
 the four dims for denormalisation; writes one compressed file per
 (reporter_imid, file_type, cycle) and one row per file in cat_submission_batch.
-Produces camelCase JSON per CAT Tech Specs 4.3, nanosecond timestamps on
-MEOTQ, SHA-256 checksum of the uncompressed payload, ISO 8601 timestamps
-with explicit offsets.
+Produces camelCase JSON per CAT IM Tech Specs v4.1.0r15, with nanosecond
+precision timestamps where the spec requires it, SHA-256 checksum of the
+uncompressed payload, and ISO 8601 timestamps with explicit offsets.
 """
 from __future__ import annotations
 

@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS link_quote_execution (
  record_source STRING NOT NULL
 )
 USING DELTA
-COMMENT 'Execution linked to source quote (CAT MEOTQ quote linkage)'
+COMMENT 'Execution linked to source quote (CAT MEOTS quote linkage)'
 TBLPROPERTIES ('delta.enableChangeDataFeed' = 'true', 'compression.codec' = 'zstd', 'subject_area' = 'data_vault_silver');
 
 -- ----------------------------------------------------------------------------

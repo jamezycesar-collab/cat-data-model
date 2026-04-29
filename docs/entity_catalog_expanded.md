@@ -117,8 +117,8 @@
 
 | Entity | CAT Events | FIX Msg | Primary Key |
 |---|---|---|---|
-| `execution` | MEOT, MEOTQ, MEOTS, MEOF, MOOT, MOOF, EOT | 35=8 | `execution_id` |
-| `execution_leg` | MLOT | 555-group | `execution_leg_id` |
+| `execution` | MEOT, MEOTS, MEOF, MOOT (and Section 5.2 multi-leg events MLOR/MLOC/...), MOOF, | 35=8 | `execution_id` |
+| `execution_leg` | Section 5.2 multi-leg events | 555-group | `execution_leg_id` |
 
 ## 9. Allocation (2 entities)
 

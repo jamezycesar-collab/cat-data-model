@@ -707,7 +707,7 @@ TBLPROPERTIES ('delta.enableChangeDataFeed'='true', 'compression.codec'='zstd', 
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- Sat 30: sat_execution_details (MEOT/MEOTQ/MOOT/MLOT/EOT)
+-- Sat 30: sat_execution_details (MEOT (Trade) and MEOTS (Trade Supplement)/MOOT/Section 5.2 multi-leg events/)
 -- *** APPEND-ONLY ***
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS sat_execution_details (
@@ -715,7 +715,7 @@ CREATE TABLE IF NOT EXISTS sat_execution_details (
  load_date TIMESTAMP NOT NULL,
  hash_diff STRING NOT NULL,
  record_source STRING NOT NULL,
- cat_event_type STRING COMMENT 'MEOT | MEOTQ | MOOT | MLOT | EOT',
+ cat_event_type STRING COMMENT 'MEOT | MEOTS | MOOT | Section 5.2 multi-leg events | ',
  trade_date DATE,
  execution_timestamp TIMESTAMP,
  order_hk STRING,

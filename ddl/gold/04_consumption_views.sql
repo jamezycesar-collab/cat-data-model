@@ -21,7 +21,7 @@
 
 -- ----------------------------------------------------------------------------
 -- 1. v_cat_order_reconstruction
--- Full lifecycle timeline of a single order (MEIR -> MENO -> MECO/MLCO -> -- MEOT/MEOTQ -> MEPA/MEAA/MOFA -> any MEOJ corrections).
+-- Full lifecycle timeline of a single order (MEIR -> MENO -> MECO/MLCO -> -- MEOT (Trade) and MEOTS (Trade Supplement) -> MEPA/MEAA/MOFA -> any MEOJ corrections).
 -- Regulatory use: SEC Rule 613 "complete lifecycle reconstruction".
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW v_cat_order_reconstruction AS

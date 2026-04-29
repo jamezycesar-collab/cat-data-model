@@ -1,287 +1,63 @@
-%% cat_event_taxonomy_class.mmd - FINRA CAT 50-event taxonomy, organised by phase
-%% Each phase is a UML namespace; each event is a class with submission file type.
-
 classDiagram
- direction TB
+ %% CAT event taxonomy - 99 events from CAT IM Tech Specs v4.1.0r15
+ %% Source: primary-sources/cat_im_event_types.csv (verified extract of Tables 15, 60, 61)
+ %% Categories: 39 equity + 35 simple option + 25 multi-leg
 
- namespace PreTrade_Quote_RFQ {
- class MEQR
- class MEQS
- }
-
- namespace OrderRequest_Client {
- class MEIR
- class MOIR
+ class CATEventTaxonomy {
+ +99 reportable events
+ +Source: CAT IM Tech Specs v4.1.0r15
+ +Sections 4 (equity), 5.1 (simple option), 5.2 (multi-leg)
  }
 
- namespace OrderOpen_Modify_Cancel {
- class MENO
- class MEOA
- class MEOM
- class MEOR
- class MEOC
- class MEOE
+ class EquityEvents {
+ +39 events (Section 4)
+ +ME prefix
+ +MENO MENOS New Order family
+ +MEOR MEMR MECR Route family
+ +MEOA MEIR MEIM MEIC Internal Route
+ +MECO MECOM MECOC Child Order
+ +MEOM MEOMS MEOMR Modification
+ +MEOJ MEOC MEOCR Cancel/Adjust
+ +MENQ MERQ MEQR Quote family
+ +MEQC MEQM MEQS
+ +MEOT MEOTS MEOF MEOFS Trade/Fulfillment
+ +MEFA MEPA MEAA MEOE
  }
 
- namespace OrderRouting {
- class MECO
- class MLCO
- class MOCO
+ class SimpleOptionEvents {
+ +35 events (Section 5.1)
+ +MO prefix
+ +MONO MONOS New Option Order
+ +MOOR MOMR MOCR Option Route family
+ +MOOA MOIR MOIM MOIC Internal Route
+ +MOCO MOCOM MOCOC Child Option
+ +MOOM MOOMS MOOMR Modification
+ +MOOJ MOOC MOOCR Cancel/Adjust
+ +MONQ MORQ MOQR MOQC MOQM Option Quote
+ +MOOT MOOF MOOFS MOFA Trade/Fulfillment
+ +MOPA MOAA MOOE
  }
 
- namespace OrderExecution {
- class MEOT
- class MEOTQ
- class MEOTS
- class MEOF
+ class MultiLegOptionEvents {
+ +25 events (Section 5.2)
+ +ML prefix
+ +MLNO Multi-Leg New Order
+ +MLOR MLMR MLCR Route family
+ +MLOA MLIR MLIM MLIC Internal Route
+ +MLCO MLCOM MLCOC Child Order
+ +MLOM MLOMR MLOC MLOCR
+ +MLNQ MLRQ MLQS MLQR MLQC MLQM
+ +MLOS MLOE
  }
 
- namespace PostTrade_Allocation {
- class MEPA
- class MEAA
- class MOFA
+ class CAISReporting {
+ +Separate spec: CAIS Tech Specs v2.2.0r4
+ +File-based not event-based
+ +CAIS Data File and Transformed Identifiers File
+ +FDID Records and Customer Records
  }
 
- namespace Corrections_Errors {
- class MEOJ
- }
-
- namespace Customer_CAIS {
- class CAIS_Customer
- class CAIS_Account
- class CAIS_TradingRelationship
- }
-
- namespace OptionsEquities_Extensions {
- class MEOC_Option
- class MEQS_Option
- class MEIR_Option
- }
-
- namespace Manual_Supervisory {
- class MEOR_Manual
- class MEOM_Manual
- }
-
- class MEQR {
- <<event QuoteRequest>>
- +cat_event_code : MEQR
- submission_file_type : QuoteEvents
- phase : PreTrade
- description : Manual/Electronic Quote Request
- }
- class MEQS {
- <<event QuoteSent>>
- +cat_event_code : MEQS
- submission_file_type : QuoteEvents
- phase : PreTrade
- description : Manual/Electronic Quote Sent
- }
- class MEIR {
- <<event InternalOrderReceived>>
- +cat_event_code : MEIR
- submission_file_type : OrderEvents
- phase : OrderRequest
- description : Electronic Internal Order Received
- }
- class MOIR {
- <<event ManualInternalOrderReceived>>
- +cat_event_code : MOIR
- submission_file_type : OrderEvents
- phase : OrderRequest
- description : Manual Internal Order Received
- }
- class MENO {
- <<event NewOrder>>
- +cat_event_code : MENO
- submission_file_type : OrderEvents
- phase : OrderOpen
- description : New Order
- }
- class MEOA {
- <<event OrderAccepted>>
- +cat_event_code : MEOA
- submission_file_type : OrderEvents
- phase : OrderOpen
- description : Order Accepted
- }
- class MEOM {
- <<event OrderModified>>
- +cat_event_code : MEOM
- submission_file_type : OrderEvents
- phase : OrderOpen
- description : Order Modification
- }
- class MEOR {
- <<event OrderRejected>>
- +cat_event_code : MEOR
- submission_file_type : OrderEvents
- phase : OrderOpen
- description : Order Rejected
- }
- class MEOC {
- <<event OrderCancelled>>
- +cat_event_code : MEOC
- submission_file_type : OrderEvents
- phase : OrderOpen
- description : Order Cancelled
- }
- class MEOE {
- <<event OrderExpired>>
- +cat_event_code : MEOE
- submission_file_type : OrderEvents
- phase : OrderOpen
- description : Order Expired
- }
- class MECO {
- <<event ElectronicRoute>>
- +cat_event_code : MECO
- submission_file_type : OrderEvents
- phase : OrderRouting
- description : Manual/Electronic Route Out
- }
- class MLCO {
- <<event ExchangeRoute>>
- +cat_event_code : MLCO
- submission_file_type : OrderEvents
- phase : OrderRouting
- description : Route Out to an Exchange
- }
- class MOCO {
- <<event ManualRoute>>
- +cat_event_code : MOCO
- submission_file_type : OrderEvents
- phase : OrderRouting
- description : Manual Route Out
- }
- class MEOT {
- <<event OrderFill>>
- +cat_event_code : MEOT
- submission_file_type : OrderEvents
- phase : Execution
- description : Order Fulfillment (execution)
- }
- class MEOTQ {
- <<event OrderFillNanoTS>>
- +cat_event_code : MEOTQ
- submission_file_type : OrderEvents
- phase : Execution
- description : Order Fulfillment with nanosecond precision
- }
- class MEOTS {
- <<event OrderFillStopped>>
- +cat_event_code : MEOTS
- submission_file_type : OrderEvents
- phase : Execution
- description : Stopped Order Fulfillment
- }
- class MEOF {
- <<event FullFill>>
- +cat_event_code : MEOF
- submission_file_type : OrderEvents
- phase : Execution
- description : Order Fulfillment Final
- }
- class MEPA {
- <<event ProrataAllocation>>
- +cat_event_code : MEPA
- submission_file_type : Allocations
- phase : Allocation
- description : Post-trade Allocation
- }
- class MEAA {
- <<event AffirmedAllocation>>
- +cat_event_code : MEAA
- submission_file_type : Allocations
- phase : Allocation
- description : Affirmed Allocation
- }
- class MOFA {
- <<event OrderFillAllocated>>
- +cat_event_code : MOFA
- submission_file_type : Allocations
- phase : Allocation
- description : Fill Allocated To Account
- }
- class MEOJ {
- <<event CorrectionAdjust>>
- +cat_event_code : MEOJ
- submission_file_type : OrderEvents
- phase : Correction
- description : Order Adjustment / Correction
- }
- class CAIS_Customer {
- <<event CAIS>>
- +cat_event_code : CAIS_Customer
- submission_file_type : CAIS
- phase : CustomerRecord
- description : Customer identification
- }
- class CAIS_Account {
- <<event CAIS>>
- +cat_event_code : CAIS_Account
- submission_file_type : CAIS
- phase : CustomerRecord
- description : Account identification
- }
- class CAIS_TradingRelationship {
- <<event CAIS>>
- +cat_event_code : CAIS_TradingRelationship
- submission_file_type : CAIS
- phase : CustomerRecord
- description : Trading relationship link
- }
- class MEOC_Option {
- <<event OptionsCancel>>
- +cat_event_code : MEOC
- submission_file_type : OrderEvents
- phase : Options
- description : Options order cancelled
- }
- class MEQS_Option {
- <<event OptionsQuote>>
- +cat_event_code : MEQS
- submission_file_type : QuoteEvents
- phase : Options
- description : Options quote sent
- }
- class MEIR_Option {
- <<event OptionsOrder>>
- +cat_event_code : MEIR
- submission_file_type : OrderEvents
- phase : Options
- description : Options internal order received
- }
- class MEOR_Manual {
- <<event ManualReject>>
- +cat_event_code : MEOR
- submission_file_type : OrderEvents
- phase : ManualSupervisory
- description : Manual rejection
- }
- class MEOM_Manual {
- <<event ManualModify>>
- +cat_event_code : MEOM
- submission_file_type : OrderEvents
- phase : ManualSupervisory
- description : Manual modification
- }
-
- MEQR..> MEQS : elicits
- MEQS..> MEIR : converted_to
- MEIR..> MENO : opens
- MOIR..> MENO : opens
- MENO..> MECO : routed_via
- MECO..> MLCO : chained
- MLCO..> MEOT : fills_at_exchange
- MENO..> MEOT : filled
- MEOT..> MEPA : split_via
- MEPA..> MEAA : affirmed
- MEOT..> MOFA : alternative_alloc
- MEOT..> MEOJ : may_correct
- MEOC..> MEOJ : correction_event
- MENO..> MEOA : accepted
- MENO..> MEOR : rejected
- MENO..> MEOC : cancelled
- MENO..> MEOE : expired
- MENO..> MEOM : modified
+ CATEventTaxonomy *-- EquityEvents
+ CATEventTaxonomy *-- SimpleOptionEvents
+ CATEventTaxonomy *-- MultiLegOptionEvents
+ CATEventTaxonomy ..> CAISReporting : separate spec

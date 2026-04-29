@@ -737,7 +737,7 @@ WITH (
 -- Hub 13 of 20: hub_execution
 -- Business key: cat_execution_id or execution_id
 -- ----------------------------------------------------------------------------
--- hub_execution: Hub for Execution - CAT MEOT/MEOTQ/MEOTS/MEOF/MOOT fills
+-- hub_execution: Hub for Execution - CAT MEOT/MEOTS/MEOF/MOOT fills
 CREATE TABLE IF NOT EXISTS hub_execution (
  execution_hk NVARCHAR(MAX) NOT NULL /* SHA-256 hub hash */,
  execution_bk NVARCHAR(MAX) NOT NULL /* cat_execution_id (preferred) or internal execution_id */,
@@ -984,7 +984,7 @@ WITH (
 -- ----------------------------------------------------------------------------
 -- Link 7 of 32: link_quote_execution
 -- ----------------------------------------------------------------------------
--- link_quote_execution: Execution linked to source quote (CAT MEOTQ quote linkage)
+-- link_quote_execution: Execution linked to source quote (CAT MEOTS quote linkage)
 CREATE TABLE IF NOT EXISTS link_quote_execution (
  link_hk NVARCHAR(MAX) NOT NULL,
  quote_hk NVARCHAR(MAX) NOT NULL,
@@ -2878,7 +2878,7 @@ WITH (
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------
--- Sat 30: sat_execution_details (MEOT/MEOTQ/MOOT/MLOT/EOT)
+-- Sat 30: sat_execution_details (MEOT (Trade) and MEOTS (Trade Supplement)/MOOT/Section 5.2 multi-leg events/)
 -- *** APPEND-ONLY ***
 -- ----------------------------------------------------------------------------
 -- sat_execution_details: Execution fills - APPEND-ONLY; FINRA CAT MEOT event
@@ -2887,7 +2887,7 @@ CREATE TABLE IF NOT EXISTS sat_execution_details (
  load_date DATETIME2(7) NOT NULL,
  hash_diff NVARCHAR(MAX) NOT NULL,
  record_source NVARCHAR(MAX) NOT NULL,
- cat_event_type NVARCHAR(MAX) /* MEOT | MEOTQ | MOOT | MLOT | EOT */,
+ cat_event_type NVARCHAR(MAX) /* MEOT | MEOTS | MOOT | Section 5.2 multi-leg events | */,
  trade_date DATE,
  execution_timestamp DATETIME2(7),
  order_hk NVARCHAR(MAX),

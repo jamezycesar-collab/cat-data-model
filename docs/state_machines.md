@@ -69,7 +69,7 @@ OPEN -> CANCELLED
 ## 6. `quote_event.quote_status`
 
 ```
-ACTIVE -> EXECUTED (client hit; fires MEOT or MEOTQ)
+ACTIVE -> EXECUTED (client hit; fires MEOT or MEOTS)
 ACTIVE -> SUPERSEDED (quote refresh; prior_quote_id populated)
 ACTIVE -> CANCELLED
 ACTIVE -> EXPIRED (past validity_end)

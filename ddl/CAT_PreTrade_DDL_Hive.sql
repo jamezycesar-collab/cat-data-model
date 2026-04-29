@@ -2272,7 +2272,7 @@ TBLPROPERTIES (
 -- File: 08_execution_model_delta.sql
 -- Purpose: Enterprise Execution Stage Model (2 entities, Delta Lake)
 -- Scope: Fill lifecycle (partial, full, bust, correct) + multi-leg fills
--- CAT Events Covered: MEOT, MEOTQ, MEOTS, MEOF, MOOT, MLOT, EOT
+-- CAT Events Covered: MEOT, MEOTS, MEOF, MOOT (and Section 5.2 multi-leg events MLOR/MLOC/...)
 -- FIX Messages: 35=8 (ExecutionReport)
 -- ============================================================================
 
@@ -2282,10 +2282,10 @@ TBLPROPERTIES (
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS execution (
  execution_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
- cat_event_type STRING NOT NULL COMMENT 'CAT event: MEOT (standard fill), MEOTQ (trade linked to quote), MEOTS (trade with symbol - split routes), MEOF (order fulfillment - riskless principal), MOOT (manual trade), MLOT (multi-leg trade), EOT (exchange trade)',
+ cat_event_type STRING NOT NULL COMMENT 'CAT event: MEOT (standard fill), MEOTS (trade linked to quote), MEOTS (trade with symbol - split routes), MEOF (order fulfillment - riskless principal), MOOT (manual trade), Section 5.2 multi-leg events (multi-leg trade)',
  order_event_id STRING NOT NULL COMMENT 'FK to order_event.order_event_id',
  cat_execution_id STRING NOT NULL COMMENT 'CAT-assigned execution identifier',
- quote_event_id STRING COMMENT 'FK to quote_event.quote_event_id - populated for MEOTQ (CAT quote linkage)',
+ quote_event_id STRING COMMENT 'FK to quote_event.quote_event_id - populated for MEOTS (CAT quote linkage)',
  execution_timestamp TIMESTAMP NOT NULL COMMENT 'Execution time - microsecond precision per CAT',
  execution_venue_id STRING COMMENT 'FK to venue.venue_id - venue where fill occurred',
  execution_price DECIMAL(18,8) NOT NULL COMMENT 'Fill price',
@@ -2313,10 +2313,10 @@ CREATE TABLE IF NOT EXISTS execution (
  _updated_at TIMESTAMP COMMENT 'CDF audit'
 )
 STORED AS PARQUET
-COMMENT 'Individual fills/executions - CAT MEOT/MEOTQ/MEOTS/MEOF/MOOT + FIX ExecutionReport 35=8; separates fill grain from order grain (one order -> many executions); MEOTQ populates quote_event_id for CAT quote linkage'
+COMMENT 'Individual fills/executions - CAT MEOT/MEOTS/MEOF/MOOT + FIX ExecutionReport 35=8; separates fill grain from order grain (one order -> many executions); MEOTS populates quote_event_id for CAT quote linkage'
 PARTITIONED BY (event_date)
 TBLPROPERTIES (
- 'description' = 'Executions - MEOT/MEOTQ/MEOTS/MEOF/MOOT',
+ 'description' = 'Executions - MEOT/MEOTS/MEOF/MOOT',
  'parquet.compression' = 'ZSTD',
  'subject_area' = 'execution',
  'source_lineage' = ' section Execution Stage - execution'
@@ -2327,11 +2327,11 @@ TBLPROPERTIES (
 -- ----------------------------------------------------------------------------
 -- Entity 2 of 2: execution_leg (NEW)
 -- Multi-leg execution legs - spreads, combos, swaps
--- Associated CAT events: MLOT
+-- Associated CAT events: Section 5.2 multi-leg events
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS execution_leg (
  execution_leg_id STRING NOT NULL COMMENT 'UUID v4 - Primary key',
- cat_event_type STRING NOT NULL DEFAULT 'MLOT' COMMENT 'CAT event: MLOT (Multi-Leg Order Trade)',
+ cat_event_type STRING NOT NULL COMMENT 'CAT event: Section 5.2 multi-leg events (Multi-Leg Order Trade)',
  execution_id STRING NOT NULL COMMENT 'FK to execution.execution_id',
  leg_number INT NOT NULL COMMENT 'Sequential leg number (1, 2, 3...) matching order_leg.leg_number',
  instrument_leg_id STRING COMMENT 'FK to instrument_leg.leg_id - canonical leg reference',
@@ -2349,10 +2349,10 @@ CREATE TABLE IF NOT EXISTS execution_leg (
  _updated_at TIMESTAMP COMMENT 'CDF audit'
 )
 STORED AS PARQUET
-COMMENT 'Multi-leg execution legs - CAT event MLOT; spreads, combos, swaps, butterflies; links to order_leg via leg_number, to instrument_leg via instrument_leg_id'
+COMMENT 'Multi-leg execution legs - CAT event Section 5.2 multi-leg events; spreads, combos, swaps, butterflies; links to order_leg via leg_number, to instrument_leg via instrument_leg_id'
 PARTITIONED BY (event_date)
 TBLPROPERTIES (
- 'description' = 'Multi-leg execution legs - MLOT',
+ 'description' = 'Multi-leg execution legs - Section 5.2 multi-leg events',
  'parquet.compression' = 'ZSTD',
  'subject_area' = 'execution',
  'source_lineage' = ' section Execution Stage - execution_leg'
@@ -2999,7 +2999,7 @@ TBLPROPERTIES (
 
 -- ----------------------------------------------------------------------------
 -- Entity 1 of 16: ref_cat_event_type
--- FINRA CAT 50-event taxonomy (v4.1.0r9)
+-- FINRA CAT 99-event taxonomy (CAT IM v4.1.0r15) (v4.1.0r9)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS ref_cat_event_type (
  cat_event_type_code STRING NOT NULL COMMENT 'CAT event code (e.g. MEIR, MOIR, MENO, MEOT, MEQS, MEPA)',
@@ -3020,7 +3020,7 @@ CREATE TABLE IF NOT EXISTS ref_cat_event_type (
  _updated_at TIMESTAMP COMMENT 'CDF audit'
 )
 STORED AS PARQUET
-COMMENT 'FINRA CAT 50-event taxonomy reference - all 50 valid CAT event codes (MEIR, MOIR, MENO, MONO, MEOA, MEOC, MEOT, MEOTQ, MEOTS, MEOF, MEQR, MEQS, MEPA, MEAA, MOOT, MLOT, EOT, etc.); enforces cat_event_type enum in order_event, execution, allocation, quote_event, order_request'
+COMMENT 'FINRA CAT 99-event taxonomy (CAT IM v4.1.0r15) reference - all CAT event codes - source of truth: primary-sources/cat_im_event_types.csv (MEIR, MOIR, MENO, MONO, MEOA, MEOC, MEOT (Trade) and MEOTS (Trade Supplement), MEOTS, MEOF, MEQR, MEQS, MEPA, MEAA, MOOT, Section 5.2 multi-leg events, etc.); enforces cat_event_type enum in order_event, execution, allocation, quote_event, order_request'
 PARTITIONED BY (effective_start_date)
 TBLPROPERTIES (
  'description' = 'CAT event type reference - 50 events',

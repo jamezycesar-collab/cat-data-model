@@ -39,7 +39,7 @@
 
 -- ----------------------------------------------------------------------------
 -- Entity 1 of 16: ref_cat_event_type
--- FINRA CAT 50-event taxonomy (v4.1.0r9)
+-- FINRA CAT 99-event taxonomy (CAT IM v4.1.0r15) (v4.1.0r9)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS ref_cat_event_type (
  cat_event_type_code STRING NOT NULL COMMENT 'CAT event code (e.g. MEIR, MOIR, MENO, MEOT, MEQS, MEPA)',
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS ref_cat_event_type (
  _updated_at TIMESTAMP COMMENT 'CDF audit'
 )
 STORED AS PARQUET
-COMMENT 'FINRA CAT 50-event taxonomy reference - all 50 valid CAT event codes (MEIR, MOIR, MENO, MONO, MEOA, MEOC, MEOT, MEOTQ, MEOTS, MEOF, MEQR, MEQS, MEPA, MEAA, MOOT, MLOT, EOT, etc.); enforces cat_event_type enum in order_event, execution, allocation, quote_event, order_request'
+COMMENT 'FINRA CAT 99-event taxonomy (CAT IM v4.1.0r15) reference - all CAT event codes - source of truth: primary-sources/cat_im_event_types.csv (MEIR, MOIR, MENO, MONO, MEOA, MEOC, MEOT (Trade) and MEOTS (Trade Supplement), MEOTS, MEOF, MEQR, MEQS, MEPA, MEAA, MOOT, Section 5.2 multi-leg events, etc.); enforces cat_event_type enum in order_event, execution, allocation, quote_event, order_request'
 PARTITIONED BY (effective_start_date)
 TBLPROPERTIES (
  'description' = 'CAT event type reference - 50 events',

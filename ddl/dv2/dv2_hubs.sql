@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS hub_execution (
  record_source STRING NOT NULL COMMENT 'Source system (OMS / Matching Engine)'
 )
 USING DELTA
-COMMENT 'Hub for Execution - CAT MEOT/MEOTQ/MEOTS/MEOF/MOOT fills'
+COMMENT 'Hub for Execution - CAT MEOT/MEOTS/MEOF/MOOT fills'
 PARTITIONED BY (record_source)
 TBLPROPERTIES ('delta.enableChangeDataFeed' = 'true', 'compression.codec' = 'zstd', 'subject_area' = 'data_vault_silver');
 

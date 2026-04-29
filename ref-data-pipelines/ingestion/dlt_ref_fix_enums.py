@@ -188,7 +188,7 @@ HANDLING = [
  # (code, name, description, category, fix_value, manual_intervention, triggers_moot)
  ("AUTOMATED_PRIVATE", "Automated, Private", "Automated execution order - private, no broker intervention", "AUTOMATED", "1", False, False),
  ("AUTOMATED_PUBLIC", "Automated, Public", "Automated execution order - public, broker intervention OK", "AUTOMATED", "2", False, False),
- ("MANUAL", "Manual", "Manual order - broker intervention required; CAT triggers MOOT/MOFA/MEMA", "MANUAL", "3", True, True),
+ ("MANUAL", "Manual", "Manual order - broker intervention required; reported with manualFlag=true on the standard CAT events", "MANUAL", "3", True, True),
 ]
 
 HANDLING_SCHEMA = StructType([

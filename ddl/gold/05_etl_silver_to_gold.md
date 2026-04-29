@@ -132,7 +132,7 @@ Facts are intraday append-only from Silver links. Example: `fact_cat_order_event
 | `dim_desk_sk` | `dim_desk` lookup | nullable |
 | `dim_trader_sk` | `dim_trader` lookup | nullable |
 | `event_timestamp` | `sat_order_event_details.event_timestamp` | DATETIME2(7) |
-| `event_nanos` | `sat_order_event_details.event_nanos` | for MEOTQ |
+| `event_nanos` | `sat_order_event_details.event_nanos` | for MEOTS |
 | `quantity`, `price`, `side`, etc. | `sat_order_event_details.*` | 1-to-1 |
 | `dv2_source_hk` | `lnk_order_event.event_link_hk` | BCBS 239 lineage |
 
