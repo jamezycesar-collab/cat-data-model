@@ -28,3 +28,7 @@ fi
 
 echo "Running spec validator..."
 python3 guardrails/validate_event_taxonomy.py
+echo "Running no-fabrications check..."
+python3 guardrails/validate_no_fabrications.py
+echo "Running Python syntax check..."
+python3 guardrails/validate_python_syntax.py
