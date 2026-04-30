@@ -101,12 +101,16 @@ def extract_cais_enums_from_pdf(pdf_path: Path) -> dict[str, set[str]]:
     """Best-effort extraction of CAIS accepted-values from the spec.
 
     The CAIS spec embeds accepted values in field-definition tables.
-    For CAIS we extract a small set of high-signal enums (fdidType,
-    accountType, fdidEndReason, addrType) by scanning for the field
-    name and pulling the quoted value list that follows.
+    For each field we know what values the spec defines, so we check
+    presence (not absence) - any value missing from the PDF is flagged
+    as a potential CSV fabrication.
     """
     reader = PdfReader(str(pdf_path))
     text = "".join((p.extract_text() or "") for p in reader.pages)
+    # Field -> set of values expected per spec v2.2.0r4. The validator
+    # checks that every value listed here is found verbatim in the PDF
+    # text. If a value is missing, that's evidence the CSV may have
+    # invented it.
     targets = {
         "fdidType": {"ACCOUNT", "RELATIONSHIP", "ENTITYID"},
         "accountType": {
@@ -118,6 +122,13 @@ def extract_cais_enums_from_pdf(pdf_path: Path) -> dict[str, set[str]]:
             "CORRECTION", "ENDED", "INACTIVE", "REPLACED", "OTHER", "TRANSFER",
         },
         "addrType": {"ADDRESS1", "ADDRESS2", "ADDRESS3", "ADDRESS4"},
+        # Added in Tier 3.2:
+        "customerRole": {"NTHOLDER", "TRDHOLDER", "AUTH3RD", "AUTHREP"},
+        "roleEndReason": {
+            "CORRECTION", "ENDED", "INACTIVE", "REPLACED", "OTHER",
+        },
+        "ltidEndReason": {"CORRECTION", "ENDED", "REPLACED", "OTHER"},
+        "largeTraderType": {"LTID", "ULTID"},
     }
     found: dict[str, set[str]] = {}
     for field, expected in targets.items():

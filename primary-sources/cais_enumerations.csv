@@ -28,9 +28,21 @@ addrType,ADDRESS3,The third Address Record.
 addrType,ADDRESS4,The fourth Address Record.
 customerType,NATURAL_PERSON,Customer Record for a Natural Person.
 customerType,LEGAL_ENTITY,Customer Record for a Legal Entity.
-customerRole,TRDHOLDER,Trading Holder of the Account.
-customerRole,AUTH3RD,Third-party authorized to act on the Account.
+customerRole,NTHOLDER,Holder of the Account that does NOT have authorization to trade on the Account.
+customerRole,TRDHOLDER,Holder of the Account that also has authorization to trade on the Account.
+customerRole,AUTH3RD,Third-party authorized to trade on the Account without being a Holder.
 customerRole,AUTHREP,Authorized Representative of the Account.
+roleEndReason,CORRECTION,Customer was erroneously reported as associated to the FDID or FDID was not required to be reported.
+roleEndReason,ENDED,Customer role ended (e.g. mis-reported role corrected; account closed).
+roleEndReason,INACTIVE,Associated FDID has had no CAT-reportable transaction activity in the prior six months.
+roleEndReason,REPLACED,Customer role on FDID ended because the FDID or Input Identifier was replaced.
+roleEndReason,OTHER,Other unlisted reason for ending the Customer role on FDID.
+ltidEndReason,CORRECTION,LTID-to-FDID association was erroneously reported.
+ltidEndReason,ENDED,LTID-to-FDID association ended.
+ltidEndReason,REPLACED,LTID-to-FDID association replaced.
+ltidEndReason,OTHER,Other unlisted reason for ending the LTID association.
+largeTraderType,LTID,Large Trader ID per SEC Rule 13h-1.
+largeTraderType,ULTID,Unidentified Large Trader ID per SEC Rule 13h-1.
 fileType,CAIS_DATA_FILE,CAIS Data File containing FDID and Customer records.
 fileType,TRANSFORMED_IDENTIFIERS_FILE,Transformed Identifiers File containing TID values.
 submissionAction,NEW,Original submission of a record.
