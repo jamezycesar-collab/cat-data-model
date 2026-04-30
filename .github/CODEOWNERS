@@ -1,0 +1,30 @@
+# Code ownership for cat-data-model.
+#
+# When a file in one of these paths is modified in a PR, GitHub will
+# request a review from the listed owner before the PR can be merged
+# (combined with a branch protection rule that requires CODEOWNER review).
+#
+# Format: <path-pattern>  <owner1> [owner2 ...]
+# Patterns are gitignore-style. Last matching rule wins.
+
+# Default owner for everything not otherwise covered.
+*  @jamezycesar-collab
+
+# Source-of-truth files. Any change here must be reviewed by the
+# repository owner because they govern the regulatory taxonomy and
+# the SHA-256 pins on the spec PDFs.
+/primary-sources/                @jamezycesar-collab
+/guardrails/spec_pins.json       @jamezycesar-collab
+/guardrails/validate_*.py        @jamezycesar-collab
+
+# Documentation that explains why the repo is structured this way.
+/docs/ROOT_CAUSE_AUDIT.md        @jamezycesar-collab
+/CHANGELOG.md                    @jamezycesar-collab
+
+# CI workflow - changes can disable the validators.
+/.github/workflows/              @jamezycesar-collab
+
+# The deprecation marker on the old CAIS event-based pipeline. Removing
+# it would re-introduce the fabricated CAIS_C / CAIS_A / CAIS_R event
+# codes through the back door.
+/dlt-pipelines/fact_pipelines/dlt_fact_cat_customer_records.py  @jamezycesar-collab
