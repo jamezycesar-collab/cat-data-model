@@ -2,6 +2,23 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 4: field-mapping cleanup
+
+### Changed
+
+- `ddl/gold/06_cat_field_mapping.csv` reduced to 27 verified field mappings (from 82). Each row now carries a `verification_status` column and a description that cites the spec section the field is defined in.
+- The 35 mappings whose CAT JSON field names do not appear in the spec PDFs (`cumQty`, `executionPrice`, `solicitedFlag`, `representativeID`, `accountID`, `quoteSide`, `quoteStatus`, `allocationMethod`, etc.) moved to `ddl/gold/06b_cat_field_mapping_unverified_candidates.csv` with explanatory notes.
+- Malformed `gold_table` cells like `"dim_party (via party_sk join)"` rewritten as proper table names.
+
+### Added
+
+- `validate_field_specifications.py` now searches both CAT IM and CAIS spec PDFs (was CAT IM only), so CAIS field names like `firmDesignatedID` and `customerRecordID` resolve correctly.
+- `06_cat_field_mapping.csv` gained a `verification_status` column.
+
+### Why
+
+Tier 3.3 (the field-spec validator) surfaced that 35 of 62 entries (~57%) referenced field names not present in any FINRA spec. Same fabrication pattern as the v2.0.0 event-code list, just one layer deeper. Splitting the file into verified vs unverified-candidates makes the boundary explicit: implementers consume the verified file; the candidates file is a backlog awaiting spec reconciliation against per-event Field Specification tables.
+
 ## [Unreleased] - Remediation against CAT IM v4.1.0r15 and CAIS v2.2.0r4
 
 ### Added
