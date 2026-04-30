@@ -1,28 +1,83 @@
 gold_table,gold_column,cat_json_field,cat_submission_file_type,cat_event_codes,data_type,required,max_length,description,verification_status
-fact_order_events,firm_roe_id,firmROEID,OrderEvents,ALL,STRING,Y,40,Firm-assigned identifier unique per Event Date and CAT Reporter IMID per spec Section 2.3.3,VERIFIED
-fact_order_events,cat_order_id,orderID,OrderEvents,ALL,STRING,Y,40,Firm-assigned order identifier per spec Section 2.3,VERIFIED
-fact_order_events,event_timestamp,eventTimestamp,OrderEvents,ALL,DATETIME,Y,30,ISO 8601 with timezone offset per spec Section 2.5.1,VERIFIED
-fact_order_events,order_type,orderType,OrderEvents,"MENO,MENOS,MEOM,MEOMS",STRING,N,12,Field referenced in spec Section 4.1+,VERIFIED
-fact_order_events,time_in_force,timeInForce,OrderEvents,"MENO,MENOS,MEOM,MEOMS,MEIR",STRING,N,3,Field referenced in spec Sections 4.1 and 4.5.1,VERIFIED
-fact_order_events,quantity,quantity,OrderEvents,"MENO,MEOM,MEOT",DECIMAL,N,15,Field referenced in spec Section 4 events,VERIFIED
-fact_order_events,leaves_quantity,leavesQty,OrderEvents,"MEOM,MEOT",DECIMAL,N,15,Spec field name verified,VERIFIED
-fact_order_events,price,price,OrderEvents,"MENO,MEOM",DECIMAL,N,18,Field referenced in spec Section 4 events,VERIFIED
-fact_order_events,handling_instructions,handlingInstructions,OrderEvents,"MENO,MEOR",STRING,N,10,Field referenced in spec Sections 4.3+,VERIFIED
-fact_order_events,parent_order_id,parentOrderID,OrderEvents,"MENO,MEOM",STRING,N,40,Field referenced in spec representative-order sections,VERIFIED
-fact_order_events,event_type_code,type,OrderEvents,ALL,STRING,Y,8,The Message Type code (MENO/MEOR/etc) reported in the JSON 'type' field per spec Section 6.1.5,VERIFIED
-fact_execution_events,firm_roe_id,firmROEID,OrderEvents,"MEOT,MEOTS,MEOF,MEOFS,MEFA",STRING,Y,40,Firm-assigned identifier,VERIFIED
-fact_execution_events,cat_order_id,orderID,OrderEvents,"MEOT,MEOTS,MEOF,MEOFS,MEFA",STRING,Y,40,Order identifier,VERIFIED
-fact_execution_events,event_timestamp,eventTimestamp,OrderEvents,ALL,DATETIME,Y,30,ISO 8601 timestamp,VERIFIED
-fact_allocations,firm_roe_id,firmROEID,Allocations,"MEPA,MEAA,MOPA,MOAA",STRING,Y,40,Firm-assigned identifier,VERIFIED
-fact_allocations,cat_order_id,orderID,Allocations,"MEPA,MEAA,MOPA,MOAA",STRING,Y,40,Parent order identifier,VERIFIED
-fact_allocations,allocation_timestamp,eventTimestamp,Allocations,ALL,DATETIME,Y,30,ISO 8601 timestamp,VERIFIED
-fact_allocations,allocation_id,allocationID,Allocations,"MEPA,MEAA,MOPA,MOAA",STRING,Y,40,Spec Section 4.13.1 field name,VERIFIED
-fact_multileg_option_events,firm_roe_id,firmROEID,OptionEvents,ALL,STRING,Y,40,Firm-assigned identifier,VERIFIED
-fact_multileg_option_events,cat_order_id,orderID,OptionEvents,ALL,STRING,Y,40,Multi-leg order identifier,VERIFIED
-fact_multileg_option_events,event_timestamp,eventTimestamp,OptionEvents,ALL,DATETIME,Y,30,ISO 8601 timestamp,VERIFIED
-dim_party,cat_imid,CATReporterIMID,OrderEvents,ALL,STRING,Y,8,Spec Section 2.4.1 - the SRO-assigned identifier for the Industry Member,VERIFIED
-dim_instrument,symbol,symbol,OrderEvents,ALL,STRING,Y,14,Spec Section 2.4.3 - the equity symbol,VERIFIED
-dim_instrument,option_id,optionID,OptionEvents,ALL,STRING,Y,22,Spec Section 2.4.4 - 21-character OSI Symbol of the option,VERIFIED
-dim_venue,mic,marketCenterID,OrderEvents,"MEOT,MEOTS",STRING,N,4,ISO 10383 MIC of execution venue,VERIFIED
-fact_cais_fdid,firm_designated_id,firmDesignatedID,CAIS,ALL,STRING,Y,40,CAIS spec Section 4.1 firmDesignatedID field,VERIFIED
-fact_cais_customer,customer_record_id,customerRecordID,CAIS,ALL,STRING,Y,40,CAIS spec Section 4.1 customerRecordID field,VERIFIED
+fact_order_events,action_type,actionType,OrderEvents,ALL,STRING,Y,8,"Section 4.1 row 1: Indicates whether the event is a new event firm-initiated correction (FRC) or a repair of a CAT error (RPR)",VERIFIED
+fact_order_events,error_roe_id,errorROEID,OrderEvents,ALL,STRING,N,40,Section 4.1 row 2: Required when actionType is RPR. Must be blank when actionType is NEW,VERIFIED
+fact_order_events,firm_roe_id,firmROEID,OrderEvents,ALL,STRING,Y,64,Section 2.3.3: Firm-assigned identifier formatted as <Event Date>_<firm ROE Identifier>. Unique per Event Date and CAT Reporter IMID,VERIFIED
+fact_order_events,event_type_code,type,OrderEvents,ALL,STRING,Y,8,"Section 6.1.5: The Message Type code (MENO, MEOR, MEOT etc) carried in the JSON 'type' field",VERIFIED
+fact_order_events,cat_reporter_imid,CATReporterIMID,OrderEvents,ALL,STRING,N,8,Section 2.4.1: SRO-assigned IMID for the Industry Member,VERIFIED
+fact_order_events,order_key_date,orderKeyDate,OrderEvents,"MENO,MENOS,MEOR,MEMR,MECR,MEORS,MEMRS,MECRS,MEOA,MEIR,MEIM,MEIC,MEIMR,MEICR,MECO,MECOM,MECOC,MEOM,MEOMS,MEOMR,MEOJ,MEOC,MEOCR,MEOE",DATETIME,Y,30,Section 4.1 row 6: Date and time the orderID was assigned,VERIFIED
+fact_order_events,cat_order_id,orderID,OrderEvents,"MENO,MENOS,MEOR,MEMR,MECR,MEORS,MEMRS,MECRS,MEOA,MEIR,MEIM,MEIC,MEIMR,MEICR,MECO,MECOM,MECOC,MEOM,MEOMS,MEOMR,MEOJ,MEOC,MEOCR,MEOE",STRING,Y,64,Section 4.1 row 7: Internal order ID. Unique within orderKeyDate CATReporterIMID and symbol,VERIFIED
+fact_order_events,symbol,symbol,OrderEvents,ALL,STRING,Y,14,Section 2.4.3: Symbol of the stock in the symbology of the primary listing exchange,VERIFIED
+fact_order_events,event_timestamp,eventTimestamp,OrderEvents,ALL,DATETIME,Y,30,Section 4.1 row 9: Date/time of the event. Millisecond precision required when manualFlag is false,VERIFIED
+fact_order_events,manual_flag,manualFlag,OrderEvents,"MENO,MEOR,MEMR,MECR,MEOA,MEIR,MEOM,MEOJ,MEOC,MEOT",BOOLEAN,Y,1,Section 4.1 row 10: True if the event was received or captured manually,VERIFIED
+fact_order_events,electronic_dup_flag,electronicDupFlag,OrderEvents,"MENO,MENOS,MEOR,MEMR,MECR,MEOA,MEIR,MEOM,MEOJ,MEOC",BOOLEAN,Y,1,Section 4.1 row 11: True if this is a duplicative electronic message of a manual event,VERIFIED
+fact_order_events,electronic_timestamp,electronicTimestamp,OrderEvents,"MENO,MEOR,MEMR,MECR,MEOA,MEIR,MEOM,MEOJ,MEOC",DATETIME,N,30,Section 4.1 row 12: Time at which the manual event was systematized. Required when manualFlag is true and event is systematized,VERIFIED
+fact_order_events,manual_order_key_date,manualOrderKeyDate,OrderEvents,"MENO,MEOR",DATETIME,N,30,Section 4.1 row 13: orderKeyDate of the related manual order,VERIFIED
+fact_order_events,manual_order_id,manualOrderID,OrderEvents,"MENO,MEOR",STRING,N,64,Section 4.1 row 14: orderID of the related manual order. Required when electronicDupFlag is true,VERIFIED
+fact_order_events,dept_type,deptType,OrderEvents,"MENO,MEOM",STRING,Y,16,Section 4.1 row 15: Category of internal department unit or desk originating or receiving the order,VERIFIED
+fact_order_events,solicitation_flag,solicitationFlag,OrderEvents,MENO,BOOLEAN,Y,1,Section 4.1 row 16: True if the order was originated in response to an RFQ or other solicitation,VERIFIED
+fact_order_events,rfq_id,RFQID,OrderEvents,MENO,STRING,N,64,Section 4.1 row 17: For New Order events representing a response to an RFQ,VERIFIED
+fact_order_events,side,side,OrderEvents,"MENO,MEOR,MEMR,MEOM,MEPA,MEAA,MEOE",STRING,Y,8,Section 4.1 row 18: Side of the order,VERIFIED
+fact_order_events,price,price,OrderEvents,"MENO,MEOR,MEMR,MEOM,MEOT,MEPA,MEAA",DECIMAL,N,18,Section 4.1 row 19: Limit or trade price,VERIFIED
+fact_order_events,quantity,quantity,OrderEvents,"MENO,MEOR,MEMR,MEOM,MEOT,MEPA,MEAA",DECIMAL,Y,15,Section 4.1 row 20: Order or trade quantity,VERIFIED
+fact_order_events,min_qty,minQty,OrderEvents,"MENO,MEOR,MEMR,MEOM",DECIMAL,N,15,Section 4.1 row 21: Minimum quantity of an order to be executed,VERIFIED
+fact_order_events,order_type,orderType,OrderEvents,"MENO,MEOR,MEMR,MEOM",STRING,Y,12,Section 4.1 row 22: Type of order being submitted,VERIFIED
+fact_order_events,time_in_force,timeInForce,OrderEvents,"MENO,MEOR,MEMR,MEOM,MEOE",STRING,Y,3,Section 4.1 row 23: Time in Force,VERIFIED
+fact_order_events,trading_session,tradingSession,OrderEvents,"MENO,MEOR,MEMR,MEOM,MEOE",STRING,Y,12,Section 4.1 row 24: Trading session(s) during which an order is eligible to trade,VERIFIED
+fact_order_events,handling_instructions,handlingInstructions,OrderEvents,"MENO,MEOR,MEMR,MEOM",STRING,N,40,Section 4.1 row 25 / Section 4.3 row 28,VERIFIED
+fact_order_events,cust_dsp_intr_flag,custDspIntrFlag,OrderEvents,MENO,BOOLEAN,N,1,Section 4.1 row 26: Customer/client display instruction flag,VERIFIED
+fact_order_events,firm_designated_id,firmDesignatedID,OrderEvents,"MENO,MEPA,MEAA",STRING,N,40,Section 2.4.2 / Appendix G: FDID of the account,VERIFIED
+fact_order_events,account_holder_type,accountHolderType,OrderEvents,"MENO,MEOM,MEPA,MEAA",STRING,N,2,Section 4.1 row 28: Beneficial owner type,VERIFIED
+fact_order_events,affiliate_flag,affiliateFlag,OrderEvents,"MENO,MEOR,MEMR",BOOLEAN,N,1,Section 4.1 row 29 / 4.3 row 26: Routing party is an affiliate of the IM,VERIFIED
+fact_order_events,info_barrier_id,infoBarrierID,OrderEvents,"MENO,MEOR,MEOT",STRING,N,20,Section 4.1 row 30: Identifier of the information barrier (FINRA Rule 5320.02),VERIFIED
+fact_order_events,negotiated_trade_flag,negotiatedTradeFlag,OrderEvents,MENO,BOOLEAN,Y,1,Section 4.1 row 32: True if the trade is a result of a negotiation,VERIFIED
+fact_order_events,representative_ind,representativeInd,OrderEvents,MENO,STRING,N,4,Section 4.1 row 33: Indicates if the order is a representative order,VERIFIED
+fact_order_events,seq_num,seqNum,OrderEvents,"MENO,MEOR,MEOT",STRING,N,40,Section 4.1 row 34: Sequence number assigned to the CAT event by the firm,VERIFIED
+fact_order_events,ats_display_ind,atsDisplayInd,OrderEvents,MENO,STRING,N,4,Section 4.1 row 35: ATS display indicator,VERIFIED
+fact_order_events,display_price,displayPrice,OrderEvents,MENO,DECIMAL,N,18,Section 4.1 row 36: Displayed price for this order,VERIFIED
+fact_order_events,working_price,workingPrice,OrderEvents,MENO,DECIMAL,N,18,Section 4.1 row 37: Working price of the order,VERIFIED
+fact_order_events,display_qty,displayQty,OrderEvents,MENO,DECIMAL,N,15,Section 4.1 row 38: Displayed quantity,VERIFIED
+fact_order_events,nbb_price,nbbPrice,OrderEvents,"MENO,MEOT",DECIMAL,N,18,Section 4.1 row 40 / 4.11.1 row 26: National best bid price at moment of receipt or trade,VERIFIED
+fact_order_events,nbb_qty,nbbQty,OrderEvents,"MENO,MEOT",DECIMAL,N,15,Section 4.1 row 41 / 4.11.1 row 27: NBB quantity,VERIFIED
+fact_order_events,nbo_price,nboPrice,OrderEvents,"MENO,MEOT",DECIMAL,N,18,Section 4.1 row 42 / 4.11.1 row 28: NBO price,VERIFIED
+fact_order_events,nbo_qty,nboQty,OrderEvents,"MENO,MEOT",DECIMAL,N,15,Section 4.1 row 43 / 4.11.1 row 29: NBO quantity,VERIFIED
+fact_order_events,nbbo_source,nbboSource,OrderEvents,"MENO,MEOT",STRING,N,8,Section 4.1 row 44 / 4.11.1 row 30: Source of NBBO data,VERIFIED
+fact_order_events,nbbo_timestamp,nbboTimestamp,OrderEvents,"MENO,MEOT",DATETIME,N,30,Section 4.1 row 45 / 4.11.1 row 31: Date/time NBBO was referenced,VERIFIED
+fact_order_events,net_price,netPrice,OrderEvents,"MENO,MEOR",DECIMAL,N,18,Section 4.1 row 46: Net price of the order when tied to stock,VERIFIED
+fact_order_events,bfmm_flag,BFMMFlag,OrderEvents,MENO,BOOLEAN,N,1,Section 4.1 row 47: Identifies if a Short Sale order event relies on the bona fide market making exception,VERIFIED
+fact_order_events,originating_imid,originatingIMID,OrderEvents,"MEOR,MEMR,MECR,MEOA,MEOJ,MEOC,MEOM,MEOE",STRING,N,8,Section 4.3 row 9: Used in mergers/acquisitions where prior firm orders are still open,VERIFIED
+fact_order_events,sender_imid,senderIMID,OrderEvents,"MEOR,MEMR,MECR",STRING,N,8,Section 4.3 row 14: The IMID actually sending the route,VERIFIED
+fact_order_events,destination,destination,OrderEvents,"MEOR,MEMR,MECR",STRING,Y,8,Section 4.3 row 15: The destination IMID (or special value for foreign / non-CAT-reporting),VERIFIED
+fact_order_events,destination_type,destinationType,OrderEvents,"MEOR,MEMR,MECR",STRING,Y,4,Section 4.3 row 16: Whether the destination is an exchange affiliated firm or other type,VERIFIED
+fact_order_events,routed_order_id,routedOrderID,OrderEvents,"MEOR,MEMR",STRING,N,64,Section 4.3 row 17: ID assigned to the routed order by the IM,VERIFIED
+fact_order_events,session,session,OrderEvents,"MEOR,MEMR",STRING,N,40,Section 4.3 row 18: Session ID used when routing the order,VERIFIED
+fact_order_events,iso_ind,isoInd,OrderEvents,"MEOR,MEMR",STRING,N,4,Section 4.3 row 27: Intermarket Sweep Order indicator,VERIFIED
+fact_order_events,route_rejected_flag,routeRejectedFlag,OrderEvents,"MEOR,MEORS,MEMR,MEMRS,MECR,MECRS",BOOLEAN,N,1,Section 4.3 row 29: True if the routed order was not accepted by the destination,VERIFIED
+fact_order_events,multi_leg_ind,multiLegInd,OrderEvents,"MEOR,MEOT",BOOLEAN,N,1,Section 4.3 row 32 / 4.11.1 row 35: Order is related to a multi-leg order,VERIFIED
+fact_order_events,paired_order_id,pairedOrderID,OrderEvents,MEOR,STRING,N,64,Section 4.3 row 33: Paired order identifier when reporting two related orders,VERIFIED
+fact_order_events,quote_key_date,quoteKeyDate,OrderEvents,MEOR,DATETIME,N,30,Section 4.3 row 36: Date and time the quoteID was assigned,VERIFIED
+fact_order_events,quote_id,quoteID,OrderEvents,MEOR,STRING,N,64,Section 4.3 row 37: Required for Order Route events reported in response to a quote,VERIFIED
+fact_execution_events,trade_key_date,tradeKeyDate,OrderEvents,"MEOT,MEOTS",DATETIME,Y,30,Section 4.11.1 row 6: Date and time the tradeID was assigned,VERIFIED
+fact_execution_events,trade_id,tradeID,OrderEvents,"MEOT,MEOTS",STRING,Y,64,Section 4.11.1 row 7: Unique ID for this execution assigned by the executing IM,VERIFIED
+fact_execution_events,cancel_flag,cancelFlag,OrderEvents,"MEOT,MEOTS,MEPA,MEAA",BOOLEAN,N,1,Section 4.11.1 row 12: True if the execution or allocation was cancelled,VERIFIED
+fact_execution_events,cancel_timestamp,cancelTimestamp,OrderEvents,"MEOT,MEOTS,MEPA,MEAA",DATETIME,N,30,Section 4.11.1 row 13: Time at which the cancellation occurred,VERIFIED
+fact_execution_events,capacity,capacity,OrderEvents,"MEOT,MEOTS,MEPA",STRING,Y,12,Section 4.11.1 row 18: Capacity in which the IM acted (PRINCIPAL/AGENT/etc),VERIFIED
+fact_execution_events,tape_trade_id,tapeTradeID,OrderEvents,"MEOT,MEOTS",STRING,N,40,Section 4.11.1 row 19: Unique tape identifier reported,VERIFIED
+fact_execution_events,market_center_id,marketCenterID,OrderEvents,"MEOT,MEOTS",STRING,Y,4,Section 4.11.1 row 20: National securities exchange or transaction venue,VERIFIED
+fact_execution_events,side_details_ind,sideDetailsInd,OrderEvents,"MEOT,MEOTS",STRING,N,4,Section 4.11.1 row 21: One-sided or two-sided trade indicator,VERIFIED
+fact_execution_events,reporting_exception_code,reportingExceptionCode,OrderEvents,"MEOT,MEOTS",STRING,N,8,Section 4.11.1 row 24: Reason a unique identifier could not be reported,VERIFIED
+fact_execution_events,clearing_firm,clearingFirm,OrderEvents,"MEOT,MEOTS",STRING,N,16,Section 4.11.1 row 33: Clearing number of the IM's clearing firm,VERIFIED
+fact_execution_events,counterparty,counterparty,OrderEvents,"MEOT,MEOTS",STRING,N,8,Section 4.11.1 row 34: Counterparty IMID to the trade,VERIFIED
+fact_allocations,allocation_key_date,allocationKeyDate,Allocations,"MEPA,MEAA,MOPA,MOAA",DATETIME,Y,30,Section 4.13.1 row 6: Date and time the allocationID was assigned,VERIFIED
+fact_allocations,allocation_id,allocationID,Allocations,"MEPA,MEAA,MOPA,MOAA",STRING,Y,64,Section 4.13.1 row 7: Internal allocation ID assigned by the IM,VERIFIED
+fact_allocations,prior_allocation_key_date,priorAllocationKeyDate,Allocations,"MEAA,MOAA",DATETIME,N,30,Section 4.13.2 row 8: Prior allocationKeyDate when a new allocationID is assigned,VERIFIED
+fact_allocations,prior_allocation_id,priorAllocationID,Allocations,"MEAA,MOAA",STRING,N,64,Section 4.13.2 row 9: Prior allocationID,VERIFIED
+fact_allocations,trade_date,tradeDate,Allocations,"MEPA,MEAA,MOPA,MOAA",DATE,N,10,Section 4.13.1 row 18: Trade date of the securities being allocated,VERIFIED
+fact_allocations,settlement_date,settlementDate,Allocations,"MEPA,MEAA,MOPA,MOAA",DATE,N,10,Section 4.13.1 row 19: Settlement date,VERIFIED
+fact_allocations,allocation_type,allocationType,Allocations,"MEPA,MEAA,MOPA,MOAA",STRING,N,8,Section 4.13.1 row 20: Type of allocation (e.g. DVP DVPF),VERIFIED
+fact_allocations,dvp_custodian_id,DVPCustodianID,Allocations,"MEPA,MEAA",STRING,N,40,Section 4.13.1 row 21: Required when allocationType is DVP or DVPF,VERIFIED
+fact_allocations,correspondent_crd,correspondentCRD,Allocations,"MEPA,MEAA",STRING,N,16,Section 4.13.1 row 22: CRD number of related Introducing Broker,VERIFIED
+fact_allocations,new_order_fdid,newOrderFDID,Allocations,"MEPA,MEAA",STRING,N,40,Section 4.13.1 row 23: FDID of the related New Order event if available,VERIFIED
+fact_allocations,allocation_instruction_time,allocationInstructionTime,Allocations,"MEPA,MEAA",DATETIME,N,30,Section 4.13.1 row 24: Date/time the allocation instruction was received,VERIFIED
+fact_allocations,institution_flag,institutionFlag,Allocations,"MEPA,MEAA",BOOLEAN,N,1,Section 4.13.1 row 17: True if the account meets the institutional definition,VERIFIED
+fact_cais_fdid,firm_designated_id,firmDesignatedID,CAIS,ALL,STRING,Y,40,CAIS Section 4.1: FDID of the ACCOUNT/RELATIONSHIP/ENTITYID being reported,VERIFIED
+fact_cais_customer,customer_record_id,customerRecordID,CAIS,ALL,STRING,Y,40,CAIS Section 4.1: Unique reference to a single Customer Record per submission file,VERIFIED
