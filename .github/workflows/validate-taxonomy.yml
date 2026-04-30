@@ -24,3 +24,5 @@ jobs:
         run: python3 guardrails/validate_no_fabrications.py
       - name: Check Python files parse cleanly
         run: python3 guardrails/validate_python_syntax.py
+      - name: Validate field-mapping CSV against verified codes
+        run: python3 guardrails/validate_field_specifications.py
