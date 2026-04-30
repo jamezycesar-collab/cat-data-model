@@ -54,11 +54,21 @@ def load_verified_event_codes() -> set[str]:
         return {r["message_type"] for r in csv.DictReader(f)}
 
 
+VERIFIED_CSV = REPO / "ddl" / "gold" / "06_cat_field_mapping.csv"
+UNVERIFIED_CSV = REPO / "ddl" / "gold" / "06b_cat_field_mapping_unverified_candidates.csv"
+
+
 def load_field_mapping() -> list[dict[str, str]]:
-    csv_path = REPO / "ddl" / "gold" / "06_cat_field_mapping.csv"
-    if not csv_path.exists():
-        raise FileNotFoundError(f"Field mapping CSV missing: {csv_path}")
-    with csv_path.open() as f:
+    if not VERIFIED_CSV.exists():
+        raise FileNotFoundError(f"Field mapping CSV missing: {VERIFIED_CSV}")
+    with VERIFIED_CSV.open() as f:
+        return list(csv.DictReader(f))
+
+
+def load_unverified_candidates() -> list[dict[str, str]]:
+    if not UNVERIFIED_CSV.exists():
+        return []
+    with UNVERIFIED_CSV.open() as f:
         return list(csv.DictReader(f))
 
 
@@ -101,13 +111,21 @@ def main() -> int:
             print(f"ERROR: {e}", file=sys.stderr)
         return 1
 
-    # Build PDF text once
+    # Build PDF text once - both CAT IM and CAIS specs, since field mappings
+    # may reference fields from either.
     cat_pin = pins["cat_im_spec"]
+    cais_pin = pins["cais_spec"]
     try:
         cat_pdf_text = extract_pdf_text(cat_pin["filename"])
     except FileNotFoundError as e:
         errors.append(str(e))
         cat_pdf_text = ""
+    try:
+        cais_pdf_text = extract_pdf_text(cais_pin["filename"])
+    except FileNotFoundError as e:
+        errors.append(str(e))
+        cais_pdf_text = ""
+    combined_text = cat_pdf_text + "\n" + cais_pdf_text
 
     # ----- Check 1: cat_event_codes references real codes -----
     rows_with_bad_codes: list[tuple[int, str, list[str]]] = []
@@ -143,8 +161,8 @@ def main() -> int:
         if not re.match(r"^[a-zA-Z][a-zA-Z0-9]*$", field):
             # Compound field names with delimiters - skip; not directly grep-able
             continue
-        # Look for the field name as a standalone token in the PDF text
-        if not re.search(rf"\b{re.escape(field)}\b", cat_pdf_text):
+        # Look for the field name as a standalone token in either spec PDF
+        if not re.search(rf"\b{re.escape(field)}\b", combined_text):
             missing_fields.append((i, row.get("gold_column", ""), field))
 
     if missing_fields:
@@ -171,6 +189,17 @@ def main() -> int:
         "fact_cais_customer",
         "fact_cais_submission",
         "fact_cais_inconsistency",
+        # Conformed dimensions, referenced via SK joins from facts
+        "dim_party",
+        "dim_instrument",
+        "dim_venue",
+        "dim_account",
+        "dim_trader",
+        "dim_desk",
+        "dim_date",
+        "dim_event_type",
+        # Quote dimension (work in progress)
+        "fact_quotes",
     }
     unknown_tables: list[tuple[int, str]] = []
     for i, row in enumerate(mappings, start=2):
@@ -184,9 +213,13 @@ def main() -> int:
                 f"If this table exists in the DDL, add it to known_gold_tables in this validator."
             )
 
+    # ----- Also count unverified candidates (informational only) -----
+    candidates = load_unverified_candidates()
+
     # ----- Report -----
-    print(f"Field mapping rows: {len(mappings)}")
-    print(f"Verified CAT event codes available: {len(verified_codes)}")
+    print(f"Verified field mapping rows:   {len(mappings)}")
+    print(f"Unverified candidate rows:     {len(candidates)}")
+    print(f"Verified CAT event codes:      {len(verified_codes)}")
     print(f"Errors:   {len(errors)}")
     print(f"Warnings: {len(warnings)}")
     print()
