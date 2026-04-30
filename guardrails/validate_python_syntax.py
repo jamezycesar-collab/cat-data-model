@@ -25,35 +25,11 @@ REPO = Path(__file__).resolve().parents[1]
 # Files known to be pseudo-code awaiting rewrite. Add or remove as the
 # rewrite work progresses. Each exemption should reference a tracking
 # issue or document the rewrite plan.
-EXEMPT = {
-    # The original v2.0.0 DLT pipelines are pseudo-code (`def foo:` with
-    # no parens, etc). They are scheduled for rewrite in Tier 2. Listed
-    # explicitly so this validator doesn't go green silently.
-    "dlt-pipelines/dim_pipelines/dlt_dim_account.py",
-    "dlt-pipelines/dim_pipelines/dlt_dim_date.py",
-    "dlt-pipelines/dim_pipelines/dlt_dim_desk.py",
-    "dlt-pipelines/dim_pipelines/dlt_dim_instrument.py",
-    "dlt-pipelines/dim_pipelines/dlt_dim_party.py",
-    "dlt-pipelines/dim_pipelines/dlt_dim_trader.py",
-    "dlt-pipelines/dim_pipelines/dlt_dim_venue.py",
-    "dlt-pipelines/fact_pipelines/dlt_fact_cat_allocations.py",
-    "dlt-pipelines/fact_pipelines/dlt_fact_cat_order_events.py",
-    "dlt-pipelines/fact_pipelines/dlt_fact_cat_quotes.py",
-    "dlt-pipelines/tests/test_dim_scd2_invariants.py",
-    "dlt-pipelines/tests/test_fact_quality_gates.py",
-    "dlt-pipelines/tests/test_referential_integrity.py",
-    "ref-data-pipelines/ingestion/dlt_ref_cat_taxonomy.py",
-    "ref-data-pipelines/ingestion/dlt_ref_cais_taxonomy.py",
-    "ref-data-pipelines/ingestion/dlt_ref_firm_taxonomy.py",
-    "ref-data-pipelines/ingestion/dlt_ref_fix_enums.py",
-    "ref-data-pipelines/ingestion/dlt_ref_industry.py",
-    "ref-data-pipelines/ingestion/dlt_ref_isda_conventions.py",
-    "ref-data-pipelines/ingestion/dlt_ref_iso_codes.py",
-    "ddl/_delta_to_fabric.py",
-    "ddl/expanded-model/_delta_to_hive.py",
-    "ddl/gold/07_submission_generator.py",
-    "diagrams/drawio/_build_drawio.py",
-}
+EXEMPT: set[str] = set()
+# Empty by design. After Tier 2.1, every Python file in the repo parses.
+# Add to this set ONLY when introducing a deliberately-incomplete file
+# (e.g. an in-progress draft you want to commit but not run yet). Each
+# entry must include a comment naming the issue and a tracking link.
 
 
 def main() -> int:
