@@ -22,9 +22,9 @@ from pyspark.sql import SparkSession, functions as F
 GOLD_DB = "gold"
 
 @pytest.fixture(scope="module")
-def spark -> SparkSession:
+def spark() -> SparkSession:
  return (
- SparkSession.builder.appName("ws8-referential-integrity").getOrCreate
+ SparkSession.builder.appName("ws8-referential-integrity").getOrCreate()
 )
 
 # Fact -> (dim table, fact SK col, dim SK col, fact date col)

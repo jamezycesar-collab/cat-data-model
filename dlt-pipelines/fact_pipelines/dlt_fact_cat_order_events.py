@@ -27,7 +27,7 @@ GOLD_DB = spark.conf.get("gold_database", "gold")
  name="v_order_events_curated",
  comment="Curated Silver view producing CAT-event-shaped rows for the fact",
 )
-def v_order_events_curated:
+def v_order_events_curated():
  lnk = spark.readStream.table(f"{SILVER_DB}.link_order_event")
  sat = spark.table(f"{SILVER_DB}.sat_order_event_details")
 
@@ -79,7 +79,7 @@ def v_order_events_curated:
  F.col("s.rejection_reason").alias("rejection_reason"),
  F.col("s.source_system").alias("source_system"),
  F.col("l.event_link_hk").alias("dv2_source_hk"),
- F.current_timestamp.alias("load_date"),
+ F.current_timestamp().alias("load_date"),
  F.lit(f"{SILVER_DB}.link_order_event").alias("record_source"),
 )
 )
@@ -102,7 +102,7 @@ def v_order_events_curated:
  name="v_order_events_validated",
  comment="Order-event stream after hard-fail DQ gates",
 )
-def v_order_events_validated:
+def v_order_events_validated():
  return dlt.read_stream("v_order_events_curated")
 
 # ---------------------------------------------------------------------------
@@ -110,7 +110,7 @@ def v_order_events_validated:
 # date window - BETWEEN effective_start_date AND effective_end_date)
 # ---------------------------------------------------------------------------
 @dlt.view(name="v_order_events_enriched")
-def v_order_events_enriched:
+def v_order_events_enriched():
  e = dlt.read_stream("v_order_events_validated")
 
  dim_party = spark.table(f"{GOLD_DB}.dim_party")
@@ -202,5 +202,5 @@ def v_order_events_enriched:
  "grain": "one row per CAT order event",
  },
 )
-def fact_cat_order_events:
+def fact_cat_order_events():
  return dlt.read_stream("v_order_events_enriched")

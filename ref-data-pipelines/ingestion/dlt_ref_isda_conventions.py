@@ -53,10 +53,10 @@ SCHEMA = StructType([
 ])
 
 @dlt.view(name="v_day_count_seed")
-def v_day_count_seed:
+def v_day_count_seed():
  df = spark.createDataFrame(DAY_COUNTS, schema=SCHEMA)
  return (
- df.withColumn("effective_start_date", F.current_date).withColumn("effective_end_date", F.lit("9999-12-31").cast(DateType)).withColumn("is_active", F.lit(True)).withColumn("source_authority", F.lit("ISDA")).withColumn("source_version", F.lit(ISDA_VERSION)).withColumn("last_updated_date", F.current_date).withColumn("record_source", F.lit(ISDA_URL)).withColumn("load_date", F.current_timestamp).withColumn("cdc_sequence", F.col("load_date").cast("long")).withColumn("cdc_operation", F.lit("UPSERT")).withColumn("row_hash",
+ df.withColumn("effective_start_date", F.current_date).withColumn("effective_end_date", F.lit("9999-12-31").cast(DateType)).withColumn("is_active", F.lit(True)).withColumn("source_authority", F.lit("ISDA")).withColumn("source_version", F.lit(ISDA_VERSION)).withColumn("last_updated_date", F.current_date).withColumn("record_source", F.lit(ISDA_URL)).withColumn("load_date", F.current_timestamp()).withColumn("cdc_sequence", F.col("load_date").cast("long")).withColumn("cdc_operation", F.lit("UPSERT")).withColumn("row_hash",
  F.sha2(F.concat_ws("|",
  F.col("day_count_code"), F.col("day_count_name"),
  F.coalesce(F.col("category"), F.lit("")),
@@ -73,7 +73,7 @@ def v_day_count_seed:
  "isda_not_null": "isda_code IS NOT NULL",
 })
 @dlt.view(name="v_day_count_validated")
-def v_day_count_validated:
+def v_day_count_validated():
  return dlt.read("v_day_count_seed")
 
 dlt.create_streaming_table(

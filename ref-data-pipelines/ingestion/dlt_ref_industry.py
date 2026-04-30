@@ -25,7 +25,7 @@ def _audit(df, authority: str, seed: str, version: str):
  df.withColumn("effective_start_date",
  F.coalesce(F.col("effective_start_date"), F.current_date)).withColumn("effective_end_date",
  F.coalesce(F.col("effective_end_date"),
- F.lit("9999-12-31").cast(DateType))).withColumn("is_active", F.coalesce(F.col("is_active"), F.lit(True))).withColumn("source_authority", F.lit(authority)).withColumn("source_version", F.lit(version)).withColumn("last_updated_date", F.current_date).withColumn("record_source", F.lit(f"{SEED_ROOT}/{seed}")).withColumn("load_date", F.current_timestamp).withColumn("cdc_sequence", F.col("load_date").cast("long")).withColumn("cdc_operation", F.lit("UPSERT"))
+ F.lit("9999-12-31").cast(DateType))).withColumn("is_active", F.coalesce(F.col("is_active"), F.lit(True))).withColumn("source_authority", F.lit(authority)).withColumn("source_version", F.lit(version)).withColumn("last_updated_date", F.current_date).withColumn("record_source", F.lit(f"{SEED_ROOT}/{seed}")).withColumn("load_date", F.current_timestamp()).withColumn("cdc_sequence", F.col("load_date").cast("long")).withColumn("cdc_operation", F.lit("UPSERT"))
 )
 
 def _hash_cols(cols):
@@ -39,7 +39,7 @@ def _hash_cols(cols):
 # 1. ref_settlement_venue
 # ===========================================================================
 @dlt.view(name="v_settlement_venue_curated")
-def v_settlement_venue_curated:
+def v_settlement_venue_curated():
  raw = (
  spark.readStream.format("cloudFiles").option("cloudFiles.format", "csv").option("cloudFiles.schemaLocation", f"{SEED_ROOT}/_schemas/settlement_venues/").option("header", "true").load(f"{SEED_ROOT}/settlement_venues/")
 )
@@ -60,7 +60,7 @@ def v_settlement_venue_curated:
  "category_enum": "category IS NULL OR category IN ('CSD','ICSD','CCP','CASH_CSD')",
 })
 @dlt.view(name="v_settlement_venue_validated")
-def v_settlement_venue_validated:
+def v_settlement_venue_validated():
  return dlt.read_stream("v_settlement_venue_curated")
 
 dlt.create_streaming_table(
@@ -84,7 +84,7 @@ dlt.apply_changes(
 # 2. ref_regulator
 # ===========================================================================
 @dlt.view(name="v_regulator_curated")
-def v_regulator_curated:
+def v_regulator_curated():
  raw = (
  spark.readStream.format("cloudFiles").option("cloudFiles.format", "csv").option("cloudFiles.schemaLocation", f"{SEED_ROOT}/_schemas/regulators/").option("header", "true").load(f"{SEED_ROOT}/regulators/")
 )
@@ -102,7 +102,7 @@ def v_regulator_curated:
  "jurisdiction_enum": "jurisdiction_scope IS NULL OR jurisdiction_scope IN ('NATIONAL','FEDERAL','STATE','SUPRANATIONAL')",
 })
 @dlt.view(name="v_regulator_validated")
-def v_regulator_validated:
+def v_regulator_validated():
  return dlt.read_stream("v_regulator_curated")
 
 dlt.create_streaming_table(
@@ -126,7 +126,7 @@ dlt.apply_changes(
 # 3. ref_credit_rating_scale
 # ===========================================================================
 @dlt.view(name="v_rating_curated")
-def v_rating_curated:
+def v_rating_curated():
  raw = (
  spark.readStream.format("cloudFiles").option("cloudFiles.format", "csv").option("cloudFiles.schemaLocation", f"{SEED_ROOT}/_schemas/rating_scales/").option("header", "true").load(f"{SEED_ROOT}/rating_scales/")
 )
@@ -147,7 +147,7 @@ def v_rating_curated:
  "basel_weight_range": "basel_risk_weight IS NULL OR basel_risk_weight BETWEEN 0 AND 1.5",
 })
 @dlt.view(name="v_rating_validated")
-def v_rating_validated:
+def v_rating_validated():
  return dlt.read_stream("v_rating_curated")
 
 dlt.create_streaming_table(
@@ -171,7 +171,7 @@ dlt.apply_changes(
 # 4. ref_tax_jurisdiction
 # ===========================================================================
 @dlt.view(name="v_tax_curated")
-def v_tax_curated:
+def v_tax_curated():
  raw = (
  spark.readStream.format("cloudFiles").option("cloudFiles.format", "csv").option("cloudFiles.schemaLocation", f"{SEED_ROOT}/_schemas/tax_jurisdictions/").option("header", "true").load(f"{SEED_ROOT}/tax_jurisdictions/")
 )
@@ -193,7 +193,7 @@ def v_tax_curated:
  "category_enum": "category IS NULL OR category IN ('FEDERAL','STATE','PROVINCIAL','MUNICIPAL','SUPRANATIONAL')",
 })
 @dlt.view(name="v_tax_validated")
-def v_tax_validated:
+def v_tax_validated():
  return dlt.read_stream("v_tax_curated")
 
 dlt.create_streaming_table(

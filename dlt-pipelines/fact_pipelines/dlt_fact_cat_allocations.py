@@ -21,7 +21,7 @@ SILVER_DB = spark.conf.get("silver_database", "silver")
 GOLD_DB = spark.conf.get("gold_database", "gold")
 
 @dlt.view(name="v_allocations_curated")
-def v_allocations_curated:
+def v_allocations_curated():
  lnk = spark.readStream.table(f"{SILVER_DB}.link_allocation")
  sat = spark.table(f"{SILVER_DB}.sat_allocation_details")
 
@@ -53,7 +53,7 @@ def v_allocations_curated:
  F.col("s.allocation_nanos").alias("allocation_nanos"),
  F.col("s.source_system").alias("source_system"),
  F.col("l.allocation_link_hk").alias("dv2_source_hk"),
- F.current_timestamp.alias("load_date"),
+ F.current_timestamp().alias("load_date"),
  F.lit(f"{SILVER_DB}.link_allocation").alias("record_source"),
 )
 )
@@ -70,11 +70,11 @@ def v_allocations_curated:
  }
 )
 @dlt.view(name="v_allocations_validated")
-def v_allocations_validated:
+def v_allocations_validated():
  return dlt.read_stream("v_allocations_curated")
 
 @dlt.view(name="v_allocations_enriched")
-def v_allocations_enriched:
+def v_allocations_enriched():
  a = dlt.read_stream("v_allocations_validated")
  dim_party = spark.table(f"{GOLD_DB}.dim_party")
  dim_instrument = spark.table(f"{GOLD_DB}.dim_instrument")
@@ -137,5 +137,5 @@ def v_allocations_enriched:
  "grain": "one row per allocation event",
  },
 )
-def fact_cat_allocations:
+def fact_cat_allocations():
  return dlt.read_stream("v_allocations_enriched")

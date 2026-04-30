@@ -65,10 +65,10 @@ PARTY_ROLE_SCHEMA = StructType([
 ])
 
 @dlt.view(name="v_party_role_seed")
-def v_party_role_seed:
+def v_party_role_seed():
  df = spark.createDataFrame(PARTY_ROLES, schema=PARTY_ROLE_SCHEMA)
  return (
- df.withColumn("effective_start_date", F.current_date).withColumn("effective_end_date", F.lit("9999-12-31").cast(DateType)).withColumn("is_active", F.lit(True)).withColumn("source_authority", F.lit("INTERNAL_TAXONOMY")).withColumn("source_version", F.lit(FIRM_VERSION)).withColumn("last_updated_date", F.current_date).withColumn("record_source", F.lit(FIRM_URL)).withColumn("load_date", F.current_timestamp).withColumn("cdc_sequence", F.col("load_date").cast("long")).withColumn("cdc_operation", F.lit("UPSERT")).withColumn("row_hash",
+ df.withColumn("effective_start_date", F.current_date).withColumn("effective_end_date", F.lit("9999-12-31").cast(DateType)).withColumn("is_active", F.lit(True)).withColumn("source_authority", F.lit("INTERNAL_TAXONOMY")).withColumn("source_version", F.lit(FIRM_VERSION)).withColumn("last_updated_date", F.current_date).withColumn("record_source", F.lit(FIRM_URL)).withColumn("load_date", F.current_timestamp()).withColumn("cdc_sequence", F.col("load_date").cast("long")).withColumn("cdc_operation", F.lit("UPSERT")).withColumn("row_hash",
  F.sha2(F.concat_ws("|",
  F.col("party_role_code"), F.col("party_role_name"),
  F.coalesce(F.col("category"), F.lit("")),
@@ -86,7 +86,7 @@ def v_party_role_seed:
  "regulatory_capacity_enum": "regulatory_capacity IS NULL OR regulatory_capacity IN ('PRINCIPAL','AGENCY','RISKLESS_PRINCIPAL','FIDUCIARY')",
 })
 @dlt.view(name="v_party_role_validated")
-def v_party_role_validated:
+def v_party_role_validated():
  return dlt.read("v_party_role_seed")
 
 dlt.create_streaming_table(
@@ -158,10 +158,10 @@ INSTRUMENT_TYPE_SCHEMA = StructType([
 ])
 
 @dlt.view(name="v_instrument_type_seed")
-def v_instrument_type_seed:
+def v_instrument_type_seed():
  df = spark.createDataFrame(INSTRUMENT_TYPES, schema=INSTRUMENT_TYPE_SCHEMA)
  return (
- df.withColumn("effective_start_date", F.current_date).withColumn("effective_end_date", F.lit("9999-12-31").cast(DateType)).withColumn("is_active", F.lit(True)).withColumn("source_authority", F.lit("INTERNAL_TAXONOMY")).withColumn("source_version", F.lit(FIRM_VERSION)).withColumn("last_updated_date", F.current_date).withColumn("record_source", F.lit(FIRM_URL)).withColumn("load_date", F.current_timestamp).withColumn("cdc_sequence", F.col("load_date").cast("long")).withColumn("cdc_operation", F.lit("UPSERT")).withColumn("row_hash",
+ df.withColumn("effective_start_date", F.current_date).withColumn("effective_end_date", F.lit("9999-12-31").cast(DateType)).withColumn("is_active", F.lit(True)).withColumn("source_authority", F.lit("INTERNAL_TAXONOMY")).withColumn("source_version", F.lit(FIRM_VERSION)).withColumn("last_updated_date", F.current_date).withColumn("record_source", F.lit(FIRM_URL)).withColumn("load_date", F.current_timestamp()).withColumn("cdc_sequence", F.col("load_date").cast("long")).withColumn("cdc_operation", F.lit("UPSERT")).withColumn("row_hash",
  F.sha2(F.concat_ws("|",
  F.col("instrument_type_code"),
  F.col("instrument_type_name"),
@@ -184,7 +184,7 @@ def v_instrument_type_seed:
  "category IN ('EQUITY','DEBT','DERIVATIVE','FUND','FOREX','COMMODITY','CRYPTO','STRUCTURED_PRODUCT')",
 })
 @dlt.view(name="v_instrument_type_validated")
-def v_instrument_type_validated:
+def v_instrument_type_validated():
  return dlt.read("v_instrument_type_seed")
 
 dlt.create_streaming_table(

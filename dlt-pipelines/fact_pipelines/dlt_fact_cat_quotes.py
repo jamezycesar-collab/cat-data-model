@@ -21,7 +21,7 @@ SILVER_DB = spark.conf.get("silver_database", "silver")
 GOLD_DB = spark.conf.get("gold_database", "gold")
 
 @dlt.view(name="v_quotes_curated")
-def v_quotes_curated:
+def v_quotes_curated():
  lnk = spark.readStream.table(f"{SILVER_DB}.link_quote")
  sat = spark.table(f"{SILVER_DB}.sat_quote_details")
 
@@ -52,7 +52,7 @@ def v_quotes_curated:
  F.col("s.quote_nanos").alias("quote_nanos"),
  F.col("s.source_system").alias("source_system"),
  F.col("l.quote_link_hk").alias("dv2_source_hk"),
- F.current_timestamp.alias("load_date"),
+ F.current_timestamp().alias("load_date"),
  F.lit(f"{SILVER_DB}.link_quote").alias("record_source"),
 )
 )
@@ -69,11 +69,11 @@ def v_quotes_curated:
  }
 )
 @dlt.view(name="v_quotes_validated")
-def v_quotes_validated:
+def v_quotes_validated():
  return dlt.read_stream("v_quotes_curated")
 
 @dlt.view(name="v_quotes_enriched")
-def v_quotes_enriched:
+def v_quotes_enriched():
  q = dlt.read_stream("v_quotes_validated")
  dim_party = spark.table(f"{GOLD_DB}.dim_party")
  dim_instrument = spark.table(f"{GOLD_DB}.dim_instrument")
@@ -139,5 +139,5 @@ def v_quotes_enriched:
  "grain": "one row per quote event",
  },
 )
-def fact_cat_quotes:
+def fact_cat_quotes():
  return dlt.read_stream("v_quotes_enriched")

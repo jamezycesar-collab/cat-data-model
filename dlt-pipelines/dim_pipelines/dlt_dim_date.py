@@ -66,7 +66,7 @@ NYSE_HOLIDAYS = {
  "subject_area": "gold_dim",
  },
 )
-def dim_date:
+def dim_date():
  start_date = "2020-01-01"
  end_date = "2035-12-31"
 
@@ -135,5 +135,5 @@ def dim_date:
  name="dim_date_validated",
  comment="dim_date with hard-fail expectations - blocks the pipeline on violation",
 )
-def dim_date_validated:
+def dim_date_validated():
  return dlt.read("dim_date")

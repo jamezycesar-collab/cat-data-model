@@ -26,7 +26,7 @@ SILVER_DB = spark.conf.get("silver_database", "silver")
  name="v_party_cdc",
  comment="Curated Silver view producing SCD2-ready CDC stream for dim_party",
 )
-def v_party_cdc:
+def v_party_cdc():
  hub = spark.table(f"{SILVER_DB}.hub_party")
  pit = spark.table(f"{SILVER_DB}.pit_party")
  sd = spark.table(f"{SILVER_DB}.sat_party_details")
@@ -81,7 +81,7 @@ def v_party_cdc:
 ),
  256,
 ),
-).withColumn("record_source", F.lit(f"{SILVER_DB}.hub_party")).withColumn("load_date", F.current_timestamp)
+).withColumn("record_source", F.lit(f"{SILVER_DB}.hub_party")).withColumn("load_date", F.current_timestamp())
 )
 
 # ---------------------------------------------------------------------------
@@ -108,7 +108,7 @@ dlt.create_streaming_table(
  }
 )
 @dlt.view(name="v_party_cdc_validated", comment="Hard-fail DQ gate upstream of apply_changes")
-def v_party_cdc_validated:
+def v_party_cdc_validated():
  return dlt.read_stream("v_party_cdc")
 
 dlt.apply_changes(

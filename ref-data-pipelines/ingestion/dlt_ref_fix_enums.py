@@ -28,7 +28,7 @@ FIX_URL = "https://www.fixtrading.org/standards/fix-4-4/"
 # ===========================================================================
 def _audit(df, authority: str, subpath: str):
  return (
- df.withColumn("effective_start_date", F.current_date).withColumn("effective_end_date", F.lit("9999-12-31").cast(DateType)).withColumn("is_active", F.lit(True)).withColumn("source_authority", F.lit(authority)).withColumn("source_version", F.lit(FIX_VERSION)).withColumn("last_updated_date", F.current_date).withColumn("record_source", F.lit(f"{FIX_URL}#{subpath}")).withColumn("load_date", F.current_timestamp).withColumn("cdc_sequence", F.col("load_date").cast("long")).withColumn("cdc_operation", F.lit("UPSERT"))
+ df.withColumn("effective_start_date", F.current_date).withColumn("effective_end_date", F.lit("9999-12-31").cast(DateType)).withColumn("is_active", F.lit(True)).withColumn("source_authority", F.lit(authority)).withColumn("source_version", F.lit(FIX_VERSION)).withColumn("last_updated_date", F.current_date).withColumn("record_source", F.lit(f"{FIX_URL}#{subpath}")).withColumn("load_date", F.current_timestamp()).withColumn("cdc_sequence", F.col("load_date").cast("long")).withColumn("cdc_operation", F.lit("UPSERT"))
 )
 
 # ===========================================================================
@@ -75,7 +75,7 @@ ORDER_TYPE_SCHEMA = StructType([
 ])
 
 @dlt.view(name="v_order_type_seed")
-def v_order_type_seed:
+def v_order_type_seed():
  df = spark.createDataFrame(ORDER_TYPES, schema=ORDER_TYPE_SCHEMA)
  return (
  df.transform(lambda d: _audit(d, "FIX_PROTOCOL", "tag40")).withColumn("row_hash",
@@ -97,7 +97,7 @@ def v_order_type_seed:
  "category_enum": "category IS NULL OR category IN ('SIMPLE','CONDITIONAL','PEGGED','ALGO','DISCRETIONARY')",
 })
 @dlt.view(name="v_order_type_validated")
-def v_order_type_validated:
+def v_order_type_validated():
  return dlt.read("v_order_type_seed")
 
 dlt.create_streaming_table(
@@ -143,7 +143,7 @@ TIF_SCHEMA = StructType([
 ])
 
 @dlt.view(name="v_tif_seed")
-def v_tif_seed:
+def v_tif_seed():
  df = spark.createDataFrame(TIF_VALUES, schema=TIF_SCHEMA)
  return (
  df.transform(lambda d: _audit(d, "FIX_PROTOCOL", "tag59")).withColumn("row_hash",
@@ -161,7 +161,7 @@ def v_tif_seed:
  "fix_tag_59_numeric": "fix_tag_59_value RLIKE '^[0-9]{1,2}$'",
 })
 @dlt.view(name="v_tif_validated")
-def v_tif_validated:
+def v_tif_validated():
  return dlt.read("v_tif_seed")
 
 dlt.create_streaming_table(
@@ -202,7 +202,7 @@ HANDLING_SCHEMA = StructType([
 ])
 
 @dlt.view(name="v_handling_seed")
-def v_handling_seed:
+def v_handling_seed():
  df = spark.createDataFrame(HANDLING, schema=HANDLING_SCHEMA)
  return (
  df.transform(lambda d: _audit(d, "FIX_PROTOCOL", "tag21")).withColumn("row_hash",
@@ -222,7 +222,7 @@ def v_handling_seed:
  "category_enum": "category IN ('AUTOMATED','MANUAL','WORKED')",
 })
 @dlt.view(name="v_handling_validated")
-def v_handling_validated:
+def v_handling_validated():
  return dlt.read("v_handling_seed")
 
 dlt.create_streaming_table(

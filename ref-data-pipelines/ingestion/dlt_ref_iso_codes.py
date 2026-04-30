@@ -37,7 +37,7 @@ def _sha256_key_cols(cols) -> F.Column:
 
 def _with_audit(df, authority: str, source_path: str):
  return (
- df.withColumn("effective_end_date", F.lit("9999-12-31").cast(DateType)).withColumn("is_active", F.lit(True)).withColumn("source_authority", F.lit(authority)).withColumn("record_source", F.lit(source_path)).withColumn("load_date", F.current_timestamp).withColumn("cdc_sequence", F.col("load_date").cast("long")).withColumn("cdc_operation",
+ df.withColumn("effective_end_date", F.lit("9999-12-31").cast(DateType)).withColumn("is_active", F.lit(True)).withColumn("source_authority", F.lit(authority)).withColumn("record_source", F.lit(source_path)).withColumn("load_date", F.current_timestamp()).withColumn("cdc_sequence", F.col("load_date").cast("long")).withColumn("cdc_operation",
  F.when(F.col("status") == F.lit("DELETED"), F.lit("DELETE")).otherwise(F.lit("UPSERT")))
 )
 
@@ -45,13 +45,13 @@ def _with_audit(df, authority: str, source_path: str):
 # 1. ref_mic (ISO 10383)
 # ===========================================================================
 @dlt.view(name="v_mic_raw")
-def v_mic_raw:
+def v_mic_raw():
  return (
  spark.readStream.format("cloudFiles").option("cloudFiles.format", "csv").option("cloudFiles.schemaLocation", f"{BRONZE_ROOT}/mic/_schemas/").option("header", "true").load(f"{BRONZE_ROOT}/mic/")
 )
 
 @dlt.view(name="v_mic_curated")
-def v_mic_curated:
+def v_mic_curated():
  return (
  dlt.read_stream("v_mic_raw").select(
  F.upper(F.col("MIC")).alias("mic_code"),
@@ -82,7 +82,7 @@ def v_mic_curated:
  "effective_start_required":"effective_start_date IS NOT NULL",
 })
 @dlt.view(name="v_mic_validated")
-def v_mic_validated:
+def v_mic_validated():
  return dlt.read_stream("v_mic_curated")
 
 dlt.create_streaming_table(
@@ -115,7 +115,7 @@ dlt.apply_changes(
 # 2. ref_country (ISO 3166-1)
 # ===========================================================================
 @dlt.view(name="v_country_curated")
-def v_country_curated:
+def v_country_curated():
  raw = (
  spark.readStream.format("cloudFiles").option("cloudFiles.format", "csv").option("cloudFiles.schemaLocation", f"{BRONZE_ROOT}/country/_schemas/").option("header", "true").load(f"{BRONZE_ROOT}/country/")
 )
@@ -151,7 +151,7 @@ def v_country_curated:
  "category_enum": "category IS NULL OR category IN ('AMERICAS','EMEA','APAC','AFRICA')",
 })
 @dlt.view(name="v_country_validated")
-def v_country_validated:
+def v_country_validated():
  return dlt.read_stream("v_country_curated")
 
 dlt.create_streaming_table(
@@ -175,7 +175,7 @@ dlt.apply_changes(
 # 3. ref_currency (ISO 4217)
 # ===========================================================================
 @dlt.view(name="v_currency_curated")
-def v_currency_curated:
+def v_currency_curated():
  raw = (
  spark.readStream.format("cloudFiles").option("cloudFiles.format", "xml").option("rowTag", "CcyNtry").option("cloudFiles.schemaLocation", f"{BRONZE_ROOT}/currency/_schemas/").load(f"{BRONZE_ROOT}/currency/")
 )
@@ -207,7 +207,7 @@ def v_currency_curated:
  "category_enum": "category IS NULL OR category IN ('FIAT','CRYPTO','PRECIOUS_METAL','FUND','OTHER')",
 })
 @dlt.view(name="v_currency_validated")
-def v_currency_validated:
+def v_currency_validated():
  return dlt.read_stream("v_currency_curated")
 
 dlt.create_streaming_table(
@@ -231,7 +231,7 @@ dlt.apply_changes(
 # 4. ref_cfi_category (ISO 10962)
 # ===========================================================================
 @dlt.view(name="v_cfi_curated")
-def v_cfi_curated:
+def v_cfi_curated():
  raw = (
  spark.readStream.format("cloudFiles").option("cloudFiles.format", "csv").option("cloudFiles.schemaLocation", f"{BRONZE_ROOT}/cfi/_schemas/").option("header", "true").load(f"{BRONZE_ROOT}/cfi/")
 )
@@ -261,7 +261,7 @@ def v_cfi_curated:
  "category_prefix_valid": "category IS NULL OR category IN ('E','D','R','O','F','S','H','I','J','K','L','M','T')",
 })
 @dlt.view(name="v_cfi_validated")
-def v_cfi_validated:
+def v_cfi_validated():
  return dlt.read_stream("v_cfi_curated")
 
 dlt.create_streaming_table(
@@ -285,7 +285,7 @@ dlt.apply_changes(
 # 5. ref_entity_legal_form (ISO 20275 / GLEIF)
 # ===========================================================================
 @dlt.view(name="v_elf_curated")
-def v_elf_curated:
+def v_elf_curated():
  raw = (
  spark.readStream.format("cloudFiles").option("cloudFiles.format", "csv").option("cloudFiles.schemaLocation", f"{BRONZE_ROOT}/elf/_schemas/").option("header", "true").load(f"{BRONZE_ROOT}/elf/")
 )
@@ -314,7 +314,7 @@ def v_elf_curated:
  "country_code_iso3166": "country_code IS NULL OR country_code RLIKE '^[A-Z]{2}$'",
 })
 @dlt.view(name="v_elf_validated")
-def v_elf_validated:
+def v_elf_validated():
  return dlt.read_stream("v_elf_curated")
 
 dlt.create_streaming_table(

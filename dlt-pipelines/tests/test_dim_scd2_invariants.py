@@ -31,9 +31,9 @@ DIMS = [
 ]
 
 @pytest.fixture(scope="module")
-def spark -> SparkSession:
+def spark() -> SparkSession:
  return (
- SparkSession.builder.appName("ws8-dim-scd2-invariants").getOrCreate
+ SparkSession.builder.appName("ws8-dim-scd2-invariants").getOrCreate()
 )
 
 # ---------------------------------------------------------------------------

@@ -20,7 +20,7 @@ from pyspark.sql import functions as F
 SILVER_DB = spark.conf.get("silver_database", "silver")
 
 @dlt.view(name="v_trader_cdc")
-def v_trader_cdc:
+def v_trader_cdc():
  hub = spark.table(f"{SILVER_DB}.hub_trader")
  pit = spark.table(f"{SILVER_DB}.pit_trader")
  sd = spark.table(f"{SILVER_DB}.sat_trader_details")
@@ -50,7 +50,7 @@ def v_trader_cdc:
 ),
  256,
 ),
-).withColumn("record_source", F.lit(f"{SILVER_DB}.hub_trader")).withColumn("load_date", F.current_timestamp)
+).withColumn("record_source", F.lit(f"{SILVER_DB}.hub_trader")).withColumn("load_date", F.current_timestamp())
 )
 
 dlt.create_streaming_table(
@@ -76,7 +76,7 @@ dlt.create_streaming_table(
  }
 )
 @dlt.view(name="v_trader_cdc_validated")
-def v_trader_cdc_validated:
+def v_trader_cdc_validated():
  return dlt.read_stream("v_trader_cdc")
 
 dlt.apply_changes(

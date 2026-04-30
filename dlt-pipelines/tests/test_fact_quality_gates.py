@@ -34,9 +34,9 @@ SNAPSHOT_GRAIN_FACTS = [
 ALL_FACTS = EVENT_GRAIN_FACTS + SNAPSHOT_GRAIN_FACTS
 
 @pytest.fixture(scope="module")
-def spark -> SparkSession:
+def spark() -> SparkSession:
  return (
- SparkSession.builder.appName("ws8-fact-quality-gates").getOrCreate
+ SparkSession.builder.appName("ws8-fact-quality-gates").getOrCreate()
 )
 
 # ---------------------------------------------------------------------------
