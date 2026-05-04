@@ -2,7 +2,34 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] - Tier 9: Diagram regeneration + CAIS state machines
+## [Unreleased] - Tier 9.3: Close four CAIS DDL gaps + add missing Hive Gold
+
+### Added
+
+- **`fact_cais_outstanding_rejection`** Gold table across all four dialects. Tracks Outstanding Rejection notifications from CAT per CAIS spec Section 6.5 with fields for `error_roe_id`, `rejection_code`, `severity`, `repair_due_dts`, and `resolved_dts`. This is what Flow 8 (Repair of CAT-identified error) in `cais_state_machines.md` writes against.
+- **`vw_cais_overdue_inconsistencies`** view across all four dialects. Filters `fact_cais_inconsistency` to unresolved rows, computes `days_since_detected`, and flags rows past the 5-business-day repair deadline. This is what Flow 9 needs for surveillance.
+- **`last_refresh_date`** column on `sat_cais_fdid_state` across all four dialects. Periodic refresh tracking per Section 3.8; set by Flow 6 (REFRESH).
+- **`correcting_customer_record_id`** column on `sat_cais_customer_state` across all four dialects. TID replacement linkage per Section 3.2; populated by Flow 10.
+- **`ddl/cais/06_cais_gold_hive.sql`** - the missing CAIS Gold-layer DDL for Hive. Previously the Hive variant only had Silver; the other three dialects had both. Now all four dialects have full Silver + Gold parity.
+
+### Changed
+
+- `guardrails/validate_field_specifications.py` known-tables list extended to include `fact_cais_outstanding_rejection`.
+
+### Why
+
+Tier 9.2 (CAIS state-machine docs) surfaced four DDL gaps that prevented the documented operational flows from being implementable. Tier 9.3 closes all four. With this push, every flow in `cais_state_machines.md` writes against tables and columns that exist.
+
+### Coverage delta
+
+| Dialect | CAIS Silver | CAIS Gold |
+|---------|------------|-----------|
+| Delta Lake | full | full |
+| Apache Hive | full | full (was Silver-only) |
+| Fabric Lakehouse | full | full |
+| Fabric Warehouse | full | full |
+
+
 
 ### Added
 

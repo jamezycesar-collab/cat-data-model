@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS silver.sat_cais_fdid_state (
     prior_cat_reporter_crd      BIGINT,
     prior_cat_reporter_fdid     STRING,
     correspondent_crd           BIGINT,
+    last_refresh_date           DATE,                   -- Periodic refresh per Section 3.8
     record_source               STRING
 )
 STORED AS PARQUET;
@@ -121,6 +122,7 @@ CREATE TABLE IF NOT EXISTS silver.sat_cais_customer_state (
     legal_entity_type           STRING,
     nationality_code            STRING,
     is_authorized_trader        BOOLEAN,
+    correcting_customer_record_id STRING COMMENT 'TID replacement linkage per CAIS Section 3.2',
     record_source               STRING
 )
 STORED AS PARQUET;

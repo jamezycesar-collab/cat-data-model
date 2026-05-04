@@ -148,6 +148,7 @@ CREATE TABLE IF NOT EXISTS silver.sat_cais_fdid_state (
  prior_cat_reporter_crd BIGINT,
  prior_cat_reporter_fdid STRING,
  correspondent_crd BIGINT,
+ last_refresh_date DATE,             -- Periodic refresh tracking per Section 3.8
  record_source STRING NOT NULL,
  CONSTRAINT pk_sat_cais_fdid PRIMARY KEY (cais_fdid_hk, load_dts),
  CONSTRAINT fk_sat_cais_fdid FOREIGN KEY (cais_fdid_hk)
@@ -174,6 +175,8 @@ CREATE TABLE IF NOT EXISTS silver.sat_cais_customer_state (
  -- Common
  nationality_code STRING,
  is_authorized_trader BOOLEAN,
+ -- TID replacement linkage (Section 3.2)
+ correcting_customer_record_id STRING,
  record_source STRING NOT NULL,
  CONSTRAINT pk_sat_cais_customer PRIMARY KEY (cais_customer_hk, load_dts),
  CONSTRAINT fk_sat_cais_customer FOREIGN KEY (cais_customer_hk)
