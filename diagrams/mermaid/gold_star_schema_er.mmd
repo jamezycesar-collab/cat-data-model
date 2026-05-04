@@ -1,5 +1,6 @@
 %% gold_star_schema_er.mmd - Gold layer star schema for FINRA CAT submissions + BI
-%% 4 facts (event-grain) x 8 conformed dimensions (SCD2) + 2 operational tables
+%% Post-v4.1.0r15: 12 fact tables across 5 event families
+%% Sources: CAT IM Tech Specs v4.1.0r15 + CAIS Tech Specs v2.2.0r4
 
 classDiagram
  direction TB
@@ -13,13 +14,33 @@ classDiagram
  class dim_event_type
  class dim_desk
  class dim_trader
+ class dim_multileg_strategy
+ class dim_cais_fdid_type
+ class dim_cais_account_type
  }
 
- namespace Facts {
- class fact_cat_order_events
- class fact_cat_allocations
- class fact_cat_quotes
- class fact_cat_customer_records
+ namespace Facts_Equity {
+ class fact_order_events
+ class fact_execution_events
+ class fact_allocations
+ }
+
+ namespace Facts_SimpleOption {
+ class fact_option_order_events
+ class fact_option_executions
+ class fact_option_allocations
+ }
+
+ namespace Facts_MultiLeg {
+ class fact_multileg_option_events
+ class fact_multileg_option_legs
+ }
+
+ namespace Facts_CAIS {
+ class fact_cais_fdid
+ class fact_cais_customer
+ class fact_cais_submission
+ class fact_cais_inconsistency
  }
 
  namespace Operational {

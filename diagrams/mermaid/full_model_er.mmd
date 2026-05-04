@@ -1,6 +1,12 @@
-%% full_model_er.mmd - Full Enterprise Model (all 83 entities, clustered)
+%% full_model_er.mmd - Full Enterprise Model (post-v4.1.0r15)
 %% Rendering: classDiagram with UML cluster namespaces per subject area
 %% Purpose: one-page overview - details live in subject-area ERs
+%% Source: aligned to FINRA CAT IM Tech Specs v4.1.0r15 + CAIS v2.2.0r4
+%%
+%% Coverage spans 12 subject areas including the post-remediation modules:
+%%   * MultiLegOption (Section 5.2 of CAT IM)
+%%   * SimpleOption (Section 5.1 of CAT IM)
+%%   * CAIS (FINRA CAT CAIS Tech Specs v2.2.0r4)
 
 classDiagram
  direction TB
@@ -81,6 +87,41 @@ classDiagram
  class position_break
  }
 
+ namespace SimpleOption {
+ class hub_option_order
+ class hub_option_instrument
+ class link_option_event
+ class link_option_child_order
+ class fact_option_order_events
+ class fact_option_executions
+ class fact_option_allocations
+ }
+
+ namespace MultiLegOption {
+ class hub_multileg_order
+ class hub_multileg_leg
+ class link_multileg_order_leg
+ class link_multileg_event
+ class link_multileg_quote
+ class link_multileg_child_order
+ class fact_multileg_option_events
+ class fact_multileg_option_legs
+ class dim_multileg_strategy
+ }
+
+ namespace CAIS {
+ class hub_cais_fdid
+ class hub_cais_customer
+ class hub_cais_large_trader
+ class link_cais_fdid_customer
+ class link_cais_fdid_large_trader
+ class link_cais_submission
+ class fact_cais_fdid
+ class fact_cais_customer
+ class fact_cais_submission
+ class fact_cais_inconsistency
+ }
+
  namespace Operations {
  class error_correction
  class clock_sync_audit
@@ -149,3 +190,29 @@ classDiagram
 
  audit_trail_event..> party : references
  error_correction..> reporting_submission : retargets
+
+ %% Simple option module (CAT IM Section 5.1)
+ hub_option_order "1" --> "*" link_option_event : produces
+ hub_option_instrument "1" --> "*" link_option_event : underlies
+ hub_option_order "1" --> "*" link_option_child_order : sliced_into
+ link_option_event "*" --> "1" fact_option_order_events : routes_to
+ link_option_event "*" --> "1" fact_option_executions : MOOT_MOOF_routes
+ link_option_event "*" --> "1" fact_option_allocations : MOPA_MOAA_routes
+
+ %% Multi-leg option module (CAT IM Section 5.2)
+ hub_multileg_order "1" --> "*" hub_multileg_leg : has_legs
+ hub_multileg_order "1" --> "*" link_multileg_event : produces
+ hub_multileg_order "1" --> "*" link_multileg_quote : quotes
+ hub_multileg_order "1" --> "*" link_multileg_child_order : sliced_into
+ link_multileg_event "*" --> "1" fact_multileg_option_events : header
+ link_multileg_order_leg "*" --> "1" fact_multileg_option_legs : per_leg
+
+ %% CAIS module (CAIS Tech Specs v2.2.0r4)
+ hub_cais_fdid "1" --> "*" link_cais_fdid_customer : has_customer
+ hub_cais_customer "1" --> "*" link_cais_fdid_customer : associated_with
+ hub_cais_fdid "1" --> "*" link_cais_fdid_large_trader : tagged_with
+ hub_cais_large_trader "1" --> "*" link_cais_fdid_large_trader : associated_with
+ link_cais_submission "*" --> "1" fact_cais_submission : registered_in
+ hub_cais_fdid..> fact_cais_fdid : snapshots_to
+ hub_cais_customer..> fact_cais_customer : snapshots_to
+ fact_cais_submission "1" --> "*" fact_cais_inconsistency : may_produce
