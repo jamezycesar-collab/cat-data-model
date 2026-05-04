@@ -2,7 +2,23 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] - Tier 4: field-mapping cleanup
+## [Unreleased] - Tier 5: Multi-leg Hive Gold + order-event field reconciliation
+
+### Added
+
+- `ddl/multileg/06_multileg_gold_hive.sql` - Hive variant of `fact_multileg_option_events`, `fact_multileg_option_legs`, `dim_multileg_strategy`, and `vw_multileg_option_lifecycle`. Multi-leg now spans all four dialects (Delta + Hive + Fabric Lakehouse + Fabric Warehouse).
+- 55 newly verified order-event field mappings sourced from CAT IM spec Sections 4.1, 4.3, 4.11.1, and 4.13. Each row cites the specific table-row in the spec where the field is defined.
+
+### Changed
+
+- `ddl/gold/06_cat_field_mapping.csv` grew from 27 verified rows to **82 verified rows**, covering MENO (47 fields), MEOR (28 fields), MEOT (35 fields), MEPA (26 fields), MEAA (28 fields), and the cross-event header fields (`actionType`, `errorROEID`, `firmROEID`, `type`, `CATReporterIMID`, `eventTimestamp`, `manualFlag`, `electronicDupFlag`, `electronicTimestamp`).
+- `ddl/gold/06b_cat_field_mapping_unverified_candidates.csv` shrank from 35 rows to 3 rows. The 32 promoted entries are now in the verified file; the 3 remaining are quote-event mappings whose submission-file-type assignment needs review in a separate quote-event pass.
+
+### Why
+
+Tier 4 split the fabrication-laden field mapping into verified and unverified buckets. Tier 5 closes the gap by walking the spec field-spec tables (Tables 16, 19, 51, 52) and promoting every real field to the verified file with a citation to its spec section.
+
+
 
 ### Changed
 
