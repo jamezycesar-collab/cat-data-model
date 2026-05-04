@@ -16,17 +16,19 @@ fact_order_events,manual_order_id,manualOrderID,OrderEvents,"MENO,MEOR",STRING,N
 fact_order_events,dept_type,deptType,OrderEvents,"MENO,MEOM",STRING,Y,16,Section 4.1 row 15: Category of internal department unit or desk originating or receiving the order,VERIFIED
 fact_order_events,solicitation_flag,solicitationFlag,OrderEvents,MENO,BOOLEAN,Y,1,Section 4.1 row 16: True if the order was originated in response to an RFQ or other solicitation,VERIFIED
 fact_order_events,rfq_id,RFQID,OrderEvents,MENO,STRING,N,64,Section 4.1 row 17: For New Order events representing a response to an RFQ,VERIFIED
-fact_order_events,side,side,OrderEvents,"MENO,MEOR,MEMR,MEOM,MEPA,MEAA,MEOE",STRING,Y,8,Section 4.1 row 18: Side of the order,VERIFIED
-fact_order_events,price,price,OrderEvents,"MENO,MEOR,MEMR,MEOM,MEOT,MEPA,MEAA",DECIMAL,N,18,Section 4.1 row 19: Limit or trade price,VERIFIED
-fact_order_events,quantity,quantity,OrderEvents,"MENO,MEOR,MEMR,MEOM,MEOT,MEPA,MEAA",DECIMAL,Y,15,Section 4.1 row 20: Order or trade quantity,VERIFIED
+fact_order_events,side,side,OrderEvents,"MENO,MEOR,MEMR,MEOM,MEOE",STRING,Y,8,Section 4.1 row 18: Side of the order,VERIFIED
+fact_order_events,price,price,OrderEvents,"MENO,MEOR,MEMR,MEOM,MEOT",DECIMAL,N,18,Section 4.1 row 19: Limit or trade price,VERIFIED
+fact_order_events,quantity,quantity,OrderEvents,"MENO,MEOR,MEMR,MEOM,MEOT",DECIMAL,Y,15,Section 4.1 row 20: Order or trade quantity,VERIFIED
+fact_order_events,leaves_quantity,leavesQty,OrderEvents,"MEOM,MEOT",DECIMAL,N,15,Section 4.1 / 4.7 / 4.11.1: Open remaining quantity on the order,VERIFIED
+fact_order_events,parent_order_id,parentOrderID,OrderEvents,"MENO,MEOM",STRING,N,64,Section 4.1: Parent order link for child-order linkage,VERIFIED
 fact_order_events,min_qty,minQty,OrderEvents,"MENO,MEOR,MEMR,MEOM",DECIMAL,N,15,Section 4.1 row 21: Minimum quantity of an order to be executed,VERIFIED
 fact_order_events,order_type,orderType,OrderEvents,"MENO,MEOR,MEMR,MEOM",STRING,Y,12,Section 4.1 row 22: Type of order being submitted,VERIFIED
 fact_order_events,time_in_force,timeInForce,OrderEvents,"MENO,MEOR,MEMR,MEOM,MEOE",STRING,Y,3,Section 4.1 row 23: Time in Force,VERIFIED
 fact_order_events,trading_session,tradingSession,OrderEvents,"MENO,MEOR,MEMR,MEOM,MEOE",STRING,Y,12,Section 4.1 row 24: Trading session(s) during which an order is eligible to trade,VERIFIED
 fact_order_events,handling_instructions,handlingInstructions,OrderEvents,"MENO,MEOR,MEMR,MEOM",STRING,N,40,Section 4.1 row 25 / Section 4.3 row 28,VERIFIED
 fact_order_events,cust_dsp_intr_flag,custDspIntrFlag,OrderEvents,MENO,BOOLEAN,N,1,Section 4.1 row 26: Customer/client display instruction flag,VERIFIED
-fact_order_events,firm_designated_id,firmDesignatedID,OrderEvents,"MENO,MEPA,MEAA",STRING,N,40,Section 2.4.2 / Appendix G: FDID of the account,VERIFIED
-fact_order_events,account_holder_type,accountHolderType,OrderEvents,"MENO,MEOM,MEPA,MEAA",STRING,N,2,Section 4.1 row 28: Beneficial owner type,VERIFIED
+fact_order_events,firm_designated_id,firmDesignatedID,OrderEvents,MENO,STRING,N,40,Section 2.4.2 / Appendix G: FDID of the account,VERIFIED
+fact_order_events,account_holder_type,accountHolderType,OrderEvents,"MENO,MEOM",STRING,N,2,Section 4.1 row 28: Beneficial owner type,VERIFIED
 fact_order_events,affiliate_flag,affiliateFlag,OrderEvents,"MENO,MEOR,MEMR",BOOLEAN,N,1,Section 4.1 row 29 / 4.3 row 26: Routing party is an affiliate of the IM,VERIFIED
 fact_order_events,info_barrier_id,infoBarrierID,OrderEvents,"MENO,MEOR,MEOT",STRING,N,20,Section 4.1 row 30: Identifier of the information barrier (FINRA Rule 5320.02),VERIFIED
 fact_order_events,negotiated_trade_flag,negotiatedTradeFlag,OrderEvents,MENO,BOOLEAN,Y,1,Section 4.1 row 32: True if the trade is a result of a negotiation,VERIFIED
@@ -58,9 +60,16 @@ fact_order_events,quote_key_date,quoteKeyDate,OrderEvents,MEOR,DATETIME,N,30,Sec
 fact_order_events,quote_id,quoteID,OrderEvents,MEOR,STRING,N,64,Section 4.3 row 37: Required for Order Route events reported in response to a quote,VERIFIED
 fact_execution_events,trade_key_date,tradeKeyDate,OrderEvents,"MEOT,MEOTS",DATETIME,Y,30,Section 4.11.1 row 6: Date and time the tradeID was assigned,VERIFIED
 fact_execution_events,trade_id,tradeID,OrderEvents,"MEOT,MEOTS",STRING,Y,64,Section 4.11.1 row 7: Unique ID for this execution assigned by the executing IM,VERIFIED
-fact_execution_events,cancel_flag,cancelFlag,OrderEvents,"MEOT,MEOTS,MEPA,MEAA",BOOLEAN,N,1,Section 4.11.1 row 12: True if the execution or allocation was cancelled,VERIFIED
-fact_execution_events,cancel_timestamp,cancelTimestamp,OrderEvents,"MEOT,MEOTS,MEPA,MEAA",DATETIME,N,30,Section 4.11.1 row 13: Time at which the cancellation occurred,VERIFIED
-fact_execution_events,capacity,capacity,OrderEvents,"MEOT,MEOTS,MEPA",STRING,Y,12,Section 4.11.1 row 18: Capacity in which the IM acted (PRINCIPAL/AGENT/etc),VERIFIED
+fact_execution_events,cancel_flag,cancelFlag,OrderEvents,"MEOT,MEOTS",BOOLEAN,N,1,Section 4.11.1 row 12: True if the execution was cancelled,VERIFIED
+fact_execution_events,cancel_timestamp,cancelTimestamp,OrderEvents,"MEOT,MEOTS",DATETIME,N,30,Section 4.11.1 row 13: Time at which the cancellation occurred,VERIFIED
+fact_execution_events,capacity,capacity,OrderEvents,"MEOT,MEOTS",STRING,Y,12,Section 4.11.1 row 18: Capacity in which the IM acted (PRINCIPAL/AGENT/etc),VERIFIED
+fact_allocations,cancel_flag,cancelFlag,Allocations,"MEPA,MEAA",BOOLEAN,N,1,Section 4.13.1 row 10: True if the allocation was cancelled,VERIFIED
+fact_allocations,cancel_timestamp,cancelTimestamp,Allocations,"MEPA,MEAA",DATETIME,N,30,Section 4.13.1 row 11: Time at which the allocation cancellation occurred,VERIFIED
+fact_allocations,side,side,Allocations,"MEPA,MEAA",STRING,Y,8,Section 4.13.1 row 14: Side of customer/client receiving the allocation,VERIFIED
+fact_allocations,price,price,Allocations,"MEPA,MEAA",DECIMAL,N,18,Section 4.13.1 row 13: Price of the allocated shares,VERIFIED
+fact_allocations,quantity,quantity,Allocations,"MEPA,MEAA",DECIMAL,Y,15,Section 4.13.1 row 12: Quantity of the allocated shares,VERIFIED
+fact_allocations,firm_designated_id,firmDesignatedID,Allocations,"MEPA,MEAA",STRING,Y,40,Section 4.13.1 row 15: FDID of the account receiving the allocation,VERIFIED
+fact_allocations,account_holder_type,accountHolderType,Allocations,"MEPA,MEAA",STRING,N,2,Section 4.13.1 row 26 / 4.13.2 row 28: Beneficial owner type,VERIFIED
 fact_execution_events,tape_trade_id,tapeTradeID,OrderEvents,"MEOT,MEOTS",STRING,N,40,Section 4.11.1 row 19: Unique tape identifier reported,VERIFIED
 fact_execution_events,market_center_id,marketCenterID,OrderEvents,"MEOT,MEOTS",STRING,Y,4,Section 4.11.1 row 20: National securities exchange or transaction venue,VERIFIED
 fact_execution_events,side_details_ind,sideDetailsInd,OrderEvents,"MEOT,MEOTS",STRING,N,4,Section 4.11.1 row 21: One-sided or two-sided trade indicator,VERIFIED
