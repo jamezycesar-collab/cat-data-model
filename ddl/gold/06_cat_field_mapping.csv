@@ -119,5 +119,81 @@ fact_quotes,mp_status_code,mpStatusCode,OrderEvents,MEQS,STRING,Y,4,Section 4.10
 fact_quotes,dup_roid_cond,dupROIDCond,OrderEvents,"MERQ,MEQR",BOOLEAN,N,1,Section 4.10.3 row 20 / 4.10.5 row 25: True when the quote event maintains the prior quote's ROE ID,VERIFIED
 fact_quotes,rfq_id,RFQID,OrderEvents,"MENQ,MERQ,MEQR,MEQC,MEQM",STRING,N,64,Section 4.10.1 row 32: For quote events representing a response to an RFQ,VERIFIED
 fact_quotes,originating_imid,originatingIMID,OrderEvents,"MEQC,MEQS",STRING,N,8,Section 4.10.6 row 9: Used in mergers/acquisitions where prior firm quotes are still open,VERIFIED
+fact_option_order_events,option_id,optionID,OrderEvents,"MONO,MONOS,MOOR,MOMR,MOCR,MOORS,MOMRS,MOCRS,MOOA,MOIR,MOIM,MOIC,MOIMR,MOICR,MOCO,MOCOM,MOCOC,MOOM,MOOMS,MOOMR,MOOJ,MOOC,MOOCR,MOOE",STRING,Y,22,Section 5.1.1 row 8: 21-character OSI Symbol of the option (FLEX uses % prefix),VERIFIED
+fact_option_order_events,order_key_date,orderKeyDate,OrderEvents,"MONO,MONOS,MOOR,MOMR,MOCR,MOORS,MOMRS,MOCRS,MOOA,MOIR,MOIM,MOIC,MOIMR,MOICR,MOCO,MOCOM,MOCOC,MOOM,MOOMS,MOOMR,MOOJ,MOOC,MOOCR,MOOE",DATETIME,Y,30,Section 5.1.1 row 6: Date and time the orderID was assigned,VERIFIED
+fact_option_order_events,cat_order_id,orderID,OrderEvents,"MONO,MONOS,MOOR,MOMR,MOCR,MOORS,MOMRS,MOCRS,MOOA,MOIR,MOIM,MOIC,MOIMR,MOICR,MOCO,MOCOM,MOCOC,MOOM,MOOMS,MOOMR,MOOJ,MOOC,MOOCR,MOOE",STRING,Y,64,Section 5.1.1 row 7: Internal order ID assigned by the IM,VERIFIED
+fact_option_order_events,event_timestamp,eventTimestamp,OrderEvents,"MONO,MOOR,MOMR,MOCR,MOOA,MOIR,MOIM,MOIC,MOIMR,MOICR,MOCO,MOCOM,MOCOC,MOOM,MOOMS,MOOMR,MOOJ,MOOC,MOOCR,MOOE",DATETIME,Y,30,Section 5.1.1 row 9: Date/time of the event,VERIFIED
+fact_option_order_events,manual_flag,manualFlag,OrderEvents,"MONO,MOOR,MOMR,MOCR,MOOA,MOIR,MOOM,MOOJ,MOOC,MOOT",BOOLEAN,Y,1,Section 5.1.1 row 10: True if the order was handled manually,VERIFIED
+fact_option_order_events,manual_order_key_date,manualOrderKeyDate,OrderEvents,"MONO,MOOR,MOOA,MOOM",DATETIME,N,30,Section 5.1.1 row 11: orderKeyDate of the related manual order,VERIFIED
+fact_option_order_events,manual_order_id,manualOrderID,OrderEvents,"MONO,MOOR,MOOA,MOOM",STRING,N,64,Section 5.1.1 row 12: orderID of the related manual order,VERIFIED
+fact_option_order_events,electronic_dup_flag,electronicDupFlag,OrderEvents,"MONO,MOOR,MOMR,MOCR,MOOA,MOIR,MOOM,MOOJ,MOOC",BOOLEAN,Y,1,Section 5.1.1 row 13: True if this is a duplicative electronic message of a manual event,VERIFIED
+fact_option_order_events,electronic_timestamp,electronicTimestamp,OrderEvents,"MONO,MOOR,MOMR,MOCR,MOOA,MOIR,MOOM,MOOJ,MOOC,MOOT,MOOF,MOFA,MOPA,MOAA",DATETIME,N,30,Section 5.1.1 row 14: Time at which the manual event was systematized,VERIFIED
+fact_option_order_events,dept_type,deptType,OrderEvents,"MONO,MOOA",STRING,Y,16,Section 5.1.1 row 15 / 5.1.4 row 19: Internal department / unit / desk,VERIFIED
+fact_option_order_events,side,side,OrderEvents,"MONO,MOOR,MOMR,MOOA,MOOM,MOCO,MOOE,MOPA,MOAA",STRING,Y,8,Section 5.1.1 row 16: Side of the order,VERIFIED
+fact_option_order_events,price,price,OrderEvents,"MONO,MOOR,MOMR,MOOA,MOOM,MOOJ,MOCO,MOOT,MOOF,MOFA,MOPA,MOAA,MOOE",DECIMAL,N,18,Section 5.1.1 row 17: Limit price of the order per contract,VERIFIED
+fact_option_order_events,quantity,quantity,OrderEvents,"MONO,MOOR,MOMR,MOOA,MOOM,MOOJ,MOCO,MOOT,MOOF,MOFA,MOPA,MOAA,MOOE",DECIMAL,Y,15,Section 5.1.1 row 18: Quantity of contracts,VERIFIED
+fact_option_order_events,min_qty,minQty,OrderEvents,"MONO,MOOR,MOOA,MOOM,MOOJ,MOCO,MOOE",DECIMAL,N,15,Section 5.1.1 row 19: Minimum quantity to be executed,VERIFIED
+fact_option_order_events,order_type,orderType,OrderEvents,"MONO,MOOR,MOOA,MOOM,MOCO,MOOE",STRING,Y,12,Section 5.1.1 row 20: Type of order being submitted,VERIFIED
+fact_option_order_events,time_in_force,timeInForce,OrderEvents,"MONO,MOOR,MOOA,MOOM,MOOJ,MOCO,MOOE",STRING,Y,3,Section 5.1.1 row 21: Time in Force,VERIFIED
+fact_option_order_events,trading_session,tradingSession,OrderEvents,"MONO,MOOR,MOOA,MOOM,MOCO,MOOE",STRING,Y,12,Section 5.1.1 row 22: Trading session(s),VERIFIED
+fact_option_order_events,handling_instructions,handlingInstructions,OrderEvents,"MONO,MOOR,MOOA,MOOM,MOCO",STRING,N,40,Section 5.1.1 row 23: Order handling instructions,VERIFIED
+fact_option_order_events,firm_designated_id,firmDesignatedID,OrderEvents,MONO,STRING,N,40,Section 5.1.1 row 24: FDID of the account,VERIFIED
+fact_option_order_events,account_holder_type,accountHolderType,OrderEvents,MONO,STRING,N,2,Section 5.1.1 row 25: Beneficial owner type,VERIFIED
+fact_option_order_events,affiliate_flag,affiliateFlag,OrderEvents,"MONO,MOOR,MOMR,MOOA",BOOLEAN,N,1,Section 5.1.1 row 26: Routing party is an affiliate of the IM,VERIFIED
+fact_option_order_events,solicitation_flag,solicitationFlag,OrderEvents,"MONO,MOOA",BOOLEAN,Y,1,Section 5.1.1 row 28: True if the order was originated in response to an RFQ or other solicitation,VERIFIED
+fact_option_order_events,open_close_indicator,openCloseIndicator,OrderEvents,"MONO,MOOR,MOOA,MOOM,MOCO,MOOE",STRING,N,4,Section 5.1.1 row 29: Whether the buy/sell will open or close a position,VERIFIED
+fact_option_order_events,representative_ind,representativeInd,OrderEvents,MONO,STRING,N,4,Section 5.1.1 row 30: Indicates if the order is a combined order,VERIFIED
+fact_option_order_events,rfq_id,RFQID,OrderEvents,"MONO,MOOR,MOOA,MOOM,MOOC",STRING,N,64,Section 5.1.1 row 32: For quote events responding to an RFQ,VERIFIED
+fact_option_order_events,net_price,netPrice,OrderEvents,"MONO,MOOR,MOOA,MOOM,MOOJ,MOCO,MOOE",DECIMAL,N,18,Section 5.1.1 row 33: Net price when tied to stock or fixed,VERIFIED
+fact_option_order_events,exch_origin_code,exchOriginCode,OrderEvents,MOOR,STRING,N,4,Section 5.1.3 row 28: Code signifying the origin of the account as sent to the exchange,VERIFIED
+fact_option_order_events,sender_imid,senderIMID,OrderEvents,"MOOR,MOMR,MOCR,MOOA,MOOM",STRING,N,8,Section 5.1.3 row 14: IMID of the IM sending the route,VERIFIED
+fact_option_order_events,destination,destination,OrderEvents,"MOOR,MOMR,MOCR",STRING,Y,8,Section 5.1.3 row 15: Destination IMID,VERIFIED
+fact_option_order_events,destination_type,destinationType,OrderEvents,"MOOR,MOMR,MOCR",STRING,Y,4,Section 5.1.3 row 16: Whether destination is exchange / affiliated firm / other,VERIFIED
+fact_option_order_events,routed_order_id,routedOrderID,OrderEvents,"MOOR,MOOA,MOOM",STRING,N,64,Section 5.1.3 row 17 / 5.1.4 row 18: ID assigned to the routed order,VERIFIED
+fact_option_order_events,session,session,OrderEvents,"MOOR,MOMR",STRING,N,40,Section 5.1.3 row 18: Session ID used when routing the order,VERIFIED
+fact_option_order_events,route_rejected_flag,routeRejectedFlag,OrderEvents,"MOOR,MOORS,MOMR,MOMRS,MOCR,MOCRS",BOOLEAN,N,1,Section 5.1.3 row 27: True if the routed order was not accepted by destination,VERIFIED
+fact_option_order_events,multi_leg_ind,multiLegInd,OrderEvents,"MOOR,MOCO,MOOT",BOOLEAN,N,1,Section 5.1.3 row 30: Order is related to a multi-leg order,VERIFIED
+fact_option_order_events,paired_order_id,pairedOrderID,OrderEvents,"MOOR,MOOA",STRING,N,64,Section 5.1.3 row 34 / 5.1.4 row 30: Paired order identifier,VERIFIED
+fact_option_order_events,receiver_imid,receiverIMID,OrderEvents,"MOOA,MOOM",STRING,N,8,Section 5.1.4 row 15 / 5.1.7 row 18: IMID of the IM receiving the order,VERIFIED
+fact_option_order_events,sender_type,senderType,OrderEvents,"MOOA,MOOM",STRING,Y,4,Section 5.1.4 row 17 / 5.1.7 row 20: Type of origin from which the order is routed,VERIFIED
+fact_option_order_events,originating_imid,originatingIMID,OrderEvents,"MOOR,MOOM,MOOJ,MOOC,MOOCR,MOOE,MOFA",STRING,N,8,Section 5.1.3 row 9: Used in mergers/acquisitions where prior firm orders are still open,VERIFIED
+fact_option_order_events,prior_order_key_date,priorOrderKeyDate,OrderEvents,"MOOM,MOOJ,MOOE",DATETIME,N,30,Section 5.1.7 row 9: Prior orderKeyDate when a new orderID is assigned,VERIFIED
+fact_option_order_events,prior_order_id,priorOrderID,OrderEvents,"MOOM,MOOJ,MOOE",STRING,N,64,Section 5.1.7 row 10: Prior orderID,VERIFIED
+fact_option_order_events,parent_order_key_date,parentOrderKeyDate,OrderEvents,MOCO,DATETIME,Y,30,Section 5.1.6.1 row 9: orderKeyDate of the parent event from which the Child Order was sliced,VERIFIED
+fact_option_order_events,parent_order_id,parentOrderID,OrderEvents,MOCO,STRING,Y,64,Section 5.1.6.1 row 10: orderID of the parent event,VERIFIED
+fact_option_order_events,initiator,initiator,OrderEvents,"MOOM,MOOJ,MOOC,MOOCR",STRING,Y,4,Section 5.1.7 row 22: Indicates who initiated the order modification/cancellation/adjustment,VERIFIED
+fact_option_order_events,leaves_qty,leavesQty,OrderEvents,"MOOM,MOOJ,MOOC",DECIMAL,N,15,Section 5.1.7 row 27 / 5.1.9 row 14: Number of contracts left open after the modification or cancel,VERIFIED
+fact_option_order_events,cancel_qty,cancelQty,OrderEvents,"MOOC,MOOCR",DECIMAL,N,15,Section 5.1.9 row 13: Quantity being cancelled,VERIFIED
+fact_option_order_events,request_timestamp,requestTimestamp,OrderEvents,"MOOM,MOOC",DATETIME,N,30,Section 5.1.7 row 33 / 5.1.9 row 17: Date/time the modification or cancellation was requested,VERIFIED
+fact_option_order_events,trigger_price,triggerPrice,OrderEvents,MOOE,DECIMAL,N,18,Section 5.1.16 row 22: Price at which the order became effective,VERIFIED
+fact_option_executions,trade_key_date,tradeKeyDate,OrderEvents,MOOT,DATETIME,Y,30,Section 5.1.11 row 6: Date and time the tradeID was assigned,VERIFIED
+fact_option_executions,trade_id,tradeID,OrderEvents,MOOT,STRING,Y,64,Section 5.1.11 row 7: Unique trade ID assigned by the IM,VERIFIED
+fact_option_executions,option_id,optionID,OrderEvents,MOOT,STRING,Y,22,Section 5.1.11 row 8: OSI Symbol of the option,VERIFIED
+fact_option_executions,cancel_flag,cancelFlag,OrderEvents,"MOOT,MOOF,MOFA",BOOLEAN,N,1,Section 5.1.11 row 12: True if the execution was cancelled,VERIFIED
+fact_option_executions,cancel_timestamp,cancelTimestamp,OrderEvents,"MOOT,MOOF,MOFA",DATETIME,N,30,Section 5.1.11 row 13: Time at which the cancellation occurred,VERIFIED
+fact_option_executions,capacity,capacity,OrderEvents,MOOT,STRING,Y,12,Section 5.1.11 row 16: Capacity in which the IM acted,VERIFIED
+fact_option_executions,tape_trade_id,tapeTradeID,OrderEvents,MOOT,STRING,N,40,Section 5.1.11 row 17: Unique tape identifier,VERIFIED
+fact_option_executions,side_details_ind,sideDetailsInd,OrderEvents,MOOT,STRING,Y,4,Section 5.1.11 row 18: Identifies which side the IM is on,VERIFIED
+fact_option_executions,market_center_id,marketCenterID,OrderEvents,MOOT,STRING,Y,4,Section 5.1.11 row 21: National securities exchange where the trade occurred,VERIFIED
+fact_option_executions,clearing_firm,clearingFirm,OrderEvents,MOOT,STRING,Y,16,Section 5.1.11 row 23: Clearing number of the IM's clearing firm,VERIFIED
+fact_option_executions,fill_key_date,fillKeyDate,OrderEvents,"MOOF,MOOFS,MOFA",DATETIME,Y,30,Section 5.1.13.1 row 6: Date and time the fulfillmentID was assigned,VERIFIED
+fact_option_executions,fulfillment_id,fulfillmentID,OrderEvents,"MOOF,MOOFS,MOFA",STRING,Y,64,Section 5.1.13.1 row 7: Unique fulfillment ID,VERIFIED
+fact_option_executions,fulfillment_link_type,fulfillmentLinkType,OrderEvents,"MOOF,MOFA",STRING,N,4,Section 5.1.13.1 row 14 / 5.1.14 row 15: Combined order linkage type (Appendix C),VERIFIED
+fact_option_executions,prior_fill_key_date,priorFillKeyDate,OrderEvents,MOFA,DATETIME,N,30,Section 5.1.14 row 9: Prior fillKeyDate when a new fulfillmentID is assigned,VERIFIED
+fact_option_executions,prior_fulfillment_id,priorFulfillmentID,OrderEvents,MOFA,STRING,N,64,Section 5.1.14 row 10: Prior fulfillmentID,VERIFIED
+fact_option_allocations,allocation_key_date,allocationKeyDate,Allocations,"MOPA,MOAA",DATETIME,Y,30,Section 5.1.13.1 row 6: Date and time the allocationID was assigned,VERIFIED
+fact_option_allocations,allocation_id,allocationID,Allocations,"MOPA,MOAA",STRING,Y,64,Section 5.1.13.1 row 7: Internal allocation ID,VERIFIED
+fact_option_allocations,prior_allocation_key_date,priorAllocationKeyDate,Allocations,MOAA,DATETIME,N,30,Section 5.1.13.2 row 8: Prior allocationKeyDate,VERIFIED
+fact_option_allocations,prior_allocation_id,priorAllocationID,Allocations,MOAA,STRING,N,64,Section 5.1.13.2 row 9: Prior allocationID,VERIFIED
+fact_option_allocations,option_id,optionID,Allocations,"MOPA,MOAA",STRING,Y,22,Section 5.1.13.1 row 8: OSI Symbol of the option,VERIFIED
+fact_option_allocations,occ_clearing_member_id,occClearingMemberID,Allocations,"MOPA,MOAA",STRING,N,40,Section 5.1.13.1 row 26: OCC Clearing Member ID,VERIFIED
+fact_option_allocations,trade_date,tradeDate,Allocations,"MOPA,MOAA",DATE,N,10,Section 5.1.13.1 row 18: Trade date of the allocated contracts,VERIFIED
+fact_option_allocations,settlement_date,settlementDate,Allocations,"MOPA,MOAA",DATE,N,10,Section 5.1.13.1 row 19: Settlement date,VERIFIED
+fact_option_allocations,allocation_type,allocationType,Allocations,"MOPA,MOAA",STRING,N,8,Section 5.1.13.1 row 20: Type of allocation,VERIFIED
+fact_option_allocations,correspondent_crd,correspondentCRD,Allocations,"MOPA,MOAA",STRING,N,16,Section 5.1.13.1 row 22: CRD of related Introducing Broker,VERIFIED
+fact_option_allocations,new_order_fdid,newOrderFDID,Allocations,"MOPA,MOAA",STRING,N,40,Section 5.1.13.1 row 23: FDID of related Option New Order event,VERIFIED
+fact_option_allocations,allocation_instruction_time,allocationInstructionTime,Allocations,"MOPA,MOAA",DATETIME,N,30,Section 5.1.13.1 row 24: Date/time the allocation instruction was received,VERIFIED
+fact_option_allocations,institution_flag,institutionFlag,Allocations,"MOPA,MOAA",BOOLEAN,N,1,Section 5.1.13.1 row 17: True if the account meets the institutional definition,VERIFIED
+fact_option_allocations,account_holder_type,accountHolderType,Allocations,"MOPA,MOAA",STRING,N,2,Section 5.1.13.1 row 27: Beneficial owner type,VERIFIED
 fact_cais_fdid,firm_designated_id,firmDesignatedID,CAIS,ALL,STRING,Y,40,CAIS Section 4.1: FDID of the ACCOUNT/RELATIONSHIP/ENTITYID being reported,VERIFIED
 fact_cais_customer,customer_record_id,customerRecordID,CAIS,ALL,STRING,Y,40,CAIS Section 4.1: Unique reference to a single Customer Record per submission file,VERIFIED
