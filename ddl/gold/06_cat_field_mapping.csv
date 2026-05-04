@@ -195,5 +195,64 @@ fact_option_allocations,new_order_fdid,newOrderFDID,Allocations,"MOPA,MOAA",STRI
 fact_option_allocations,allocation_instruction_time,allocationInstructionTime,Allocations,"MOPA,MOAA",DATETIME,N,30,Section 5.1.13.1 row 24: Date/time the allocation instruction was received,VERIFIED
 fact_option_allocations,institution_flag,institutionFlag,Allocations,"MOPA,MOAA",BOOLEAN,N,1,Section 5.1.13.1 row 17: True if the account meets the institutional definition,VERIFIED
 fact_option_allocations,account_holder_type,accountHolderType,Allocations,"MOPA,MOAA",STRING,N,2,Section 5.1.13.1 row 27: Beneficial owner type,VERIFIED
+fact_multileg_option_events,underlying,underlying,OrderEvents,"MLNO,MLOR,MLMR,MLCR,MLOA,MLIR,MLIM,MLIC,MLIMR,MLICR,MLCO,MLCOM,MLCOC,MLOM,MLOMR,MLOC,MLOCR,MLNQ,MLRQ,MLQS,MLQR,MLQC,MLQM,MLOS,MLOE",STRING,Y,14,Section 5.2.1 row 8: Symbol of the underlying instrument for one or more legs,VERIFIED
+fact_multileg_option_events,order_key_date,orderKeyDate,OrderEvents,"MLNO,MLOR,MLMR,MLCR,MLOA,MLIR,MLIM,MLIC,MLIMR,MLICR,MLCO,MLCOM,MLCOC,MLOM,MLOMR,MLOC,MLOCR,MLOS,MLOE",DATETIME,Y,30,Section 5.2.1 row 6: Date and time the orderID was assigned,VERIFIED
+fact_multileg_option_events,cat_order_id,orderID,OrderEvents,"MLNO,MLOR,MLMR,MLCR,MLOA,MLIR,MLIM,MLIC,MLIMR,MLICR,MLCO,MLCOM,MLCOC,MLOM,MLOMR,MLOC,MLOCR,MLOS,MLOE",STRING,Y,64,Section 5.2.1 row 7: Internal order ID assigned by the IM,VERIFIED
+fact_multileg_option_events,event_timestamp,eventTimestamp,OrderEvents,"MLNO,MLOR,MLMR,MLCR,MLOA,MLIR,MLIM,MLIC,MLIMR,MLICR,MLCO,MLCOM,MLCOC,MLOM,MLOMR,MLOC,MLOCR,MLNQ,MLRQ,MLQS,MLQR,MLQC,MLQM,MLOS,MLOE",DATETIME,Y,30,Section 5.2.1 row 9: Date/time of the event,VERIFIED
+fact_multileg_option_events,manual_flag,manualFlag,OrderEvents,"MLNO,MLOR,MLMR,MLCR,MLOA,MLIR,MLOM,MLOC",BOOLEAN,Y,1,Section 5.2.1 row 10: True if the order was handled manually,VERIFIED
+fact_multileg_option_events,manual_order_key_date,manualOrderKeyDate,OrderEvents,"MLNO,MLOR,MLOA",DATETIME,N,30,Section 5.2.1 row 11: orderKeyDate of the related manual order,VERIFIED
+fact_multileg_option_events,manual_order_id,manualOrderID,OrderEvents,"MLNO,MLOR,MLOA",STRING,N,64,Section 5.2.1 row 12: orderID of the related manual order,VERIFIED
+fact_multileg_option_events,electronic_dup_flag,electronicDupFlag,OrderEvents,"MLNO,MLOR,MLMR,MLCR,MLOA,MLIR,MLOM,MLOC",BOOLEAN,Y,1,Section 5.2.1 row 13: True if this is a duplicative electronic message of a manual event,VERIFIED
+fact_multileg_option_events,electronic_timestamp,electronicTimestamp,OrderEvents,"MLNO,MLOR,MLMR,MLCR,MLOA,MLIR,MLOM,MLOC",DATETIME,N,30,Section 5.2.1 row 14: Time at which the manual event was systematized,VERIFIED
+fact_multileg_option_events,dept_type,deptType,OrderEvents,MLNO,STRING,Y,16,Section 5.2.1 row 15: Internal department / unit / desk,VERIFIED
+fact_multileg_option_events,price,price,OrderEvents,"MLNO,MLOR,MLMR,MLOA,MLOM,MLOE",DECIMAL,N,18,Section 5.2.1 row 16: Net price of the multi-leg order at a net level,VERIFIED
+fact_multileg_option_events,quantity,quantity,OrderEvents,"MLNO,MLOR,MLMR,MLOA,MLOM,MLOC,MLOE",DECIMAL,Y,15,Section 5.2.1 row 17: Quantity of the multi-leg order in units,VERIFIED
+fact_multileg_option_events,min_qty,minQty,OrderEvents,"MLNO,MLOR,MLMR,MLOA,MLOM,MLOC",DECIMAL,N,15,Section 5.2.1 row 18: Minimum quantity of units to be executed,VERIFIED
+fact_multileg_option_events,order_type,orderType,OrderEvents,"MLNO,MLOR,MLMR,MLOA,MLOM,MLOE",STRING,Y,12,Section 5.2.1 row 19: Type of order being submitted,VERIFIED
+fact_multileg_option_events,time_in_force,timeInForce,OrderEvents,"MLNO,MLOR,MLMR,MLOA,MLOM,MLOC,MLOE",STRING,Y,3,Section 5.2.1 row 20: Time in Force,VERIFIED
+fact_multileg_option_events,trading_session,tradingSession,OrderEvents,"MLNO,MLOR,MLMR,MLOA,MLOM,MLOE",STRING,Y,12,Section 5.2.1 row 21: Trading session(s),VERIFIED
+fact_multileg_option_events,handling_instructions,handlingInstructions,OrderEvents,"MLNO,MLOR,MLMR,MLOA,MLOM",STRING,N,40,Section 5.2.1 row 22: Order handling instructions,VERIFIED
+fact_multileg_option_events,firm_designated_id,firmDesignatedID,OrderEvents,MLNO,STRING,N,40,Section 5.2.1 row 23: FDID of the account,VERIFIED
+fact_multileg_option_events,account_holder_type,accountHolderType,OrderEvents,MLNO,STRING,N,2,Section 5.2.1 row 24: Beneficial owner type,VERIFIED
+fact_multileg_option_events,affiliate_flag,affiliateFlag,OrderEvents,"MLNO,MLOR,MLMR,MLOA",BOOLEAN,N,1,Section 5.2.1 row 25: Routing party is an affiliate of the IM,VERIFIED
+fact_multileg_option_events,representative_ind,representativeInd,OrderEvents,MLNO,STRING,N,4,Section 5.2.1 row 27: Indicates if the order is a combined order,VERIFIED
+fact_multileg_option_events,solicitation_flag,solicitationFlag,OrderEvents,MLNO,BOOLEAN,Y,1,Section 5.2.1 row 28: True if the order was originated in response to an RFQ or other solicitation,VERIFIED
+fact_multileg_option_events,rfq_id,RFQID,OrderEvents,"MLNO,MLOR,MLOA",STRING,N,64,Section 5.2.1 row 29: For events responding to an RFQ,VERIFIED
+fact_multileg_option_events,number_of_legs,numberOfLegs,OrderEvents,"MLNO,MLOR,MLOA",INT,Y,3,Section 5.2.1 row 30: Number of CAT-reportable legs in the multi-leg order,VERIFIED
+fact_multileg_option_events,sender_imid,senderIMID,OrderEvents,"MLOR,MLMR,MLCR,MLOA,MLOM",STRING,N,8,Section 5.2.2 row 14: IMID of the IM sending the route,VERIFIED
+fact_multileg_option_events,destination,destination,OrderEvents,"MLOR,MLMR,MLCR",STRING,Y,8,Section 5.2.2 row 15: Destination IMID,VERIFIED
+fact_multileg_option_events,destination_type,destinationType,OrderEvents,"MLOR,MLMR,MLCR",STRING,Y,4,Section 5.2.2 row 16: Whether destination is exchange / affiliated firm / other,VERIFIED
+fact_multileg_option_events,routed_order_id,routedOrderID,OrderEvents,"MLOR,MLOA",STRING,N,64,Section 5.2.2 row 17: ID assigned to the routed order,VERIFIED
+fact_multileg_option_events,session,session,OrderEvents,"MLOR,MLMR",STRING,N,40,Section 5.2.2 row 18: Session ID used when routing,VERIFIED
+fact_multileg_option_events,route_rejected_flag,routeRejectedFlag,OrderEvents,"MLOR,MLMR,MLCR",BOOLEAN,N,1,Section 5.2.2 row 27: True if the routed order was not accepted by destination,VERIFIED
+fact_multileg_option_events,exch_origin_code,exchOriginCode,OrderEvents,MLOR,STRING,N,4,Section 5.2.2 row 28: Code signifying the origin of the account as sent to exchange,VERIFIED
+fact_multileg_option_events,paired_order_id,pairedOrderID,OrderEvents,"MLOR,MLOA",STRING,N,64,Section 5.2.2 row 34 / 5.2.3 row 30: Paired order identifier,VERIFIED
+fact_multileg_option_events,receiver_imid,receiverIMID,OrderEvents,"MLOA,MLOM",STRING,N,8,Section 5.2.3 row 15: IMID of the IM receiving the order,VERIFIED
+fact_multileg_option_events,sender_type,senderType,OrderEvents,"MLOA,MLOM",STRING,Y,4,Section 5.2.3 row 17: Type of origin from which the order is routed,VERIFIED
+fact_multileg_option_events,originating_imid,originatingIMID,OrderEvents,"MLOR,MLOM,MLOC,MLOCR,MLOE",STRING,N,8,Section 5.2.2 row 9: Used in mergers/acquisitions where prior firm orders are still open,VERIFIED
+fact_multileg_option_events,prior_order_key_date,priorOrderKeyDate,OrderEvents,"MLOM,MLOE",DATETIME,N,30,Section 5.2.6 row 9: Prior orderKeyDate when a new orderID is assigned,VERIFIED
+fact_multileg_option_events,prior_order_id,priorOrderID,OrderEvents,"MLOM,MLOE",STRING,N,64,Section 5.2.6 row 10: Prior orderID,VERIFIED
+fact_multileg_option_events,parent_order_key_date,parentOrderKeyDate,OrderEvents,MLCO,DATETIME,Y,30,Section 5.2.5.1 row 9: orderKeyDate of the parent event from which the Child Order was sliced,VERIFIED
+fact_multileg_option_events,parent_order_id,parentOrderID,OrderEvents,MLCO,STRING,Y,64,Section 5.2.5.1 row 10: orderID of the parent event,VERIFIED
+fact_multileg_option_events,initiator,initiator,OrderEvents,"MLOM,MLOC,MLOCR",STRING,Y,4,Section 5.2.6 row 22: Indicates who initiated the modification/cancellation,VERIFIED
+fact_multileg_option_events,leaves_qty,leavesQty,OrderEvents,"MLOM,MLOC",DECIMAL,N,15,Section 5.2.6 row 27 / 5.2.7 row 14: Number of units left open after modification or cancel,VERIFIED
+fact_multileg_option_events,cancel_qty,cancelQty,OrderEvents,"MLOC,MLOCR",DECIMAL,N,15,Section 5.2.7 row 13: Quantity being cancelled,VERIFIED
+fact_multileg_option_events,request_timestamp,requestTimestamp,OrderEvents,"MLOM,MLOC",DATETIME,N,30,Section 5.2.6 row 33 / 5.2.7 row 17: Date/time the modification or cancellation was requested,VERIFIED
+fact_multileg_option_events,quote_key_date,quoteKeyDate,OrderEvents,"MLNQ,MLRQ,MLQS,MLQR,MLQC,MLQM",DATETIME,Y,30,Section 5.2.8 quote events: Date and time the quoteID was assigned,VERIFIED
+fact_multileg_option_events,quote_id,quoteID,OrderEvents,"MLNQ,MLRQ,MLQS,MLQR,MLQC,MLQM",STRING,Y,64,Section 5.2.8 quote events: Internal quote ID,VERIFIED
+fact_multileg_option_events,bid_price,bidPrice,OrderEvents,"MLNQ,MLRQ,MLQR,MLQM",DECIMAL,N,18,Section 5.2.8 quote events: Bid price,VERIFIED
+fact_multileg_option_events,ask_price,askPrice,OrderEvents,"MLNQ,MLRQ,MLQR,MLQM",DECIMAL,N,18,Section 5.2.8 quote events: Ask price,VERIFIED
+fact_multileg_option_events,bid_qty,bidQty,OrderEvents,"MLNQ,MLRQ,MLQR,MLQM",DECIMAL,N,15,Section 5.2.8 quote events: Bid quantity,VERIFIED
+fact_multileg_option_events,ask_qty,askQty,OrderEvents,"MLNQ,MLRQ,MLQR,MLQM",DECIMAL,N,15,Section 5.2.8 quote events: Ask quantity,VERIFIED
+fact_multileg_option_events,routed_quote_id,routedQuoteID,OrderEvents,MLRQ,STRING,N,64,Section 5.2.8.2: Quote ID sent to recipient,VERIFIED
+fact_multileg_option_events,quote_rejected_flag,quoteRejectedFlag,OrderEvents,MLRQ,BOOLEAN,N,1,Section 5.2.8.2: True if routed quote was rejected,VERIFIED
+fact_multileg_option_events,prior_quote_key_date,priorQuoteKeyDate,OrderEvents,MLQM,DATETIME,N,30,Section 5.2.8.6: Prior quoteKeyDate when a new quoteID is assigned,VERIFIED
+fact_multileg_option_events,prior_quote_id,priorQuoteID,OrderEvents,MLQM,STRING,N,64,Section 5.2.8.6: Prior quoteID,VERIFIED
+fact_multileg_option_legs,leg_ref_id,legRefID,OrderEvents,"MLNO,MLOR,MLOA,MLOM",STRING,N,64,"Section 5.2.1 row 32.n.1: Unique identifier of the leg",VERIFIED
+fact_multileg_option_legs,leg_symbol,symbol,OrderEvents,"MLNO,MLOR,MLOA,MLOM",STRING,N,14,"Section 5.2.1 row 32.n.2: Symbol of the equity for an equity leg (within legs[] array)",VERIFIED
+fact_multileg_option_legs,leg_option_id,optionID,OrderEvents,"MLNO,MLOR,MLOA,MLOM",STRING,N,22,"Section 5.2.1 row 32.n.3: OSI Symbol of the option for an option leg (within legs[] array)",VERIFIED
+fact_multileg_option_legs,leg_open_close_indicator,openCloseIndicator,OrderEvents,"MLNO,MLOR,MLOA,MLOM",STRING,N,2,"Section 5.2.1 row 32.n.4: Whether the leg buy/sell opens or closes a position (within legs[] array)",VERIFIED
+fact_multileg_option_legs,leg_side,side,OrderEvents,"MLNO,MLOR,MLOA,MLOM",STRING,Y,8,"Section 5.2.1 row 32.n.5: Side of the individual leg (within legs[] array)",VERIFIED
+fact_multileg_option_legs,leg_ratio_quantity,legRatioQuantity,OrderEvents,"MLNO,MLOR,MLOA,MLOM",DECIMAL,Y,15,"Section 5.2.1 row 32.n.6: Ratio of quantity for this individual leg (within legs[] array)",VERIFIED
 fact_cais_fdid,firm_designated_id,firmDesignatedID,CAIS,ALL,STRING,Y,40,CAIS Section 4.1: FDID of the ACCOUNT/RELATIONSHIP/ENTITYID being reported,VERIFIED
 fact_cais_customer,customer_record_id,customerRecordID,CAIS,ALL,STRING,Y,40,CAIS Section 4.1: Unique reference to a single Customer Record per submission file,VERIFIED

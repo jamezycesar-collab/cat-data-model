@@ -2,7 +2,49 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] - Tier 7.5: Simple-option DDL across all four dialects
+## [Unreleased] - Tier 8: Multi-leg event field reconciliation (Section 5.2)
+
+### Added
+
+- 59 verified field mappings for the 25 multi-leg option events in CAT IM Section 5.2, populating `fact_multileg_option_events` and `fact_multileg_option_legs`. Each row cites the spec section.
+- Coverage:
+  - **Header**: `orderKeyDate`, `orderID`, `underlying`, `eventTimestamp`, `manualFlag`, `electronicDupFlag`, `electronicTimestamp`, `manualOrderKeyDate`, `manualOrderID`, `deptType`, `numberOfLegs`
+  - **Order**: `price` (net price), `quantity`, `minQty`, `orderType`, `timeInForce`, `tradingSession`, `handlingInstructions`, `firmDesignatedID`, `accountHolderType`, `affiliateFlag`, `representativeInd`, `solicitationFlag`, `RFQID`
+  - **Routing**: `senderIMID`, `destination`, `destinationType`, `routedOrderID`, `session`, `routeRejectedFlag`, `exchOriginCode`, `pairedOrderID`
+  - **Receipt**: `receiverIMID`, `senderType`
+  - **Modification linkage**: `priorOrderKeyDate`, `priorOrderID`, `parentOrderKeyDate`, `parentOrderID`, `originatingIMID`
+  - **Cancel/Adjust**: `initiator`, `leavesQty`, `cancelQty`, `requestTimestamp`
+  - **Quote**: `quoteKeyDate`, `quoteID`, `bidPrice`, `askPrice`, `bidQty`, `askQty`, `routedQuoteID`, `quoteRejectedFlag`, `priorQuoteKeyDate`, `priorQuoteID`
+  - **Per-leg detail** (in `fact_multileg_option_legs`): `legRefID`, `symbol` (equity leg), `optionID` (option leg), `openCloseIndicator`, `side`, `legRatioQuantity` — all sourced from the spec's `legs[]` array structure (Section 5.2.1 row 32.n)
+
+### Spec corrections caught during reconciliation
+
+The original CSV draft had AI-extended leg field names (`legSeq`, `legSymbol`, `legSide`, `legRatio`, `legOpenCloseIndicator`, `legPrice`) that don't appear in the spec. The actual spec uses field names within a `legs[]` array (so the JSON path is `legs[].symbol`, not `legSymbol`). The validator's PDF token search caught all six and they were corrected before commit:
+
+| AI-extended name | Spec-correct name |
+|---|---|
+| `legSeq` | `legRefID` |
+| `legSymbol` | `symbol` (within `legs[]`) |
+| `legOptionID` | `optionID` (within `legs[]`) |
+| `legSide` | `side` (within `legs[]`) |
+| `legOpenCloseIndicator` | `openCloseIndicator` (within `legs[]`) |
+| `legRatio` | `legRatioQuantity` |
+| `legQuantity` | (dropped - not in spec; legs only carry `legRatioQuantity`) |
+| `legPrice` | (dropped - legs don't carry individual prices on order events; net price is at the order header) |
+
+This is exactly the failure mode the field validator was built to catch — same pattern as the v2.0.0 fabrications, just at the leg-detail level.
+
+### Coverage delta cumulative
+
+| Metric | After Tier 7.5 | After Tier 8 |
+|--------|------:|------:|
+| Verified field mappings | 198 | **257** |
+| Multi-leg events covered | 0 / 25 | 25 / 25 |
+| **Total event-type field coverage** | 64 / 99 | **99 / 99** |
+
+This closes field-level reconciliation for all 99 CAT event types in the spec.
+
+
 
 ### Added
 
