@@ -2,7 +2,77 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] - Tier 7.5: Simple-option DDL across all four dialects
+## [Unreleased] - Tier 9: Diagram regeneration + CAIS state machines
+
+### Added
+
+- `docs/cais_state_machines.md` - 10 named operational flows for CAIS, each citing the spec section and specifying the table-by-table sequence:
+  1. New FDID submission
+  2. FDID update
+  3. FDID end (CORRECTION / ENDED / INACTIVE / OTHER)
+  4. FDID replacement
+  5. Mass FDID transfer
+  6. Periodic refresh
+  7. Firm-initiated correction
+  8. Repair of CAT-identified error
+  9. Material inconsistency detection and resolution
+  10. TID replacement
+- Documents the cascade rules (FDID end -> Customer association end, etc.) and the idempotency guarantees (deterministic hub hashes; SCD2 hash-diff dedupes no-change resubmissions).
+- Includes a backlog section listing the four DDL gaps the state-machine docs revealed (no `errors` table for Flow 8; no `vw_cais_overdue_inconsistencies` view for Flow 9; missing `correctingCustomerRecordID` and `last_refresh_date` columns).
+
+### Changed
+
+- `diagrams/mermaid/full_model_er.mmd` updated to include the SimpleOption, MultiLegOption, and CAIS namespaces with their hubs / links / facts. Comment header updated to reflect post-v4.1.0r15 alignment instead of the old "83 entities" claim.
+- `diagrams/mermaid/medallion_flowchart.mmd` source-system box updated from "CAT 4.1.0r9" to "CAT IM v4.1.0r15 + CAIS v2.2.0r4" with the actual 99 events. Gold-layer fact-table list updated from 4 stale names to 12 actual fact tables across 5 event families.
+- `diagrams/mermaid/gold_star_schema_er.mmd` namespaces split from one Facts namespace into four (Facts_Equity, Facts_SimpleOption, Facts_MultiLeg, Facts_CAIS). dim_multileg_strategy, dim_cais_fdid_type, dim_cais_account_type added to Dimensions namespace.
+
+### Why
+
+Tier 9 closes the cosmetic-but-misleading gap between the diagrams that ship with the model and the actual structure. A reader picking up `full_model_er.mmd` should see exactly what's in the DDL; previously they saw the pre-remediation entity list. The CAIS state machines document the operational logic that the DDL tables enable - tables exist, but without the documented flows it wasn't clear how to drive them correctly.
+
+
+
+### Added
+
+- 59 verified field mappings for the 25 multi-leg option events in CAT IM Section 5.2, populating `fact_multileg_option_events` and `fact_multileg_option_legs`. Each row cites the spec section.
+- Coverage:
+  - **Header**: `orderKeyDate`, `orderID`, `underlying`, `eventTimestamp`, `manualFlag`, `electronicDupFlag`, `electronicTimestamp`, `manualOrderKeyDate`, `manualOrderID`, `deptType`, `numberOfLegs`
+  - **Order**: `price` (net price), `quantity`, `minQty`, `orderType`, `timeInForce`, `tradingSession`, `handlingInstructions`, `firmDesignatedID`, `accountHolderType`, `affiliateFlag`, `representativeInd`, `solicitationFlag`, `RFQID`
+  - **Routing**: `senderIMID`, `destination`, `destinationType`, `routedOrderID`, `session`, `routeRejectedFlag`, `exchOriginCode`, `pairedOrderID`
+  - **Receipt**: `receiverIMID`, `senderType`
+  - **Modification linkage**: `priorOrderKeyDate`, `priorOrderID`, `parentOrderKeyDate`, `parentOrderID`, `originatingIMID`
+  - **Cancel/Adjust**: `initiator`, `leavesQty`, `cancelQty`, `requestTimestamp`
+  - **Quote**: `quoteKeyDate`, `quoteID`, `bidPrice`, `askPrice`, `bidQty`, `askQty`, `routedQuoteID`, `quoteRejectedFlag`, `priorQuoteKeyDate`, `priorQuoteID`
+  - **Per-leg detail** (in `fact_multileg_option_legs`): `legRefID`, `symbol` (equity leg), `optionID` (option leg), `openCloseIndicator`, `side`, `legRatioQuantity` — all sourced from the spec's `legs[]` array structure (Section 5.2.1 row 32.n)
+
+### Spec corrections caught during reconciliation
+
+The original CSV draft had AI-extended leg field names (`legSeq`, `legSymbol`, `legSide`, `legRatio`, `legOpenCloseIndicator`, `legPrice`) that don't appear in the spec. The actual spec uses field names within a `legs[]` array (so the JSON path is `legs[].symbol`, not `legSymbol`). The validator's PDF token search caught all six and they were corrected before commit:
+
+| AI-extended name | Spec-correct name |
+|---|---|
+| `legSeq` | `legRefID` |
+| `legSymbol` | `symbol` (within `legs[]`) |
+| `legOptionID` | `optionID` (within `legs[]`) |
+| `legSide` | `side` (within `legs[]`) |
+| `legOpenCloseIndicator` | `openCloseIndicator` (within `legs[]`) |
+| `legRatio` | `legRatioQuantity` |
+| `legQuantity` | (dropped - not in spec; legs only carry `legRatioQuantity`) |
+| `legPrice` | (dropped - legs don't carry individual prices on order events; net price is at the order header) |
+
+This is exactly the failure mode the field validator was built to catch — same pattern as the v2.0.0 fabrications, just at the leg-detail level.
+
+### Coverage delta cumulative
+
+| Metric | After Tier 7.5 | After Tier 8 |
+|--------|------:|------:|
+| Verified field mappings | 198 | **257** |
+| Multi-leg events covered | 0 / 25 | 25 / 25 |
+| **Total event-type field coverage** | 64 / 99 | **99 / 99** |
+
+This closes field-level reconciliation for all 99 CAT event types in the spec.
+
+
 
 ### Added
 

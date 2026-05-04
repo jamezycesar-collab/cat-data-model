@@ -10,7 +10,7 @@ flowchart TD
 
  subgraph SRC [Source Systems]
  FIX["FIX 4.4 / 5.0 SP2\n(NewOrderSingle, Execution)"]
- CAT["CAT 4.1.0r9\n(MEIR, MENO, MEOT, MEPA)"]
+ CAT["CAT IM v4.1.0r15 + CAIS v2.2.0r4\n(99 events: equity, simple option, multi-leg)"]
  CRM["CRM / Party master"]
  RMS["Reference data\n(LEI, ISIN, MIC)"]
  MKT["Market data / ISDA"]
@@ -32,7 +32,7 @@ flowchart TD
 
  subgraph G [Gold - Star Schema]
  G_DIM["8 conformed dims (SCD2)\ndim_date, dim_party,\n dim_instrument, dim_venue,\n dim_account, dim_event_type,\n dim_desk, dim_trader"]
- G_FCT["4 fact tables\nfact_cat_order_events,\nfact_cat_allocations,\nfact_cat_quotes,\nfact_cat_customer_records"]
+ G_FCT["10 fact tables\nEquity: fact_order_events, fact_execution_events,\n fact_allocations\nSimple option: fact_option_order_events,\n fact_option_executions, fact_option_allocations\nMulti-leg: fact_multileg_option_events,\n fact_multileg_option_legs\nCAIS: fact_cais_fdid, fact_cais_customer,\n fact_cais_submission, fact_cais_inconsistency"]
  G_OPS["Operational tables\ncat_submission_batch,\ncat_feedback_error"]
  G_VW["Consumption views\nv_cat_order_reconstruction,\nv_cat_daily_submission_status,\nv_cat_best_execution_audit"]
  end
