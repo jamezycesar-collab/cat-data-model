@@ -193,6 +193,7 @@ def main() -> int:
         "fact_cais_customer",
         "fact_cais_submission",
         "fact_cais_inconsistency",
+        "fact_cais_outstanding_rejection",
         # Conformed dimensions, referenced via SK joins from facts
         "dim_party",
         "dim_instrument",

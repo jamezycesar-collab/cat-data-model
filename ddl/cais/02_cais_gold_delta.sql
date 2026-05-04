@@ -153,3 +153,56 @@ CREATE TABLE IF NOT EXISTS gold.fact_cais_inconsistency (
 )
 USING DELTA
 COMMENT 'Gold fact: tracks material inconsistencies per CAIS spec Section 6.4.';
+
+
+-- Tier 9.3 additions: Outstanding Rejection tracking + overdue-inconsistency view
+
+CREATE TABLE IF NOT EXISTS gold.fact_cais_outstanding_rejection (
+    cais_rejection_sk           BIGINT GENERATED ALWAYS AS IDENTITY,
+    rejected_dts                TIMESTAMP NOT NULL,
+    cais_submission_sk          BIGINT NOT NULL,
+    error_roe_id                STRING NOT NULL,        -- the errorROEID assigned by CAT
+    rejection_code              STRING NOT NULL,        -- code from CAIS spec Appendix B (data validation errors)
+    severity                    STRING NOT NULL,        -- DATA_VALIDATION, FILE_INTEGRITY, etc.
+    affected_record_id          STRING NOT NULL,        -- firmDesignatedID or customerRecordID
+    affected_record_type        STRING NOT NULL,        -- FDID or CUSTOMER or FILE
+    description                 STRING,
+    repair_due_dts              TIMESTAMP NOT NULL,     -- per CAIS Section 6.4.2 deadline
+    resolved_dts                TIMESTAMP,
+    resolution_submission_sk    BIGINT,
+    CONSTRAINT pk_fact_cais_rejection PRIMARY KEY (cais_rejection_sk),
+    CONSTRAINT fk_fact_cais_rej_sub FOREIGN KEY (cais_submission_sk)
+        REFERENCES gold.fact_cais_submission (cais_submission_sk),
+    CONSTRAINT chk_cais_rej_severity CHECK (severity IN
+        ('DATA_VALIDATION', 'FILE_INTEGRITY', 'SCHEMA_VIOLATION', 'OTHER')),
+    CONSTRAINT chk_cais_rej_record_type CHECK (affected_record_type IN ('FDID', 'CUSTOMER', 'FILE'))
+)
+USING DELTA
+COMMENT 'Gold fact: tracks Outstanding Rejection notifications from CAT per CAIS spec Section 6.5.';
+
+
+-- View: Overdue inconsistencies (past their repair deadline per Section 6.4.3)
+CREATE OR REPLACE VIEW gold.vw_cais_overdue_inconsistencies AS
+SELECT
+    i.cais_inconsistency_sk,
+    i.detected_dts,
+    i.inconsistency_code,
+    i.severity,
+    i.affected_record_id,
+    i.affected_record_type,
+    i.description,
+    i.cais_submission_sk,
+    sub.submission_filename,
+    sub.cat_reporter_crd,
+    -- Section 6.4.3: Material inconsistencies must be resolved within
+    -- the deadline (typically 5 business days after notification).
+    -- Days_overdue is computed against current_date for active monitoring.
+    DATEDIFF(CURRENT_DATE(), DATE(i.detected_dts)) AS days_since_detected,
+    CASE
+        WHEN DATEDIFF(CURRENT_DATE(), DATE(i.detected_dts)) > 5 THEN TRUE
+        ELSE FALSE
+    END AS is_overdue
+FROM gold.fact_cais_inconsistency i
+JOIN gold.fact_cais_submission sub
+    ON i.cais_submission_sk = sub.cais_submission_sk
+WHERE i.resolved_dts IS NULL;

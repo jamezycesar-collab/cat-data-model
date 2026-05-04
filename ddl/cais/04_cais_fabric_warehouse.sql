@@ -112,6 +112,7 @@ CREATE TABLE silver.sat_cais_fdid_state (
     prior_cat_reporter_crd        BIGINT,
     prior_cat_reporter_fdid       VARCHAR(40),
     correspondent_crd             BIGINT,
+    last_refresh_date             DATE,
     record_source                 VARCHAR(64) NOT NULL,
     CONSTRAINT pk_sat_cais_fdid PRIMARY KEY NONCLUSTERED (cais_fdid_hk, load_dts) NOT ENFORCED,
     CONSTRAINT chk_sat_cais_fdid_type CHECK (fdid_type IN ('ACCOUNT', 'RELATIONSHIP', 'ENTITYID')),
@@ -130,6 +131,7 @@ CREATE TABLE silver.sat_cais_customer_state (
     legal_entity_type             VARCHAR(64),
     nationality_code              VARCHAR(2),
     is_authorized_trader          BIT,
+    correcting_customer_record_id VARCHAR(40),
     record_source                 VARCHAR(64) NOT NULL,
     CONSTRAINT pk_sat_cais_customer PRIMARY KEY NONCLUSTERED (cais_customer_hk, load_dts) NOT ENFORCED
 );
@@ -278,3 +280,51 @@ CREATE TABLE gold.fact_cais_inconsistency (
     CONSTRAINT chk_cais_inc_severity CHECK (severity IN ('MATERIAL','NON_MATERIAL')),
     CONSTRAINT chk_cais_inc_record_type CHECK (affected_record_type IN ('FDID','CUSTOMER'))
 );
+
+
+-- Tier 9.3 additions
+
+CREATE TABLE gold.fact_cais_outstanding_rejection (
+    cais_rejection_sk             BIGINT IDENTITY(1,1) NOT NULL,
+    rejected_dts                  DATETIME2(7) NOT NULL,
+    cais_submission_sk            BIGINT NOT NULL,
+    error_roe_id                  VARCHAR(40) NOT NULL,
+    rejection_code                VARCHAR(32) NOT NULL,
+    severity                      VARCHAR(20) NOT NULL,
+    affected_record_id            VARCHAR(40) NOT NULL,
+    affected_record_type          VARCHAR(16) NOT NULL,
+    description                   VARCHAR(MAX),
+    repair_due_dts                DATETIME2(7) NOT NULL,
+    resolved_dts                  DATETIME2(7),
+    resolution_submission_sk      BIGINT,
+    CONSTRAINT pk_fact_cais_rej PRIMARY KEY NONCLUSTERED (cais_rejection_sk) NOT ENFORCED,
+    CONSTRAINT chk_cais_rej_severity CHECK (severity IN
+        ('DATA_VALIDATION','FILE_INTEGRITY','SCHEMA_VIOLATION','OTHER')),
+    CONSTRAINT chk_cais_rej_record_type CHECK (affected_record_type IN ('FDID','CUSTOMER','FILE'))
+);
+
+GO
+
+CREATE OR ALTER VIEW gold.vw_cais_overdue_inconsistencies AS
+SELECT
+    i.cais_inconsistency_sk,
+    i.detected_dts,
+    i.inconsistency_code,
+    i.severity,
+    i.affected_record_id,
+    i.affected_record_type,
+    i.description,
+    i.cais_submission_sk,
+    sub.submission_filename,
+    sub.cat_reporter_crd,
+    DATEDIFF(DAY, CAST(i.detected_dts AS DATE), CAST(GETDATE() AS DATE)) AS days_since_detected,
+    CASE
+        WHEN DATEDIFF(DAY, CAST(i.detected_dts AS DATE), CAST(GETDATE() AS DATE)) > 5
+        THEN CAST(1 AS BIT)
+        ELSE CAST(0 AS BIT)
+    END AS is_overdue
+FROM gold.fact_cais_inconsistency i
+JOIN gold.fact_cais_submission sub
+    ON i.cais_submission_sk = sub.cais_submission_sk
+WHERE i.resolved_dts IS NULL;
+GO

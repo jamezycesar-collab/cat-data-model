@@ -118,6 +118,7 @@ CREATE TABLE IF NOT EXISTS silver.sat_cais_fdid_state (
     prior_cat_reporter_crd         BIGINT,
     prior_cat_reporter_fdid        STRING,
     correspondent_crd              BIGINT,
+    last_refresh_date              DATE,                -- Periodic refresh per Section 3.8
     record_source                  STRING NOT NULL,
     CONSTRAINT chk_sat_cais_fdid_type CHECK (fdid_type IN ('ACCOUNT', 'RELATIONSHIP', 'ENTITYID')),
     CONSTRAINT chk_sat_cais_end_reason CHECK (fdid_end_reason IS NULL OR fdid_end_reason IN
@@ -137,6 +138,7 @@ CREATE TABLE IF NOT EXISTS silver.sat_cais_customer_state (
     legal_entity_type              STRING,
     nationality_code               STRING,
     is_authorized_trader           BOOLEAN,
+    correcting_customer_record_id  STRING,              -- TID replacement linkage per Section 3.2
     record_source                  STRING NOT NULL
 )
 USING DELTA;
@@ -295,3 +297,48 @@ CREATE TABLE IF NOT EXISTS gold.fact_cais_inconsistency (
     CONSTRAINT chk_cais_inc_record_type CHECK (affected_record_type IN ('FDID','CUSTOMER'))
 )
 USING DELTA;
+
+
+-- Tier 9.3 additions
+
+CREATE TABLE IF NOT EXISTS gold.fact_cais_outstanding_rejection (
+    cais_rejection_sk           BIGINT GENERATED ALWAYS AS IDENTITY,
+    rejected_dts                TIMESTAMP NOT NULL,
+    cais_submission_sk          BIGINT NOT NULL,
+    error_roe_id                STRING NOT NULL,
+    rejection_code              STRING NOT NULL,
+    severity                    STRING NOT NULL,
+    affected_record_id          STRING NOT NULL,
+    affected_record_type        STRING NOT NULL,
+    description                 STRING,
+    repair_due_dts              TIMESTAMP NOT NULL,
+    resolved_dts                TIMESTAMP,
+    resolution_submission_sk    BIGINT,
+    CONSTRAINT chk_cais_rej_severity CHECK (severity IN
+        ('DATA_VALIDATION','FILE_INTEGRITY','SCHEMA_VIOLATION','OTHER')),
+    CONSTRAINT chk_cais_rej_record_type CHECK (affected_record_type IN ('FDID','CUSTOMER','FILE'))
+)
+USING DELTA;
+
+
+CREATE OR REPLACE VIEW gold.vw_cais_overdue_inconsistencies AS
+SELECT
+    i.cais_inconsistency_sk,
+    i.detected_dts,
+    i.inconsistency_code,
+    i.severity,
+    i.affected_record_id,
+    i.affected_record_type,
+    i.description,
+    i.cais_submission_sk,
+    sub.submission_filename,
+    sub.cat_reporter_crd,
+    DATEDIFF(CURRENT_DATE(), DATE(i.detected_dts)) AS days_since_detected,
+    CASE
+        WHEN DATEDIFF(CURRENT_DATE(), DATE(i.detected_dts)) > 5 THEN TRUE
+        ELSE FALSE
+    END AS is_overdue
+FROM gold.fact_cais_inconsistency i
+JOIN gold.fact_cais_submission sub
+    ON i.cais_submission_sk = sub.cais_submission_sk
+WHERE i.resolved_dts IS NULL;
