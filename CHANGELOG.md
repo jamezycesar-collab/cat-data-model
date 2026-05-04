@@ -2,7 +2,37 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] - Tier 7: Simple-option-event field reconciliation
+## [Unreleased] - Tier 7.5: Simple-option DDL across all four dialects
+
+### Added
+
+- `ddl/option/` directory with simple-option Silver and Gold DDL across all four dialects:
+  - `01_option_silver_delta.sql` - DV2 hubs (`hub_option_order`, `hub_option_instrument`), links (`link_option_event`, `link_option_child_order`), and satellites (`sat_option_order_state`, `sat_option_event_state`) for Databricks Delta
+  - `02_option_gold_delta.sql` - Gold facts `fact_option_order_events`, `fact_option_executions`, `fact_option_allocations`, plus consolidated `vw_option_lifecycle` view
+  - `03_option_silver_hive.sql` - Hive Silver mirror
+  - `04_option_gold_hive.sql` - Hive Gold mirror
+  - `05_option_silver_fabric_lakehouse.sql` - Fabric Lakehouse Silver + Gold (Spark SQL on Delta on OneLake)
+  - `06_option_fabric_warehouse.sql` - Fabric Warehouse T-SQL Silver + Gold
+- Three DLT pipelines under `dlt-pipelines/fact_pipelines/`:
+  - `dlt_fact_option_order_events.py` - routes the 29 order-flow event codes from `link_option_event` into `fact_option_order_events`
+  - `dlt_fact_option_executions.py` - routes MOOT/MOOF/MOOFS/MOFA into `fact_option_executions`
+  - `dlt_fact_option_allocations.py` - routes MOPA/MOAA into `fact_option_allocations`
+- All three new DLT pipelines carry `expect_all_or_fail` quality gates that hard-stop on invalid event codes or missing required fields.
+
+### Why
+
+Tier 7 added 76 verified field mappings referencing three Gold tables (`fact_option_order_events`, `fact_option_executions`, `fact_option_allocations`) that did not yet exist in the DDL. Tier 7.5 closes that gap: the field mapping CSV now resolves to actual tables across all four published SQL dialects, and the DLT pipelines have a runnable path from Silver to Gold.
+
+### Coverage delta cumulative
+
+| Metric | After Tier 7 | After Tier 7.5 |
+|--------|------:|------:|
+| Verified field mappings | 198 | 198 |
+| Simple-option Gold tables | 0 | **3 across 4 dialects** |
+| Simple-option DLT pipelines | 0 | **3** |
+| Python files parseable | 34 | 37 |
+
+
 
 ### Added
 
