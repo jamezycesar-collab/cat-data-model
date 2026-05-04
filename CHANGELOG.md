@@ -2,7 +2,28 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] - Tier 5: Multi-leg Hive Gold + order-event field reconciliation
+## [Unreleased] - Tier 6: Quote-event field reconciliation
+
+### Added
+
+- 31 verified quote-event field mappings across MENQ, MENQS, MERQ, MERQS, MEQR, MEQC, MEQM, MEQS in `ddl/gold/06_cat_field_mapping.csv`. Each row cites the spec section (e.g. "Section 4.10.5 row 9") where the field is defined. Coverage includes header fields (`quoteKeyDate`, `quoteID`), bid/ask price+qty, RFQ-specific fields (`bidRelativePrice`, `askRelativePrice`, `validUntilDuration`), routing fields (`senderIMID`, `destination`, `destinationType`, `routedQuoteID`, `quoteRejectedFlag`, `session`), receiver-side fields (`receivedQuoteID`, `receiverIMID`, `quoteWantedInd`), modification linkage (`priorQuoteKeyDate`, `priorQuoteID`), cancellation (`initiator`), status code (`mpStatusCode`), aggregated-orders for ADF (`askAggregatedOrders`, `bidAggregatedOrders`), and indicators (`onlyOneQuoteFlag`, `unsolicitedInd`, `unpricedInd`, `representativeQuoteInd`, `dupROIDCond`).
+
+### Changed
+
+- `cat_submission_file_type` for quote events corrected from the fabricated `QuoteEvents` to the spec-correct `OrderEvents`. Quote events live in Section 4.10 of the CAT IM spec which is part of Section 4 (Equity Events) - they're submitted in the same file type as orders, routes, and trades.
+- `ddl/gold/06b_cat_field_mapping_unverified_candidates.csv` is now empty (header only). The 3 remaining candidates from Tier 5 (`quoteID`, `bidPrice`, `askPrice`) all promoted to verified after spec reconciliation.
+
+### Coverage delta cumulative
+
+| Metric | v2.0.0 push | After Tier 6 |
+|--------|-------:|------:|
+| CAT codes in reference table | 49 (24 fabricated) | 99 (0 fabricated) |
+| Verified field mappings | 0 | 122 |
+| Unverified field candidates | n/a | 0 |
+| Multi-leg dialect coverage | 0 / 4 | 4 / 4 |
+| CAIS dialect coverage | (mistyped as events) | 4 / 4 |
+
+
 
 ### Added
 

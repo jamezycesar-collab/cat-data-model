@@ -88,5 +88,36 @@ fact_allocations,correspondent_crd,correspondentCRD,Allocations,"MEPA,MEAA",STRI
 fact_allocations,new_order_fdid,newOrderFDID,Allocations,"MEPA,MEAA",STRING,N,40,Section 4.13.1 row 23: FDID of the related New Order event if available,VERIFIED
 fact_allocations,allocation_instruction_time,allocationInstructionTime,Allocations,"MEPA,MEAA",DATETIME,N,30,Section 4.13.1 row 24: Date/time the allocation instruction was received,VERIFIED
 fact_allocations,institution_flag,institutionFlag,Allocations,"MEPA,MEAA",BOOLEAN,N,1,Section 4.13.1 row 17: True if the account meets the institutional definition,VERIFIED
+fact_quotes,quote_key_date,quoteKeyDate,OrderEvents,"MENQ,MENQS,MERQ,MERQS,MEQR,MEQC,MEQM,MEQS",DATETIME,Y,30,Section 4.10.1 row 6: Date and time the quoteID was assigned,VERIFIED
+fact_quotes,quote_id,quoteID,OrderEvents,"MENQ,MENQS,MERQ,MERQS,MEQR,MEQC,MEQM,MEQS",STRING,Y,64,Section 4.10.1 row 7: Internal quote ID assigned to the quote by the IM,VERIFIED
+fact_quotes,prior_quote_key_date,priorQuoteKeyDate,OrderEvents,MEQM,DATETIME,N,30,Section 4.10.7 row 9: Prior quoteKeyDate when a new quoteID is assigned,VERIFIED
+fact_quotes,prior_quote_id,priorQuoteID,OrderEvents,MEQM,STRING,N,64,Section 4.10.7 row 10: Prior quoteID when a new quoteID is assigned,VERIFIED
+fact_quotes,received_quote_id,receivedQuoteID,OrderEvents,MEQR,STRING,N,64,Section 4.10.5 row 9: Quote ID as received by the Industry Member internally,VERIFIED
+fact_quotes,routed_quote_id,routedQuoteID,OrderEvents,"MERQ,MERQS",STRING,N,64,Section 4.10.3 row 13: Quote ID sent to the recipient,VERIFIED
+fact_quotes,bid_price,bidPrice,OrderEvents,"MENQ,MERQ,MEQR,MEQM",DECIMAL,N,18,Section 4.10.1 row 17: Price being bid,VERIFIED
+fact_quotes,bid_qty,bidQty,OrderEvents,"MENQ,MERQ,MEQR,MEQM",DECIMAL,N,15,Section 4.10.1 row 18: Quantity being bid,VERIFIED
+fact_quotes,ask_price,askPrice,OrderEvents,"MENQ,MERQ,MEQR,MEQM",DECIMAL,N,18,Section 4.10.1 row 19: Price being asked,VERIFIED
+fact_quotes,ask_qty,askQty,OrderEvents,"MENQ,MERQ,MEQR,MEQM",DECIMAL,N,15,Section 4.10.1 row 20: Quantity being asked,VERIFIED
+fact_quotes,bid_relative_price,bidRelativePrice,OrderEvents,"MERQ,MEQM",STRING,N,40,Section 4.10.3: RFQ-only relative price for bid,VERIFIED
+fact_quotes,ask_relative_price,askRelativePrice,OrderEvents,"MERQ,MEQM",STRING,N,40,Section 4.10.3: RFQ-only relative price for ask,VERIFIED
+fact_quotes,valid_until_duration,validUntilDuration,OrderEvents,"MERQ,MEQM",DECIMAL,N,15,Section 4.10.3: RFQ-only duration in seconds,VERIFIED
+fact_quotes,only_one_quote_flag,onlyOneQuoteFlag,OrderEvents,"MENQ,MEQR",BOOLEAN,N,1,Section 4.10.1 row 16: True if the recipient only allows one quote at a time per symbol,VERIFIED
+fact_quotes,unsolicited_ind,unsolicitedInd,OrderEvents,"MENQ,MEQR,MEQM",STRING,N,4,Section 4.10.1 row 23: Indicates whether this is an unsolicited quote,VERIFIED
+fact_quotes,unpriced_ind,unpricedInd,OrderEvents,"MENQ,MERQ,MEQR,MEQM",BOOLEAN,N,1,Section 4.10.1 row 26: True when the quote is unpriced,VERIFIED
+fact_quotes,quote_wanted_ind,quoteWantedInd,OrderEvents,MEQR,STRING,N,4,Section 4.10.5 row 23: IDQS-only indicator that the quote message is a quote-wanted,VERIFIED
+fact_quotes,representative_quote_ind,representativeQuoteInd,OrderEvents,"MENQ,MENQS",STRING,N,4,Section 4.10.1 row 29: ADF-only indicator that the quote represents customer/client orders,VERIFIED
+fact_quotes,ask_aggregated_orders,askAggregatedOrders,OrderEvents,"MENQ,MENQS",STRING,N,4000,Section 4.10.1 row 30: ADF-only orderID list for asks (JSON-encoded array),VERIFIED
+fact_quotes,bid_aggregated_orders,bidAggregatedOrders,OrderEvents,"MENQ,MENQS",STRING,N,4000,Section 4.10.1 row 31: ADF-only orderID list for bids (JSON-encoded array),VERIFIED
+fact_quotes,quote_rejected_flag,quoteRejectedFlag,OrderEvents,"MERQ,MERQS",BOOLEAN,N,1,Section 4.10.3 row 18: True if the routed quote was rejected by destination,VERIFIED
+fact_quotes,sender_imid,senderIMID,OrderEvents,"MERQ,MERQS,MEQR",STRING,N,8,Section 4.10.3 row 11: IMID of the IM sending the quote,VERIFIED
+fact_quotes,destination,destination,OrderEvents,"MERQ,MERQS",STRING,Y,8,Section 4.10.3 row 12: Destination IMID,VERIFIED
+fact_quotes,destination_type,destinationType,OrderEvents,"MERQ,MERQS",STRING,Y,4,Section 4.10.3 row 23: Whether the destination is exchange / affiliated firm / other,VERIFIED
+fact_quotes,session,session,OrderEvents,"MERQ,MERQS",STRING,N,40,Section 4.10.3 row 24: IDQS/ADF-only session ID used when routing the quote,VERIFIED
+fact_quotes,receiver_imid,receiverIMID,OrderEvents,MEQR,STRING,N,8,Section 4.10.5 row 12: IMID of the IM receiving the quote,VERIFIED
+fact_quotes,initiator,initiator,OrderEvents,MEQC,STRING,Y,4,Section 4.10.6 row 13: Indicates who initiated the quote cancellation,VERIFIED
+fact_quotes,mp_status_code,mpStatusCode,OrderEvents,MEQS,STRING,Y,4,Section 4.10.8 row 12: Market Participant Status Code,VERIFIED
+fact_quotes,dup_roid_cond,dupROIDCond,OrderEvents,"MERQ,MEQR",BOOLEAN,N,1,Section 4.10.3 row 20 / 4.10.5 row 25: True when the quote event maintains the prior quote's ROE ID,VERIFIED
+fact_quotes,rfq_id,RFQID,OrderEvents,"MENQ,MERQ,MEQR,MEQC,MEQM",STRING,N,64,Section 4.10.1 row 32: For quote events representing a response to an RFQ,VERIFIED
+fact_quotes,originating_imid,originatingIMID,OrderEvents,"MEQC,MEQS",STRING,N,8,Section 4.10.6 row 9: Used in mergers/acquisitions where prior firm quotes are still open,VERIFIED
 fact_cais_fdid,firm_designated_id,firmDesignatedID,CAIS,ALL,STRING,Y,40,CAIS Section 4.1: FDID of the ACCOUNT/RELATIONSHIP/ENTITYID being reported,VERIFIED
 fact_cais_customer,customer_record_id,customerRecordID,CAIS,ALL,STRING,Y,40,CAIS Section 4.1: Unique reference to a single Customer Record per submission file,VERIFIED
