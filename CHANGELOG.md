@@ -2,7 +2,39 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased] - Tier 6: Quote-event field reconciliation
+## [Unreleased] - Tier 7: Simple-option-event field reconciliation
+
+### Added
+
+- 76 verified field mappings for the 35 simple-option events in Section 5.1 of the CAT IM spec, spanning the new `fact_option_order_events`, `fact_option_executions`, and `fact_option_allocations` Gold tables.
+- Coverage includes:
+  - **Option-specific identifier**: `optionID` (21-character OSI Symbol) replaces equity's `symbol`
+  - **Header fields**: `actionType`, `errorROEID`, `firmROEID`, `type`, `CATReporterIMID` (carried from existing common rows)
+  - **Order lifecycle**: `orderKeyDate`, `orderID`, `eventTimestamp`, `manualFlag`, `electronicDupFlag`, `electronicTimestamp`, `manualOrderKeyDate`, `manualOrderID`, `deptType`, `solicitationFlag`, `RFQID`
+  - **Order details**: `side`, `price`, `quantity`, `minQty`, `orderType`, `timeInForce`, `tradingSession`, `handlingInstructions`, `firmDesignatedID`, `accountHolderType`, `affiliateFlag`, `representativeInd`, `netPrice`
+  - **Option-specific**: `openCloseIndicator`, `triggerPrice`, `exchOriginCode`, `occClearingMemberID`
+  - **Routing**: `senderIMID`, `destination`, `destinationType`, `routedOrderID`, `session`, `routeRejectedFlag`, `multiLegInd`, `pairedOrderID`
+  - **Receipt**: `receiverIMID`, `senderType`
+  - **Modification linkage**: `priorOrderKeyDate`, `priorOrderID`, `parentOrderKeyDate`, `parentOrderID`, `originatingIMID`
+  - **Cancel/Adjust**: `initiator`, `leavesQty`, `cancelQty`, `requestTimestamp`
+  - **Trade**: `tradeKeyDate`, `tradeID`, `cancelFlag`, `cancelTimestamp`, `capacity`, `tapeTradeID`, `sideDetailsInd`, `marketCenterID`, `clearingFirm`
+  - **Fulfillment**: `fillKeyDate`, `fulfillmentID`, `fulfillmentLinkType`, `priorFillKeyDate`, `priorFulfillmentID`
+  - **Allocations**: `allocationKeyDate`, `allocationID`, `priorAllocationKeyDate`, `priorAllocationID`, `tradeDate`, `settlementDate`, `allocationType`, `correspondentCRD`, `newOrderFDID`, `allocationInstructionTime`, `institutionFlag`, `accountHolderType`
+
+### Changed
+
+- Added three Gold tables to the validator's `known_gold_tables` allow-list: `fact_option_order_events`, `fact_option_executions`, `fact_option_allocations`.
+
+### Coverage delta cumulative
+
+| Metric | After Tier 6 | After Tier 7 |
+|--------|------:|------:|
+| Verified field mappings | 122 | **198** |
+| Equity event types covered | All Section 4 events | All Section 4 events |
+| Simple option event types covered | none | All 35 Section 5.1 events |
+| Multi-leg events still pending field reconciliation | 25 | 25 |
+
+
 
 ### Added
 

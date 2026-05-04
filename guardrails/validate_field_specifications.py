@@ -185,6 +185,10 @@ def main() -> int:
         "fact_allocations",
         "fact_multileg_option_events",
         "fact_multileg_option_legs",
+        # Simple option event facts (Section 5.1)
+        "fact_option_order_events",
+        "fact_option_executions",
+        "fact_option_allocations",
         "fact_cais_fdid",
         "fact_cais_customer",
         "fact_cais_submission",
