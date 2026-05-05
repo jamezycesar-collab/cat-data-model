@@ -2,6 +2,72 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 10.7: Cross-dialect parity guardrail (close audit F8.4)
+
+### Added
+
+- **`guardrails/validate_cross_dialect_parity.py`** - new (seventh) guardrail. For each table that appears in 2+ dialects within `ddl/option/`, `ddl/multileg/`, or `ddl/cais/`, validates that the column set is the same across all dialects (Delta, Hive, Fabric Warehouse, Fabric Lakehouse). Diffs not in the allowlist are errors and exit 1.
+- **`guardrails/known_parity_gaps.csv`** - 13 documented backlog rows: 1 from F5.1 (`fact_cais_fdid.last_refresh_date` Hive-only), 4 from F5.2 (`link_*_event` partition-strategy diffs), 8 from F5.3 (`sat_cais_fdid_state` `_array` vs `_json` naming for the 4 array columns).
+
+### Changed
+
+- `.github/workflows/validate-taxonomy.yml` - seventh validation step.
+- `guardrails/pre-commit` - seventh validator wired in.
+
+### Why
+
+Audit finding F8.4: no validator checked cross-dialect column parity. Step 5 of the audit found ~5 real diffs by hand. Tier 10.7 makes the check automated. Same allowlist pattern as Tier 10 / 10.5 / 10.6: existing diffs are documented backlog (warnings); future drift fails CI.
+
+### Scope
+
+Only the 4-dialect-parallel families are checked:
+
+| Directory | In scope |
+|---|---|
+| `ddl/option/` | ✅ silver+gold across 4 dialects |
+| `ddl/multileg/` | ✅ silver+gold across 4 dialects |
+| `ddl/cais/` | ✅ silver+gold across 4 dialects |
+| `ddl/gold/` | ❌ Delta-canonical only |
+| `ddl/dv2/` | ❌ cross-cutting; managed separately |
+| `ddl/expanded-model*/` | ❌ enterprise-scope; Delta+Hive only |
+| `ddl/CAT_PreTrade_DDL_*.sql` | ❌ legacy |
+
+The narrow scope keeps the allowlist tractable. Out-of-scope dirs aren't audited for parity because they're dialect-partial by design.
+
+### Coverage
+
+```
+DDL files scanned (parity scope):  18
+Tables in 2+ dialects:             38
+Allowlisted backlog diffs:         13
+New parity violations:             0
+```
+
+F5.4 (`hub_*_order_bk_keydate` missing from Hive) no longer surfaces — either Tier 9.3 backfilled the columns or the improved parser now finds them. Removed from active backlog.
+
+### Parser improvements over the audit's manual diff
+
+- Hive `PARTITIONED BY (col TYPE)` columns are now treated as real columns (parity now correctly counts `event_date` / `as_of_date` as present in Hive even though they're outside the column body)
+- Reserved-keyword line starts (REFERENCES inline FK clauses, CONSTRAINT, PRIMARY, FOREIGN, CHECK, etc.) are filtered out, no longer producing false-positive "extra column" findings
+- Schema prefixes are stripped (`gold.fact_x` and bare `fact_x` resolve to the same table)
+
+### Behavior change
+
+- Before Tier 10.7: cross-dialect drift silently shipped (manual catch only).
+- After Tier 10.7: any new column added to one dialect but not another is an ERROR unless explicitly allowlisted.
+
+Re-verified by injecting a `totally_synthetic_drift_col STRING` into `fact_cais_inconsistency` in `ddl/cais/02_cais_gold_delta.sql` only - validator exits 1 with a clear message naming Delta as the only-dialect-with and listing Hive/FabricWH/FabricLH as missing. Restoration - exits 0.
+
+### Audit-finding closure status update
+
+| Finding | Severity | After Tier 10.7 |
+|---|---|---|
+| F8.4 no cross-dialect parity check | MEDIUM | ✅ closed |
+| F5.1, F5.2, F5.3 | MEDIUM/LOW | tracked in allowlist; burndown ongoing |
+| F5.4 hub_*_order_bk_keydate | MEDIUM | resolved (no longer surfaces) |
+
+WS1 (validator hardening) is now complete except for F8.6 (CHANGELOG↔git automation) which is informational.
+
 ## [Unreleased] - Tier 10.6: CHECK constraint enum lint (close audit F8.5)
 
 ### Added

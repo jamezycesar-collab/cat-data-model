@@ -1,0 +1,14 @@
+table,column,present_in,missing_from,audit_finding
+fact_cais_fdid,last_refresh_date,hive,"delta,fab_lh,fab_wh",F5.1
+link_multileg_event,date,delta,"fab_lh,fab_wh,hive",F5.2
+link_multileg_event,event_date,"fab_lh,fab_wh,hive",delta,F5.2
+link_option_event,date,delta,"fab_lh,fab_wh,hive",F5.2
+link_option_event,event_date,"fab_lh,fab_wh,hive",delta,F5.2
+sat_cais_fdid_state,account_types_array,"delta,fab_lh,hive",fab_wh,F5.3
+sat_cais_fdid_state,account_types_json,fab_wh,"delta,fab_lh,hive",F5.3
+sat_cais_fdid_state,clearing_broker_ids,"delta,fab_lh,hive",fab_wh,F5.3
+sat_cais_fdid_state,clearing_broker_ids_json,fab_wh,"delta,fab_lh,hive",F5.3
+sat_cais_fdid_state,dvp_custodian_ids,"delta,fab_lh,hive",fab_wh,F5.3
+sat_cais_fdid_state,dvp_custodian_ids_json,fab_wh,"delta,fab_lh,hive",F5.3
+sat_cais_fdid_state,registered_rep_crds,"delta,fab_lh,hive",fab_wh,F5.3
+sat_cais_fdid_state,registered_rep_crds_json,fab_wh,"delta,fab_lh,hive",F5.3
