@@ -2,6 +2,52 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 10.6: CHECK constraint enum lint (close audit F8.5)
+
+### Added
+
+- **`guardrails/validate_check_constraints.py`** - new (sixth) guardrail. Walks every DDL file and extracts SQL `CHECK (col IN ('a','b','c'))` constraints (also handles `CHECK (col IS NULL OR col IN (...))`). For each (column, value) pair, validates the value against the appropriate primary source: CAT verified event codes for `cat_event_code` / `event_code` / `quote_event_code`; CAIS enumerations for `customer_type`, `fdid_type`, `customer_role`, `large_trader_type`, `submission_action`, `file_type`, `fdid_end_reason`, `cais_account_type_bk`, `addr_type`, `cais_fdid_type_bk`. Unknown values are errors and exit 1.
+
+### Changed
+
+- `.github/workflows/validate-taxonomy.yml` - added a sixth validation step running `validate_check_constraints.py` on every PR.
+- `guardrails/pre-commit` - sixth validator wired in.
+
+### Why
+
+Audit finding F8.5: `validate_event_taxonomy.py` validates the 11 CAIS enum families row-by-row vs the CSV, but does not validate CAT-spec or CAIS CHECK constraint values in actual DDL. A typo in a CHECK constraint (e.g. `'MONOX'` instead of `'MONO'`, or `'TRDHOLDER_X'` instead of `'TRDHOLDER'`) would slip past every existing validator unless the typo happened to match one of the 24 historically-fabricated codes the no-fabrications validator knows about.
+
+Tier 10.6 closes that gap. Same pattern as Tier 10 (replace ad-hoc checking with primary-source introspection) applied to a different artefact: the IN-list of every enforced SQL CHECK constraint in DDL.
+
+### Coverage
+
+```
+DDL files scanned:                68
+SQL CHECK constraints found:      83
+Constraints validated vs source:  62
+Constraints on known-unmapped:    21
+Distinct constrained columns:     17
+```
+
+13 columns are mapped to primary-source enumerations and validated. 4 columns are operational/internal enums not in primary sources (`severity`, `affected_record_type`, `leg_side`, `risk_framework`); these are recorded in `KNOWN_UNMAPPED_COLUMNS` and skipped silently. New columns added to DDL with CHECK constraints get a warning until either mapped to a primary source or added to the known-unmapped set.
+
+### Hive markers
+
+Hive `COMMENT 'CHECK in (X, Y, Z)'` documentation markers (21 occurrences across CAIS/multileg DDL) are NOT validated. The corresponding SQL `CHECK` constraint in the Delta / Fabric Warehouse / Fabric Lakehouse dialects is the canonical source of truth; if those have been validated, the Hive comment can be assumed consistent.
+
+### Behavior change
+
+- Before Tier 10.6: a typo in any CHECK constraint value silently shipped.
+- After Tier 10.6: any CHECK value not in the appropriate primary-source CSV is an error and fails CI.
+
+Re-verified by injecting `'MONOX_FAKE'` into the `cat_event_code` CHECK constraint in `ddl/option/02_option_gold_delta.sql` - validator exits 1 with a clear error message. Restoration - exits 0.
+
+### Audit-finding closure status update
+
+| Finding | Severity | After Tier 10.6 |
+|---|---|---|
+| F8.5 no CHECK enum lint | MEDIUM | ✅ closed |
+
 ## [Unreleased] - Tier 10.5: Diagram-lint guardrail (close audit F7.1, F7.2, F8.3)
 
 ### Added

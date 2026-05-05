@@ -37,3 +37,5 @@ echo "Running field-mapping check..."
 python3 guardrails/validate_field_specifications.py
 echo "Running diagram-lint check..."
 python3 guardrails/validate_diagrams.py
+echo "Running CHECK-constraint enum check..."
+python3 guardrails/validate_check_constraints.py

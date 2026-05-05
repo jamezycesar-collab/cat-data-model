@@ -28,3 +28,5 @@ jobs:
         run: python3 guardrails/validate_field_specifications.py
       - name: Validate Mermaid diagrams reference real DDL entities
         run: python3 guardrails/validate_diagrams.py
+      - name: Validate DDL CHECK constraint values resolve to primary sources
+        run: python3 guardrails/validate_check_constraints.py
