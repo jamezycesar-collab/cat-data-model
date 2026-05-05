@@ -12,8 +12,9 @@ set -euo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
-# Only run if any tracked file under primary-sources/ or reference-data/ is staged.
-TRIGGER_PATHS="primary-sources/ reference-data/ guardrails/spec_pins.json"
+# Only run if any tracked file under one of the trigger paths is staged.
+# Diagrams and DDL are triggers because validate_diagrams checks both.
+TRIGGER_PATHS="primary-sources/ reference-data/ ddl/ diagrams/ guardrails/"
 NEED_RUN=0
 for path in $TRIGGER_PATHS; do
   if git diff --cached --name-only | grep -q "^$path"; then
@@ -34,3 +35,5 @@ echo "Running Python syntax check..."
 python3 guardrails/validate_python_syntax.py
 echo "Running field-mapping check..."
 python3 guardrails/validate_field_specifications.py
+echo "Running diagram-lint check..."
+python3 guardrails/validate_diagrams.py

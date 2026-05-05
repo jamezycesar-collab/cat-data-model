@@ -2,6 +2,51 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 10.5: Diagram-lint guardrail (close audit F7.1, F7.2, F8.3)
+
+### Added
+
+- **`guardrails/validate_diagrams.py`** - new validator. Walks every `diagrams/mermaid/*.mmd` and confirms entity tokens matching `(hub|sat|link|fact|dim|pit|bridge)_*` resolve to a `CREATE TABLE` somewhere in `ddl/`. Phantom entities (referenced in a diagram but absent from DDL) become errors and exit 1, unless allowlisted.
+- **`guardrails/known_diagram_gaps.csv`** - 12 documented backlog rows: 5 from F7.1 (`medallion_flowchart.mmd` phantom links + facts), 3 from F7.2 (`gold_star_schema_er.mmd` phantom facts), and 4 newly surfaced as F7.4 (`dv2_hub_link_er.mmd` references `link_order_execution` / `link_execution_allocation` / `link_order_route_venue` / `hub_position` where DV2 DDL has different names like `link_execution_order`, `link_allocation_execution`).
+
+### Changed
+
+- `.github/workflows/validate-taxonomy.yml` - added a fifth validation step that runs `validate_diagrams.py` on every PR.
+- `guardrails/pre-commit` - extended `TRIGGER_PATHS` to include `ddl/`, `diagrams/`, and `guardrails/` (previously only `primary-sources/`, `reference-data/`, `spec_pins.json`). Now triggers all 5 validators when any DDL or diagram file is staged.
+
+### Why
+
+Tier 10 generalized the v2.0.0 anti-fabrication pattern (replace hardcoded reference lists with primary-source introspection) to the field-mapping CSV. Tier 10.5 applies the same pattern to Mermaid diagrams, the next artefact class where stale or invented entity names had been silently accepted. The DV2 diagrams in particular surfaced naming drift (`link_order_execution` vs the DDL's `link_execution_order`) that no other check would have caught.
+
+### Mermaid parser notes
+
+The validator handles three Mermaid diagram types: `classDiagram` (with `namespace { class A class B }` blocks where the namespace is transparent and inner classes are entity declarations), `erDiagram` (with `ENTITY { type field }` blocks where the inner content is column declarations and is skipped), and `flowchart` (where every entity-prefix token on a relationship line is a reference). Tokens ending in `_sk` whose prefix is a real DDL table are filtered out as FK column references.
+
+### Behavior change
+
+- Before Tier 10.5: stale or fabricated diagram entities silently accepted.
+- After Tier 10.5: any new diagram entity not in DDL and not in `known_diagram_gaps.csv` is an error.
+
+```
+Diagram files scanned:       19
+Entity tokens scanned:       321
+DDL tables available:        293
+Allowlisted backlog hits:    12
+New phantom violations:      0
+PASS - all diagram entities resolve in DDL or are allowlisted.
+```
+
+Re-verified by injecting a synthetic `fact_totally_fake` reference into `full_model_er.mmd` - validator exits 1 as expected. Restoring - exits 0.
+
+### Audit-finding closure status
+
+| Finding | Severity | After Tier 10.5 |
+|---|---|---|
+| F7.1 medallion_flowchart phantom entities | HIGH | ✅ closed (allowlisted, flagged for burndown) |
+| F7.2 gold_star_schema_er phantom entities | HIGH | ✅ closed (allowlisted, flagged for burndown) |
+| F7.4 DV2 diagram naming drift | NEW | flagged + allowlisted (4 rows) |
+| F8.3 no diagram lint | MEDIUM | ✅ closed (validator now exists) |
+
 ## [Unreleased] - Tier 10: DDL introspection in field-mapping validator (close audit F3.1, F3.2, F8.1, F8.2)
 
 ### Added
