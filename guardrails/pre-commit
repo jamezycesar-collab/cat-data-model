@@ -39,3 +39,5 @@ echo "Running diagram-lint check..."
 python3 guardrails/validate_diagrams.py
 echo "Running CHECK-constraint enum check..."
 python3 guardrails/validate_check_constraints.py
+echo "Running cross-dialect parity check..."
+python3 guardrails/validate_cross_dialect_parity.py
