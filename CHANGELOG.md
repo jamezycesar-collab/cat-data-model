@@ -2,6 +2,45 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 10: DDL introspection in field-mapping validator (close audit F3.1, F3.2, F8.1, F8.2)
+
+### Added
+
+- **`guardrails/known_field_mapping_gaps.csv`** - 212 documented backlog rows covering the 4 phantom gold tables (F3.1: `fact_order_events`, `fact_quotes`, `fact_allocations`, `fact_execution_events`) and 92 missing columns (F3.2: across `fact_multileg_option_events`, `fact_option_order_events`, `fact_multileg_option_legs`, `fact_option_allocations`, `fact_option_executions`). Each row carries an `audit_finding` column (F3.1 or F3.2) and the source line number. Allowlisted entries become warnings; new violations are errors and fail the validator.
+- **`discover_ddl_tables()`** in `validate_field_specifications.py` - scans `ddl/**/*.sql` for `CREATE TABLE` statements across all 4 SQL dialects and merges columns. Replaces the 27-name hardcoded set that was the root cause of F8.1.
+
+### Changed
+
+- `validate_field_specifications.py` Check 3 rewritten:
+  - Was: hardcoded `known_gold_tables` set; unknown tables emitted warnings only.
+  - Now: introspects DDL; tables and columns not in DDL emit ERRORS unless allowlisted in `known_field_mapping_gaps.csv`.
+  - Closes audit findings F3.1 (phantom tables in field mapping), F3.2 (missing columns), F8.1 (hardcoded known-tables list), F8.2 (no column-existence check).
+
+### Why
+
+The forensic audit dated 2026-05-04 found that `validate_field_specifications.py` passed 257/257 mapping rows because it accepted any table whose name was on a hardcoded list, without checking DDL existence. 120 of 257 rows (47%) referenced 4 tables that have no `CREATE TABLE` anywhere in the repo. 92 rows referenced columns that don't exist on existing tables.
+
+The same failure pattern that produced 24 fabricated event codes in v2.0.0 — accepting names without verifying against a primary source — applied to a different artefact: DDL existence. Tier 10 generalizes the v2.0.0 remediation pattern (replace hardcoded reference lists with introspection) to this new artefact class.
+
+### Behavior change
+
+- Before Tier 10: validator passed silently on phantom tables and missing columns.
+- After Tier 10: existing 212 violations are warnings (allowlisted as documented backlog); any NEW violation is an error and exits 1.
+
+```
+Errors:   0
+Warnings: 2
+WARN:  120 field-mapping rows reference phantom gold_tables (allowlisted as backlog per F3.1).
+WARN:  92 field-mapping rows reference missing gold_columns (allowlisted as backlog per F3.2).
+PASS - field mappings reference verified codes.
+```
+
+Re-verified by injecting two synthetic fabrications (one phantom table, one missing column on an existing table) - validator exits 1 as expected. Restoring the CSV - exits 0.
+
+### Backlog burndown plan
+
+The 212 allowlist rows trace to a half-finished naming migration documented in the audit. Three options for closing them are described in AUDIT_2026_05_04.md Workstream 2. Each row removed from `known_field_mapping_gaps.csv` (after either DDL or field-mapping is reconciled) tightens the validator. Final state: empty allowlist (header only).
+
 ## [Unreleased] - Tier 9.3: Close four CAIS DDL gaps + add missing Hive Gold
 
 ### Added

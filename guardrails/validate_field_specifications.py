@@ -16,11 +16,18 @@ It checks ddl/gold/06_cat_field_mapping.csv against:
      'firmDesignatedID' or 'eventTimestamp'. Fields not found in the PDF
      are flagged as warnings (could be a misspelling or invented name).
 
-This is a heuristic, not a complete spec-cross-reference. A future
-version could parse the per-event Field Specification tables in the
-spec PDF (Tables 64+) and compare the precise required-vs-conditional
-column. For now this catches the most common fabrications: typos in
-event codes and made-up JSON field names.
+  3. DDL existence: every gold_table in the field mapping must have a
+     CREATE TABLE somewhere under ddl/, and every gold_column must exist
+     on its table in at least one dialect. This catches the F3.1 (phantom
+     table) and F3.2 (missing column) classes that the previous hardcoded
+     known_gold_tables list silently allowed. Existing backlog from
+     AUDIT_2026_05_04.md is allowlisted in
+     guardrails/known_field_mapping_gaps.csv; new violations fail.
+
+This is a heuristic for check #2, not a complete spec-cross-reference.
+A future version could parse the per-event Field Specification tables
+in the spec PDF (Tables 64+) and compare the precise required-vs-
+conditional column. Checks #1 and #3 are exact.
 
 Usage:
   python3 guardrails/validate_field_specifications.py
@@ -56,6 +63,15 @@ def load_verified_event_codes() -> set[str]:
 
 VERIFIED_CSV = REPO / "ddl" / "gold" / "06_cat_field_mapping.csv"
 UNVERIFIED_CSV = REPO / "ddl" / "gold" / "06b_cat_field_mapping_unverified_candidates.csv"
+KNOWN_GAPS_CSV = Path(__file__).parent / "known_field_mapping_gaps.csv"
+
+# Pattern: CREATE TABLE [IF NOT EXISTS] [schema.]name ( ... ) <terminator>
+_CREATE_TABLE_RE = re.compile(
+    r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[\w\.]*?(\w+)\s*\(([^;]+?)\)"
+    r"\s*(?:USING|PARTITIONED|TBLPROPERTIES|CLUSTER|COMMENT|STORED|;)",
+    re.IGNORECASE | re.DOTALL,
+)
+_COL_NAME_RE = re.compile(r"(\w+)\s+\w")
 
 
 def load_field_mapping() -> list[dict[str, str]]:
@@ -70,6 +86,57 @@ def load_unverified_candidates() -> list[dict[str, str]]:
         return []
     with UNVERIFIED_CSV.open() as f:
         return list(csv.DictReader(f))
+
+
+def discover_ddl_tables() -> dict[str, set[str]]:
+    """Scan ddl/**/*.sql for CREATE TABLE statements across all dialects.
+
+    Returns a dict mapping table_name (lowercased, schema-stripped) to the
+    set of column names defined on it (also lowercased). Columns from any
+    dialect (Delta, Hive, Fabric Warehouse, Fabric Lakehouse) are merged,
+    so a column present in any dialect satisfies the check.
+    """
+    tables: dict[str, set[str]] = {}
+    ddl_root = REPO / "ddl"
+    if not ddl_root.exists():
+        return tables
+    for f in ddl_root.rglob("*.sql"):
+        text = f.read_text()
+        for m in _CREATE_TABLE_RE.finditer(text):
+            tbl = m.group(1).lower()
+            body = m.group(2)
+            cols = tables.setdefault(tbl, set())
+            for line in body.splitlines():
+                line = line.strip().rstrip(",")
+                if not line:
+                    continue
+                if line.startswith("--"):
+                    continue
+                if line.upper().startswith(("CONSTRAINT", "PRIMARY", "FOREIGN")):
+                    continue
+                cm = _COL_NAME_RE.match(line)
+                if cm:
+                    cols.add(cm.group(1).lower())
+    return tables
+
+
+def load_known_gaps() -> set[tuple[str, str]]:
+    """Load (gold_table, gold_column) tuples that are documented backlog.
+
+    These are the 212 violations identified by AUDIT_2026_05_04.md (F3.1
+    and F3.2). Allowlisted entries become warnings; everything else is
+    an error.
+    """
+    if not KNOWN_GAPS_CSV.exists():
+        return set()
+    out: set[tuple[str, str]] = set()
+    with KNOWN_GAPS_CSV.open() as f:
+        for row in csv.DictReader(f):
+            t = (row.get("gold_table") or "").strip().lower()
+            c = (row.get("gold_column") or "").strip().lower()
+            if t and c:
+                out.add((t, c))
+    return out
 
 
 def extract_pdf_text(spec_filename: str) -> str:
@@ -173,50 +240,64 @@ def main() -> int:
                 f"Could be a fabrication or a CAIS-only field. Verify manually."
             )
 
-    # ----- Check 3: gold_table values match a known set -----
-    known_gold_tables = {
-        "fact_cat_order_events",
-        "fact_cat_executions",
-        "fact_cat_allocations",
-        "fact_cat_quotes",
-        "fact_cat_customer_records",  # legacy / deprecated
-        "fact_order_events",
-        "fact_execution_events",
-        "fact_allocations",
-        "fact_multileg_option_events",
-        "fact_multileg_option_legs",
-        # Simple option event facts (Section 5.1)
-        "fact_option_order_events",
-        "fact_option_executions",
-        "fact_option_allocations",
-        "fact_cais_fdid",
-        "fact_cais_customer",
-        "fact_cais_submission",
-        "fact_cais_inconsistency",
-        "fact_cais_outstanding_rejection",
-        # Conformed dimensions, referenced via SK joins from facts
-        "dim_party",
-        "dim_instrument",
-        "dim_venue",
-        "dim_account",
-        "dim_trader",
-        "dim_desk",
-        "dim_date",
-        "dim_event_type",
-        # Quote dimension (work in progress)
-        "fact_quotes",
-    }
-    unknown_tables: list[tuple[int, str]] = []
+    # ----- Check 3: gold_table and gold_column values resolve in DDL -----
+    #
+    # Replaces the previous hardcoded known_gold_tables set with DDL
+    # introspection. Closes audit findings F3.1 (phantom tables) and F3.2
+    # (missing columns) by making them detectable.
+    #
+    # The 212 existing violations from AUDIT_2026_05_04.md are listed in
+    # guardrails/known_field_mapping_gaps.csv as documented backlog. New
+    # violations (table/column not in DDL AND not in allowlist) become
+    # errors and fail the validator.
+    ddl_tables = discover_ddl_tables()
+    allowlist = load_known_gaps()
+
+    phantom_table_violations: list[tuple[int, str, str]] = []
+    missing_column_violations: list[tuple[int, str, str]] = []
+    backlog_table: list[tuple[int, str, str]] = []
+    backlog_column: list[tuple[int, str, str]] = []
+
     for i, row in enumerate(mappings, start=2):
-        t = (row.get("gold_table") or "").strip()
-        if t and t not in known_gold_tables:
-            unknown_tables.append((i, t))
-    if unknown_tables:
-        for line, t in unknown_tables:
-            warnings.append(
-                f"06_cat_field_mapping.csv:{line} references unknown gold_table {t!r}. "
-                f"If this table exists in the DDL, add it to known_gold_tables in this validator."
-            )
+        t = (row.get("gold_table") or "").strip().lower()
+        c = (row.get("gold_column") or "").strip().lower()
+        if not t or not c:
+            continue
+        if t not in ddl_tables:
+            if (t, c) in allowlist:
+                backlog_table.append((i, t, c))
+            else:
+                phantom_table_violations.append((i, t, c))
+        elif c not in ddl_tables[t]:
+            if (t, c) in allowlist:
+                backlog_column.append((i, t, c))
+            else:
+                missing_column_violations.append((i, t, c))
+
+    for line, t, c in phantom_table_violations:
+        errors.append(
+            f"06_cat_field_mapping.csv:{line} references gold_table {t!r} "
+            f"(column {c!r}) that has no CREATE TABLE in any DDL file. "
+            f"Either add the DDL or add this row to "
+            f"guardrails/known_field_mapping_gaps.csv as documented backlog."
+        )
+    for line, t, c in missing_column_violations:
+        errors.append(
+            f"06_cat_field_mapping.csv:{line} references column {t}.{c!r} "
+            f"not found on the table in any dialect. Either add the column "
+            f"to the DDL or add this row to "
+            f"guardrails/known_field_mapping_gaps.csv as documented backlog."
+        )
+    if backlog_table:
+        warnings.append(
+            f"{len(backlog_table)} field-mapping rows reference phantom "
+            f"gold_tables (allowlisted as backlog per F3.1)."
+        )
+    if backlog_column:
+        warnings.append(
+            f"{len(backlog_column)} field-mapping rows reference missing "
+            f"gold_columns (allowlisted as backlog per F3.2)."
+        )
 
     # ----- Also count unverified candidates (informational only) -----
     candidates = load_unverified_candidates()
