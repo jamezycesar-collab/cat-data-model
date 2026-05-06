@@ -32,3 +32,5 @@ jobs:
         run: python3 guardrails/validate_check_constraints.py
       - name: Validate cross-dialect column parity
         run: python3 guardrails/validate_cross_dialect_parity.py
+      - name: Validate every CAT event code has at least one field-mapping row
+        run: python3 guardrails/validate_event_coverage.py
