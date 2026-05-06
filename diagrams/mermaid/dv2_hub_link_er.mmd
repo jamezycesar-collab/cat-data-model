@@ -27,7 +27,6 @@ classDiagram
 
  namespace OpsHubs {
  class hub_submission
- class hub_position
  }
 
  namespace ReferenceHubs {
@@ -72,20 +71,19 @@ classDiagram
  record_source : STRING
  }
 
- class link_order_execution {
+ class link_execution_order {
  <<link>>
  +link_hk : PK SHA256
- order_hk : FK
  execution_hk : FK
+ order_hk : FK
  load_date : TIMESTAMP
  record_source : STRING
  }
- class link_execution_allocation {
+ class link_allocation_execution {
  <<link>>
  +link_hk : PK SHA256
- execution_hk : FK
  allocation_hk : FK
- account_hk : FK
+ execution_hk : FK
  load_date : TIMESTAMP
  record_source : STRING
  }
@@ -106,12 +104,11 @@ classDiagram
  load_date : TIMESTAMP
  record_source : STRING
  }
- class link_order_route_venue {
+ class link_order_venue {
  <<link>>
  +link_hk : PK SHA256
  order_hk : FK
  venue_hk : FK
- route_sequence : INT
  load_date : TIMESTAMP
  record_source : STRING
  }
@@ -168,13 +165,13 @@ classDiagram
  hub_order "1" --> "*" sat_order_details : describes
  hub_execution "1" --> "*" sat_execution_details : describes
 
- hub_order "1" --> "*" link_order_execution : participates
- hub_execution "1" --> "*" link_order_execution : participates
- hub_execution "1" --> "*" link_execution_allocation : participates
- hub_allocation "1" --> "*" link_execution_allocation : participates
+ hub_order "1" --> "*" link_execution_order : participates
+ hub_execution "1" --> "*" link_execution_order : participates
+ hub_execution "1" --> "*" link_allocation_execution : participates
+ hub_allocation "1" --> "*" link_allocation_execution : participates
  hub_party "1" --> "*" link_party_account : participates
  hub_account "1" --> "*" link_party_account : participates
  hub_instrument "1" --> "*" link_instrument_venue : participates
  hub_venue "1" --> "*" link_instrument_venue : participates
- hub_order "1" --> "*" link_order_route_venue : participates
- hub_venue "1" --> "*" link_order_route_venue : participates
+ hub_order "1" --> "*" link_order_venue : participates
+ hub_venue "1" --> "*" link_order_venue : participates

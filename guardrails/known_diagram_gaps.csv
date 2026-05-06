@@ -1,8 +1,4 @@
 diagram_file,entity_name,reason,audit_finding,first_line
-diagrams/mermaid/dv2_hub_link_er.mmd,hub_position,phantom_entity,F7.4,30
-diagrams/mermaid/dv2_hub_link_er.mmd,link_order_execution,phantom_entity,F7.4,75
-diagrams/mermaid/dv2_hub_link_er.mmd,link_execution_allocation,phantom_entity,F7.4,83
-diagrams/mermaid/dv2_hub_link_er.mmd,link_order_route_venue,phantom_entity,F7.4,109
 diagrams/mermaid/gold_star_schema_er.mmd,fact_order_events,phantom_entity,F7.2,23
 diagrams/mermaid/gold_star_schema_er.mmd,fact_execution_events,phantom_entity,F7.2,24
 diagrams/mermaid/gold_star_schema_er.mmd,fact_allocations,phantom_entity,F7.2,25

@@ -1,0 +1,8 @@
+# Runtime dependencies for the cat-data-model guardrail validators.
+#
+# pypdf is used by validate_event_taxonomy.py and validate_field_specifications.py
+# to extract text from the CAT IM and CAIS spec PDFs.
+#
+# pypdf < 4.0 emits a CryptographyDeprecationWarning under cryptography 45+
+# (ARC4 algorithm moved). Pinning to 4.x silences it without changing behavior.
+pypdf>=4.0,<6.0

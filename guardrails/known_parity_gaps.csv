@@ -1,5 +1,4 @@
 table,column,present_in,missing_from,audit_finding
-fact_cais_fdid,last_refresh_date,hive,"delta,fab_lh,fab_wh",F5.1
 link_multileg_event,date,delta,"fab_lh,fab_wh,hive",F5.2
 link_multileg_event,event_date,"fab_lh,fab_wh,hive",delta,F5.2
 link_option_event,date,delta,"fab_lh,fab_wh,hive",F5.2

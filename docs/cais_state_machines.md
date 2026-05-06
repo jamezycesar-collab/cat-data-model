@@ -294,16 +294,16 @@ If any precondition fails, the submission is rejected and the flow does not star
 
 ## Backlog
 
-These flows are documented but not fully implemented in DDL:
+All four DDL gaps surfaced by this state-machine analysis were closed in Tier 9.3 (commit `eb68b26`). The backlog is empty.
 
-| Flow | Gap |
-|------|-----|
-| Repair (Flow 8) | No `errors` table to link the `errorROEID` to the originating Outstanding Rejection feedback file. Add as `fact_cais_outstanding_rejection`. |
-| Inconsistency past deadline (Flow 9) | `vw_cais_overdue_inconsistencies` view not yet defined. |
-| TID replacement linkage (Flow 10) | `correctingCustomerRecordID` column not yet on `sat_cais_customer_state`. Add it. |
-| Last-refresh tracking (Flow 6) | No `last_refresh_date` column on `sat_cais_fdid_state`. Add it. |
+| Flow | Gap | Status |
+|------|-----|--------|
+| Repair (Flow 8) | `fact_cais_outstanding_rejection` table for `errorROEID` -> Outstanding Rejection feedback file. | Closed in Tier 9.3 - table added across all 4 dialects. |
+| Inconsistency past deadline (Flow 9) | `vw_cais_overdue_inconsistencies` view. | Closed in Tier 9.3 - view added across all 4 dialects. |
+| TID replacement linkage (Flow 10) | `correcting_customer_record_id` column on `sat_cais_customer_state`. | Closed in Tier 9.3 - column added across all 4 dialects. |
+| Last-refresh tracking (Flow 6) | `last_refresh_date` column on `sat_cais_fdid_state`. | Closed in Tier 9.3 - column added across all 4 dialects. |
 
-These are the next implementation increment, not blocking documentation. File a Tier 9.3 if you want me to land them.
+Note: an over-eager Tier 9.3 also placed `last_refresh_date` on Hive Gold `fact_cais_fdid` (a duplicate of the Silver state column). Tier 11 corrected that - the column now lives only on the Silver SCD2 satellite, matching the design intent across all dialects.
 
 ## Verification status
 

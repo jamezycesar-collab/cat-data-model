@@ -38,7 +38,6 @@ CREATE TABLE IF NOT EXISTS gold.fact_cais_fdid (
     has_active_ltid             BOOLEAN,
     last_submission_id          STRING,
     last_submission_action      STRING,
-    last_refresh_date           DATE,
     source_file                 STRING,
     dv2_source_hk               STRING,
     quality_outcome             STRING
