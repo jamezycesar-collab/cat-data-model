@@ -2,6 +2,43 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 11: Quick-wins (F5.1, F7.3, F7.4 burndown + I1)
+
+### Changed
+
+- `ddl/cais/06_cais_gold_hive.sql` - dropped `last_refresh_date DATE` from Hive Gold `fact_cais_fdid`. Tier 9.3 placed it on Gold by mistake; the column belongs on the Silver SCD2 satellite (`sat_cais_fdid_state`) only, where it lives across all four dialects. Closes F5.1 (-1 row from `known_parity_gaps.csv`).
+- `diagrams/mermaid/dv2_hub_link_er.mmd` - renamed three classes to match DV2 DDL: `link_order_execution` -> `link_execution_order`, `link_execution_allocation` -> `link_allocation_execution`, `link_order_route_venue` -> `link_order_venue`. Removed `class hub_position` from the OpsHubs namespace - position concept lives in `ddl/expanded-model/`, not DV2. Closes F7.4 (-4 rows from `known_diagram_gaps.csv`).
+- `docs/cais_state_machines.md` - Backlog table reformatted with Status column showing all 4 items closed in Tier 9.3, plus a footnote about the Tier 9.3 Hive over-eager fix that Tier 11 corrected. Closes F7.3.
+- `.github/workflows/validate-taxonomy.yml` - `pip install pypdf` -> `pip install -r requirements.txt`.
+- `guardrails/known_parity_gaps.csv` - 13 -> 12 rows (F5.1 cleared).
+- `guardrails/known_diagram_gaps.csv` - 12 -> 8 rows (F7.4 cleared).
+
+### Added
+
+- `requirements.txt` - declares `pypdf>=4.0,<6.0`. Single source of truth for Python deps across CI and local dev. Closes I1 - older pypdf 3.x emitted a `CryptographyDeprecationWarning` under cryptography 45+; pinning to 4.x silences it.
+
+### Why
+
+Quick-win burndown of low-effort items the audit surfaced. Each fix removes documented backlog from at least one allowlist, tightening the validator suite. Ordering chosen so each fix is independently verifiable:
+
+1. Drop a redundant DDL column in one dialect (`last_refresh_date` Hive Gold) -> F5.1 cleared
+2. Rename diagram entities to match DDL names + drop the one entity DV2 doesn't model -> F7.4 cleared
+3. Update doc that referenced not-yet-implemented gaps that are now implemented -> F7.3 cleared
+4. Pin a dependency that emits warnings -> I1 cleared
+
+Re-verified all 7 guardrails pass after each step. Allowlist warnings now read 8 (was 12) for diagrams and 12 (was 13) for parity.
+
+### Audit-finding closure status update
+
+| Finding | Severity | After Tier 11 |
+|---|---|---|
+| F5.1 last_refresh_date Hive Gold drift | MEDIUM | ✅ closed (DDL fixed; allowlist row removed) |
+| F7.3 stale state-machine backlog | LOW | ✅ closed (doc updated) |
+| F7.4 DV2 diagram naming drift | NEW (Tier 10.5) | ✅ closed (3 renames + 1 removal) |
+| I1 pypdf ARC4 deprecation warning | info | ✅ closed (pinned in requirements.txt) |
+
+Remaining open: F4.1 (8 uncovered codes — needs DDL/data work), F5.2/F5.3 (allowlisted; intentional dialect strategy diffs), F8.6 (CHANGELOG↔git automation; informational), I2 (informational).
+
 ## [Unreleased] - Tier 10.7: Cross-dialect parity guardrail (close audit F8.4)
 
 ### Added

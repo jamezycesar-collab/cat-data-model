@@ -16,8 +16,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install pypdf
-        run: pip install pypdf
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
       - name: Validate event taxonomy against spec PDFs
         run: python3 guardrails/validate_event_taxonomy.py --strict
       - name: Check for fabricated event codes
