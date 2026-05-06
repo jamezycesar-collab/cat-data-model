@@ -9,6 +9,7 @@ Scope: only the 4-dialect-parallel families are checked:
   - ddl/option/    (silver+gold across 4 dialects)
   - ddl/multileg/  (silver+gold across 4 dialects)
   - ddl/cais/      (silver+gold across 4 dialects)
+  - ddl/equity/    (gold across 4 dialects, since Tier 13)
 
 Out of scope (dialect-specific by design):
   - ddl/gold/         (Delta canonical only)
@@ -44,7 +45,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 KNOWN_GAPS_CSV = Path(__file__).parent / "known_parity_gaps.csv"
-PARITY_DIRS = {"option", "multileg", "cais"}
+PARITY_DIRS = {"option", "multileg", "cais", "equity"}
 
 _RESERVED_LINE_STARTS = {
     "constraint", "primary", "foreign", "check", "references",

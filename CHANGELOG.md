@@ -2,6 +2,55 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 13: WS2 burndown sub-tier 1 — fact_execution_events DDL
+
+### Added
+
+- **`ddl/equity/02_equity_gold_delta.sql`** - new file. Builds `gold.fact_execution_events` (Delta) for CAT IM v4.1.0r15 section 4.11.1 trade events (MEOT/MEOTS). Mirrors the structure of `fact_option_executions`. PK + FK constraints to `dim_date`, `dim_instrument`, `dim_party`, `dim_event_type`. CHECK constraint on `cat_event_code` accepts `MEOT, MEOTS` (Order Fulfillment codes MEOF/MEOFS/MEFA still tracked in `known_uncovered_events.csv` per F4.1 pending dedicated reconciliation).
+- **`ddl/equity/04_equity_gold_hive.sql`** - Hive variant. Hive doesn't enforce constraints; documented as `COMMENT 'CHECK in (MEOT, MEOTS)'`. Partitioned by `event_date`, stored as Parquet.
+- **`ddl/equity/05_equity_gold_fabric_lakehouse.sql`** - Fabric Lakehouse variant. Uses Delta under the hood with conservative TBLPROPERTIES (Fabric manages autoOptimize via workspace settings).
+- **`ddl/equity/06_equity_gold_fabric_warehouse.sql`** - Fabric Warehouse variant. T-SQL semantics: `BIGINT IDENTITY(1,1)`, `DATETIME2(7)`, `VARCHAR(N)`, `BIT`, `NOT ENFORCED` constraints.
+
+### Changed
+
+- `guardrails/validate_cross_dialect_parity.py` - extended `PARITY_DIRS` to include `equity` so the new directory is parity-checked across all four dialects.
+- `guardrails/known_field_mapping_gaps.csv` - 212 → 201 rows (11 `fact_execution_events` rows removed; columns now resolve in DDL).
+
+### Why
+
+Tier 13 is the first sub-tier of WS2 (the 212-row field-mapping allowlist burndown). Picked Option B from the audit Workstream 2 menu: build the missing DDL across all four dialects so the field mapping is grounded. Started with `fact_execution_events` because it has the smallest scope (11 mapping columns) and no equivalent `fact_cat_executions` to migrate from.
+
+The audit's column-overlap analysis showed Option C (rename phantoms to existing `fact_cat_*` tables) was less attractive than initially hypothesized: only 7 of 59 columns in `fact_order_events` overlap with `fact_cat_order_events`, and 0 of 19 `fact_allocations` columns overlap with `fact_cat_allocations`. The phantom tables represent a different design philosophy (flatter, more spec-faithful) than the legacy `fact_cat_*` tables (compact, FK-heavy). Option B builds the new design cleanly.
+
+### Coverage
+
+```
+Validators:                       8/8 pass
+DDL files scanned (parity):       22  (was 18)
+Tables in 2+ dialects:            39  (was 38)
+known_field_mapping_gaps.csv:    201  (was 212)
+```
+
+`fact_execution_events` is now a real table across all 4 dialects, parity-checked, with zero new parity violations.
+
+### Next sub-tiers
+
+| Sub-tier | Phantom table | Mapping cols | Allowlist delta |
+|---|---|---|---|
+| **Tier 13 (this)** | `fact_execution_events` | 11 | -11 → 201 |
+| Tier 14 | `fact_allocations` | 19 | -19 → ~182 |
+| Tier 15 | `fact_quotes` | 31 | -31 → ~151 |
+| Tier 16 | `fact_order_events` | 59 | -59 → ~92 |
+
+After Tier 16, the remaining ~92 allowlist rows would be missing-column cases on existing tables (F3.2). Those need either DDL extensions or field-mapping corrections — handled in subsequent tiers.
+
+### Audit-finding closure status update
+
+| Finding | Status |
+|---|---|
+| F3.1 (4 phantom tables) | 1/4 fixed (`fact_execution_events`); 3 remaining |
+| F3.2 (92 missing columns) | unchanged (separate sub-tiers) |
+
 ## [Unreleased] - Tier 12: Event-coverage guardrail (close audit F4.1)
 
 ### Added
