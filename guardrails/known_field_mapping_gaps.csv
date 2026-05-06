@@ -58,11 +58,6 @@ fact_order_events,multi_leg_ind,phantom_table,F3.1,57
 fact_order_events,paired_order_id,phantom_table,F3.1,58
 fact_order_events,quote_key_date,phantom_table,F3.1,59
 fact_order_events,quote_id,phantom_table,F3.1,60
-fact_execution_events,trade_key_date,phantom_table,F3.1,61
-fact_execution_events,trade_id,phantom_table,F3.1,62
-fact_execution_events,cancel_flag,phantom_table,F3.1,63
-fact_execution_events,cancel_timestamp,phantom_table,F3.1,64
-fact_execution_events,capacity,phantom_table,F3.1,65
 fact_allocations,cancel_flag,phantom_table,F3.1,66
 fact_allocations,cancel_timestamp,phantom_table,F3.1,67
 fact_allocations,side,phantom_table,F3.1,68
@@ -70,12 +65,6 @@ fact_allocations,price,phantom_table,F3.1,69
 fact_allocations,quantity,phantom_table,F3.1,70
 fact_allocations,firm_designated_id,phantom_table,F3.1,71
 fact_allocations,account_holder_type,phantom_table,F3.1,72
-fact_execution_events,tape_trade_id,phantom_table,F3.1,73
-fact_execution_events,market_center_id,phantom_table,F3.1,74
-fact_execution_events,side_details_ind,phantom_table,F3.1,75
-fact_execution_events,reporting_exception_code,phantom_table,F3.1,76
-fact_execution_events,clearing_firm,phantom_table,F3.1,77
-fact_execution_events,counterparty,phantom_table,F3.1,78
 fact_allocations,allocation_key_date,phantom_table,F3.1,79
 fact_allocations,allocation_id,phantom_table,F3.1,80
 fact_allocations,prior_allocation_key_date,phantom_table,F3.1,81
