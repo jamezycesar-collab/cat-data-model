@@ -2,6 +2,57 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 12: Event-coverage guardrail (close audit F4.1)
+
+### Added
+
+- **`guardrails/validate_event_coverage.py`** - new (eighth) guardrail. For every code in `primary-sources/cat_im_event_types.csv`, confirms at least one row in `ddl/gold/06_cat_field_mapping.csv` references it via the `cat_event_codes` column. Codes with zero references are errors unless allowlisted in `known_uncovered_events.csv`. Has a `--report` flag for coverage-depth distribution.
+- **`guardrails/known_uncovered_events.csv`** - 8 documented backlog rows: MEOF, MEOFS, MEFA (Order Fulfillment family, section 4.12.x) and MONQ, MORQ, MOQR, MOQC, MOQM (option quote events, section 5.1.10.x). Each row carries `target_gold_table`, written `reason`, and `audit_finding` tag.
+- **`docs/event_coverage_status.md`** - 99-event coverage status table. Documents the 8 allowlisted codes, the coverage-depth distribution, and the future-tier remediation plan per event.
+
+### Changed
+
+- `.github/workflows/validate-taxonomy.yml` - eighth validation step.
+- `guardrails/pre-commit` - eighth validator wired in.
+
+### Why
+
+Audit finding F4.1: 8 verified CAT event codes had no row in the field-mapping CSV referencing them. Tier 12 closes F4.1 by converting the gap from hidden to tracked: the 8 codes are now explicitly documented as deferred-coverage backlog with per-section rationale, and a new validator prevents NEW spec versions from sneaking uncovered codes through.
+
+Why not just add the field mappings directly: the 8 codes need per-section spec field-table reconciliation that can't be done safely from PDF text extraction alone. Order Fulfillment events (MEOF/MEOFS/MEFA) per spec section 4.12 have a field set distinct from MEOT/MEOTS, so a partial extension of MEOT field-mapping rows would either over-cover (claiming fields apply when they don't) or under-cover (missing event-specific fields). Same for option quote events vs option order events. Documented deferral is the honest move.
+
+### Coverage state
+
+```
+Verified CAT event codes:        99
+Codes with >= 1 mapping row:     91
+Codes uncovered (allowlisted):   8
+Codes uncovered (NEW):           0
+```
+
+Re-verified by removing MEOF from `known_uncovered_events.csv` - validator exits 1 with a clear message naming the code and pointing to either the field-mapping CSV or the allowlist for resolution. Restoration - exits 0.
+
+### Audit-finding closure status update
+
+| Finding | Severity | After Tier 12 |
+|---|---|---|
+| F4.1 8 uncovered codes | MEDIUM | ✅ closed (allowlisted with rationale; new uncovered codes fail CI) |
+
+### Validator suite milestone
+
+Tier 12 brings the validator suite to **8 layers**:
+
+| # | Validator | Catches |
+|---|---|---|
+| 1 | validate_event_taxonomy | spec hash drift, code-set drift, CAIS enum drift |
+| 2 | validate_no_fabrications | 24 historical fabricated codes |
+| 3 | validate_python_syntax | Python parse errors |
+| 4 | validate_field_specifications | phantom gold tables/columns in field mapping |
+| 5 | validate_diagrams | phantom entities in Mermaid diagrams |
+| 6 | validate_check_constraints | typos in DDL CHECK enum lists |
+| 7 | validate_cross_dialect_parity | column-set drift across dialects |
+| 8 | **validate_event_coverage** | **CAT codes with zero field-mapping rows** |
+
 ## [Unreleased] - Tier 11: Quick-wins (F5.1, F7.3, F7.4 burndown + I1)
 
 ### Changed
