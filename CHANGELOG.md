@@ -2,6 +2,106 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 15: WS2 burndown sub-tier 3 — fact_quotes DDL
+
+### Added
+
+- `gold.fact_quotes` across all four dialects (appended to existing Tier-13/14 `ddl/equity/` files):
+  - `ddl/equity/02_equity_gold_delta.sql`
+  - `ddl/equity/04_equity_gold_hive.sql`
+  - `ddl/equity/05_equity_gold_fabric_lakehouse.sql`
+  - `ddl/equity/06_equity_gold_fabric_warehouse.sql`
+
+  PK + FK + CHECK constraint on `cat_event_code` accepting `MENQ`, `MENQS`, `MERQ`, `MERQS`, `MEQR`, `MEQC`, `MEQM`, `MEQS` (CAT IM v4.1.0r15 sections 4.10.1 New Quote, 4.10.2 New Quote Supplement, 4.10.3 Routed Quote, 4.10.4 Routed Quote Supplement, 4.10.5 Quote Received, 4.10.6 Quote Cancelled, 4.10.7 Quote Modified, 4.10.8 Quote Status). Eight distinct equity quote event codes — the broadest CHECK constraint added so far. Replaces the legacy `fact_cat_quotes` (which covered only MEQR/MEQS with 2/31 column overlap).
+
+### Changed
+
+- `guardrails/known_field_mapping_gaps.csv` - 182 → 151 rows (31 `fact_quotes` rows removed; columns now resolve in DDL).
+
+### Why
+
+Third sub-tier of WS2 phantom-table burndown. `fact_quotes` was the next-largest phantom (31 mapping cols vs Tier 14's 19). Same Option B pattern: build the new spec-faithful design rather than retrofitting the legacy `fact_cat_quotes`. The legacy table targeted only MEQR/MEQS and carried compact derived columns (`quote_status`, `quote_type`, `quote_expiry_timestamp`) that don't appear in the spec mapping; the new `fact_quotes` covers all eight quote event codes with the actual spec fields (`quote_id`, `quote_key_date`, `bid_price`/`ask_price`, RFQ-only relative pricing, ADF-only aggregated orders, IDQS-only quote-wanted, etc.).
+
+### Schema
+
+`fact_quotes` (40 columns total: 9 framework + 31 spec):
+- `quote_event_sk` BIGINT IDENTITY (PK)
+- `event_dts` / `event_date` (timestamps; partition key in non-Delta dialects)
+- 5 dim FKs: `date_sk`, `instrument_sk`, `party_sk`, `venue_sk` (nullable), `event_type_sk`
+- `cat_event_code` (CHECK ⊂ {`MENQ`, `MENQS`, `MERQ`, `MERQS`, `MEQR`, `MEQC`, `MEQM`, `MEQS`})
+- 31 spec mapping columns (quote IDs, prior quote refs, received/routed quote refs, bid/ask pricing & size, RFQ-only relative pricing & duration, ADF-only aggregated orders, IDQS-only quote-wanted, IMID routing fields, MEQC initiator, MEQS market-participant status, RFQ ID, originating IMID)
+- 4 lineage cols
+
+### Coverage
+
+```
+Validators:                        8/8 pass
+known_field_mapping_gaps.csv:    151  (was 182)
+DDL files in parity scope:        22  (unchanged - fact_quotes appended to existing equity/ files)
+Tables in 2+ dialects:            41  (was 40)
+New parity violations:             0
+```
+
+### WS2 burndown progress
+
+| Sub-tier | Phantom | Cols | Allowlist | Status |
+|---|---|---|---|---|
+| Tier 13 | `fact_execution_events` | 11 | 212 → 201 | ✅ |
+| Tier 14 | `fact_allocations` | 19 | 201 → 182 | ✅ |
+| **Tier 15 (this)** | `fact_quotes` | 31 | 182 → 151 | ✅ |
+| Tier 16 | `fact_order_events` | 59 | 151 → ~92 | next |
+
+## [Unreleased] - Tier 14: WS2 burndown sub-tier 2 — fact_allocations DDL
+
+### Added
+
+- `gold.fact_allocations` across all four dialects (appended to existing Tier-13 `ddl/equity/` files):
+  - `ddl/equity/02_equity_gold_delta.sql`
+  - `ddl/equity/04_equity_gold_hive.sql`
+  - `ddl/equity/05_equity_gold_fabric_lakehouse.sql`
+  - `ddl/equity/06_equity_gold_fabric_warehouse.sql`
+
+  PK + FK + CHECK constraint on `cat_event_code` accepting `MEPA`, `MEAA` (CAT IM v4.1.0r15 sections 4.13.1 New Allocation and 4.13.2 Allocation Amendment). Mirrors the structure of `fact_option_allocations` for cross-family consistency.
+
+### Changed
+
+- `guardrails/known_field_mapping_gaps.csv` - 201 → 182 rows (19 `fact_allocations` rows removed; columns now resolve in DDL).
+
+### Why
+
+Second sub-tier of WS2 phantom-table burndown. `fact_allocations` was the next-smallest phantom (19 mapping cols vs Tier 13's 11). Same Option B pattern: build the new spec-faithful design rather than retrofitting the legacy `fact_cat_allocations` (which had 0/19 column overlap with the field mapping).
+
+Note on event-code scope: some mapping rows use `cat_event_codes = "MEPA,MEAA,MOPA,MOAA"`, mixing equity and option allocation codes. The DDL CHECK constraint correctly limits `fact_allocations` to equity codes only (`MEPA`, `MEAA`); option codes (`MOPA`, `MOAA`) are already handled by `fact_option_allocations`.
+
+### Schema
+
+`fact_allocations` (28 columns):
+- `allocation_event_sk` BIGINT IDENTITY (PK)
+- `event_dts` / `event_date` (timestamps; partition key in non-Delta dialects)
+- 5 dim FKs: `date_sk`, `instrument_sk`, `party_sk`, `account_sk` (nullable), `event_type_sk`
+- `cat_event_code` (CHECK ⊂ {`MEPA`, `MEAA`})
+- 19 spec mapping columns
+- 4 lineage cols
+
+### Coverage
+
+```
+Validators:                        8/8 pass
+known_field_mapping_gaps.csv:    182  (was 201)
+DDL files in parity scope:        22  (unchanged - fact_allocations appended to existing equity/ files)
+Tables in 2+ dialects:            40  (was 39)
+New parity violations:             0
+```
+
+### WS2 burndown progress
+
+| Sub-tier | Phantom | Cols | Allowlist | Status |
+|---|---|---|---|---|
+| Tier 13 | `fact_execution_events` | 11 | 212 → 201 | ✅ |
+| **Tier 14 (this)** | `fact_allocations` | 19 | 201 → 182 | ✅ |
+| Tier 15 | `fact_quotes` | 31 | 182 → ~151 | next |
+| Tier 16 | `fact_order_events` | 59 | ~151 → ~92 | queued |
+
 ## [Unreleased] - Tier 13: WS2 burndown sub-tier 1 — fact_execution_events DDL
 
 ### Added
