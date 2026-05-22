@@ -4,6 +4,16 @@ All notable changes to the data model are documented here. The format is based o
 
 ## [Unreleased] - Tier 15: WS2 burndown sub-tier 3 — fact_quotes DDL
 
+> **Note on history:** The `fact_quotes` DDL and the corresponding 31 allowlist
+> deletions were physically committed in PR #16 (the Tier 14 branch), because
+> the Tier 14 push script staged the same file list as Tier 15 and the working
+> tree carried both tiers' edits when the user ran `push_tier14_pr.sh`. The
+> standalone Tier 15 branch was therefore empty and has been deleted. No code
+> change is needed for Tier 15 - the DDL is already on `main`. This Tier 15
+> CHANGELOG section records the work for audit-trail completeness; the merge
+> commit is `b9f5d8c` (PR #16) and represents Tier 14 + Tier 15 together.
+
+
 ### Added
 
 - `gold.fact_quotes` across all four dialects (appended to existing Tier-13/14 `ddl/equity/` files):
