@@ -2,17 +2,17 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 15 (post-hoc): fact_quotes shipped with PR #16
+
+> The `fact_quotes` DDL and 31 corresponding allowlist deletions were physically
+> committed in PR #16 (the Tier 14 branch) because the Tier 14 push script
+> staged the same file list as the planned Tier 15 push, and the working tree
+> carried both tiers' edits at the time of execution. The standalone Tier 15
+> branch was empty and has been deleted. The merge commit `b9f5d8c` (PR #16)
+> physically contains both `fact_allocations` (Tier 14) and `fact_quotes`
+> (Tier 15). This banner records the bundle for audit-trail completeness.
+
 ## [Unreleased] - Tier 15: WS2 burndown sub-tier 3 — fact_quotes DDL
-
-> **Note on history:** The `fact_quotes` DDL and the corresponding 31 allowlist
-> deletions were physically committed in PR #16 (the Tier 14 branch), because
-> the Tier 14 push script staged the same file list as Tier 15 and the working
-> tree carried both tiers' edits when the user ran `push_tier14_pr.sh`. The
-> standalone Tier 15 branch was therefore empty and has been deleted. No code
-> change is needed for Tier 15 - the DDL is already on `main`. This Tier 15
-> CHANGELOG section records the work for audit-trail completeness; the merge
-> commit is `b9f5d8c` (PR #16) and represents Tier 14 + Tier 15 together.
-
 
 ### Added
 
