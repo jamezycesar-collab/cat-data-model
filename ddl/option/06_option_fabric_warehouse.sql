@@ -162,8 +162,11 @@ CREATE TABLE gold.fact_option_executions (
     option_id                   VARCHAR(22) NOT NULL,
     cat_event_code              VARCHAR(8)  NOT NULL,
     trade_id                    VARCHAR(64),
+    trade_key_date              DATETIME2(7),           -- CAT IM v4.1.0r15 section 5.1.11 row 6 (MOOT)
     fulfillment_id              VARCHAR(64),
+    fill_key_date               DATETIME2(7),           -- CAT IM v4.1.0r15 section 5.1.12.1 row 6 (MOOF/MOOFS)
     prior_fulfillment_id        VARCHAR(64),
+    prior_fill_key_date         DATETIME2(7),           -- CAT IM v4.1.0r15 section 5.1.12.3 row 9 (MOFA)
     quantity                    DECIMAL(38, 18) NOT NULL,
     price                       DECIMAL(38, 18) NOT NULL,
     capacity                    VARCHAR(12),
