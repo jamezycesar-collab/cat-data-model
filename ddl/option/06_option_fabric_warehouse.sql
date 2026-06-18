@@ -136,6 +136,37 @@ CREATE TABLE gold.fact_option_order_events (
     prior_order_id              VARCHAR(64),
     initiator                   VARCHAR(8),
     trigger_price               DECIMAL(38, 18),
+    -- CAT IM v4.1.0r15 spec-mapping columns added in Tier 17.4
+    order_key_date              DATETIME2(7) NOT NULL,  -- section 5.1.1 row 6 orderKeyDate
+    event_timestamp             DATETIME2(7) NOT NULL,  -- section 5.1.1 row 9 eventTimestamp
+    manual_flag                 BIT NOT NULL,           -- section 5.1.1 row 10 manualFlag
+    manual_order_key_date       DATETIME2(7),           -- section 5.1.1 row 11 manualOrderKeyDate
+    manual_order_id             VARCHAR(64),            -- section 5.1.1 row 12 manualOrderID
+    electronic_dup_flag         BIT NOT NULL,           -- section 5.1.1 row 13 electronicDupFlag
+    electronic_timestamp        DATETIME2(7),           -- section 5.1.1 row 14 electronicTimestamp
+    dept_type                   VARCHAR(16) NOT NULL,   -- section 5.1.1 row 15 deptType
+    min_qty                     DECIMAL(38, 18),        -- section 5.1.1 row 19 minQty
+    solicitation_flag           BIT NOT NULL,           -- section 5.1.1 row 28 solicitationFlag
+    rfq_id                      VARCHAR(64),            -- section 5.1.1 row 32 RFQID
+    representative_ind          VARCHAR(4),             -- section 5.1.1 row 30 representativeInd
+    exch_origin_code            VARCHAR(8),             -- section 5.1.3 row 28 exchOriginCode
+    firm_designated_id          VARCHAR(40),            -- section 5.1.1 row 24 firmDesignatedID
+    account_holder_type         VARCHAR(2),             -- section 5.1.1 row 25 accountHolderType
+    affiliate_flag              BIT,                    -- section 5.1.1 row 26 affiliateFlag
+    sender_imid                 VARCHAR(8),             -- section 5.1.3 row 14 senderIMID
+    receiver_imid               VARCHAR(8),             -- section 5.1.4 row 15 receiverIMID
+    sender_type                 VARCHAR(8) NOT NULL,    -- section 5.1.4 row 17 senderType
+    originating_imid            VARCHAR(8),             -- section 5.1.3 row 9 originatingIMID
+    destination                 VARCHAR(8)  NOT NULL,   -- section 5.1.3 row 15 destination
+    destination_type            VARCHAR(4)  NOT NULL,   -- section 5.1.3 row 16 destinationType
+    routed_order_id             VARCHAR(64),            -- section 5.1.3 row 17 routedOrderID
+    session                     VARCHAR(40),            -- section 5.1.3 row 18 session
+    route_rejected_flag         BIT,                    -- section 5.1.3 row 27 routeRejectedFlag
+    multi_leg_ind               BIT,                    -- section 5.1.3 row 30 multiLegInd
+    paired_order_id             VARCHAR(64),            -- section 5.1.3 row 34 pairedOrderID
+    prior_order_key_date        DATETIME2(7),           -- section 5.1.7 row 9 priorOrderKeyDate
+    parent_order_key_date       DATETIME2(7),           -- section 5.1.6.1 row 9 parentOrderKeyDate
+    request_timestamp           DATETIME2(7),           -- section 5.1.7 row 33 requestTimestamp
     source_file                 VARCHAR(256) NOT NULL,
     source_batch_id             VARCHAR(64)  NOT NULL,
     dv2_source_hk               VARCHAR(64)  NOT NULL,
