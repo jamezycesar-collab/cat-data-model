@@ -53,6 +53,7 @@ COLUMN_TO_PRIMARY_SOURCE: dict[str, tuple[Path, str | None, str | None, str]] = 
     "cat_event_code":     (REPO / "primary-sources" / "cat_im_event_types.csv", None, None, "message_type"),
     "event_code":         (REPO / "primary-sources" / "cat_im_event_types.csv", None, None, "message_type"),
     "quote_event_code":   (REPO / "primary-sources" / "cat_im_event_types.csv", None, None, "message_type"),
+    "event_type_code":    (REPO / "primary-sources" / "cat_im_event_types.csv", None, None, "message_type"),
     "customer_type":      (REPO / "primary-sources" / "cais_enumerations.csv", "enum_field", "customerType", "enum_value"),
     "fdid_type":          (REPO / "primary-sources" / "cais_enumerations.csv", "enum_field", "fdidType", "enum_value"),
     "cais_fdid_type_bk":  (REPO / "primary-sources" / "cais_enumerations.csv", "enum_field", "fdidType", "enum_value"),
@@ -72,6 +73,7 @@ KNOWN_UNMAPPED_COLUMNS = {
     "affected_record_type",    # CAIS operational: FDID, CUSTOMER, FILE
     "leg_side",                # Multileg internal: BUY, SELL
     "risk_framework",          # Expanded-model agreement: CRR, FRTB, SA_CCR
+    "action_type",             # CAT IM v4.1.0r15 section 4.1 row 1: NEW, FRC, RPR (fixed 3-value enum, no separate primary-source CSV)
 }
 
 # CHECK (col IN ('a','b'))  -- multi-line tolerant

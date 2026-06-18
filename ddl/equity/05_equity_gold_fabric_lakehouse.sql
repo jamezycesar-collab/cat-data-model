@@ -160,3 +160,96 @@ CREATE TABLE IF NOT EXISTS gold.fact_quotes (
 USING DELTA
 PARTITIONED BY (event_date)
 COMMENT 'CAT equity quote event fact - one row per MENQ/MENQS/MERQ/MERQS/MEQR/MEQC/MEQM/MEQS submission';
+
+
+-- ----------------------------------------------------------------------------
+-- 4. fact_order_events  -- equity order lifecycle events (24 codes)
+--    Tier 16 (WS2 sub-tier 4 - final phantom-table burndown)
+-- ----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS gold.fact_order_events (
+    order_event_sk              BIGINT GENERATED ALWAYS AS IDENTITY,
+    event_dts                   TIMESTAMP NOT NULL,
+    event_date                  DATE      NOT NULL,
+    -- conformed dimension FKs
+    date_sk                     BIGINT NOT NULL,
+    instrument_sk               BIGINT NOT NULL,
+    party_sk                    BIGINT NOT NULL,
+    venue_sk                    BIGINT,
+    event_type_sk               BIGINT NOT NULL,
+    -- equity order event specifics (CAT IM v4.1.0r15 sections 4.1 - 4.9 + 4.14)
+    action_type                 STRING NOT NULL,
+    error_roe_id                STRING,
+    firm_roe_id                 STRING NOT NULL,
+    event_type_code             STRING NOT NULL,
+    cat_reporter_imid           STRING,
+    order_key_date              TIMESTAMP NOT NULL,
+    cat_order_id                STRING NOT NULL,
+    symbol                      STRING NOT NULL,
+    event_timestamp             TIMESTAMP NOT NULL,
+    manual_flag                 BOOLEAN NOT NULL,
+    electronic_dup_flag         BOOLEAN NOT NULL,
+    electronic_timestamp        TIMESTAMP,
+    manual_order_key_date       TIMESTAMP,
+    manual_order_id             STRING,
+    dept_type                   STRING,
+    solicitation_flag           BOOLEAN,
+    rfq_id                      STRING,
+    side                        STRING,
+    price                       DECIMAL(38, 18),
+    quantity                    DECIMAL(38, 18),
+    leaves_quantity             DECIMAL(38, 18),
+    parent_order_id             STRING,
+    min_qty                     DECIMAL(38, 18),
+    order_type                  STRING,
+    time_in_force               STRING,
+    trading_session             STRING,
+    handling_instructions       STRING,
+    cust_dsp_intr_flag          BOOLEAN,
+    firm_designated_id          STRING,
+    account_holder_type         STRING,
+    affiliate_flag              BOOLEAN,
+    info_barrier_id             STRING,
+    negotiated_trade_flag       BOOLEAN,
+    representative_ind          STRING,
+    seq_num                     STRING,
+    ats_display_ind             STRING,
+    display_price               DECIMAL(38, 18),
+    working_price               DECIMAL(38, 18),
+    display_qty                 DECIMAL(38, 18),
+    nbb_price                   DECIMAL(38, 18),
+    nbb_qty                     DECIMAL(38, 18),
+    nbo_price                   DECIMAL(38, 18),
+    nbo_qty                     DECIMAL(38, 18),
+    nbbo_source                 STRING,
+    nbbo_timestamp              TIMESTAMP,
+    net_price                   DECIMAL(38, 18),
+    bfmm_flag                   BOOLEAN,
+    originating_imid            STRING,
+    sender_imid                 STRING,
+    destination                 STRING,
+    destination_type            STRING,
+    routed_order_id             STRING,
+    session                     STRING,
+    iso_ind                     STRING,
+    route_rejected_flag         BOOLEAN,
+    multi_leg_ind               BOOLEAN,
+    paired_order_id             STRING,
+    quote_key_date              TIMESTAMP,
+    quote_id                    STRING,
+    -- lineage
+    source_file                 STRING NOT NULL,
+    source_batch_id             STRING NOT NULL,
+    dv2_source_hk               STRING NOT NULL,
+    quality_outcome             STRING,
+    CONSTRAINT chk_fact_order_code CHECK (event_type_code IN (
+        'MENO','MENOS','MEOR','MEORS','MEMR','MEMRS','MECR','MECRS',
+        'MEOA','MEIR','MEIM','MEIC','MEIMR','MEICR',
+        'MECO','MECOM','MECOC','MEOM','MEOMS','MEOMR',
+        'MEOJ','MEOC','MEOCR','MEOE'
+    )),
+    CONSTRAINT chk_fact_order_action CHECK (action_type IN ('NEW','FRC','RPR'))
+)
+USING DELTA
+PARTITIONED BY (event_date)
+COMMENT 'CAT equity order event fact - one row per equity order lifecycle event (24 distinct codes from sections 4.1-4.9 + 4.14, excluding trades MEOT/MEOTS)';

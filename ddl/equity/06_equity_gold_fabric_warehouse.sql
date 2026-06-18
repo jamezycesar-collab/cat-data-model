@@ -154,3 +154,94 @@ CREATE TABLE gold.fact_quotes (
         'MENQ','MENQS','MERQ','MERQS','MEQR','MEQC','MEQM','MEQS'
     ))
 );
+
+
+-- ----------------------------------------------------------------------------
+-- 4. fact_order_events  -- equity order lifecycle events (24 codes)
+--    Tier 16 (WS2 sub-tier 4 - final phantom-table burndown)
+-- ----------------------------------------------------------------------------
+
+CREATE TABLE gold.fact_order_events (
+    order_event_sk                BIGINT IDENTITY(1,1) NOT NULL,
+    event_dts                     DATETIME2(7) NOT NULL,
+    event_date                    DATE NOT NULL,
+    -- conformed dimension FKs
+    date_sk                       BIGINT NOT NULL,
+    instrument_sk                 BIGINT NOT NULL,
+    party_sk                      BIGINT NOT NULL,
+    venue_sk                      BIGINT,
+    event_type_sk                 BIGINT NOT NULL,
+    -- equity order event specifics (CAT IM v4.1.0r15 sections 4.1 - 4.9 + 4.14)
+    action_type                   VARCHAR(8)   NOT NULL,
+    error_roe_id                  VARCHAR(40),
+    firm_roe_id                   VARCHAR(64)  NOT NULL,
+    event_type_code               VARCHAR(8)   NOT NULL,
+    cat_reporter_imid             VARCHAR(8),
+    order_key_date                DATETIME2(7) NOT NULL,
+    cat_order_id                  VARCHAR(64)  NOT NULL,
+    symbol                        VARCHAR(14)  NOT NULL,
+    event_timestamp               DATETIME2(7) NOT NULL,
+    manual_flag                   BIT NOT NULL,
+    electronic_dup_flag           BIT NOT NULL,
+    electronic_timestamp          DATETIME2(7),
+    manual_order_key_date         DATETIME2(7),
+    manual_order_id               VARCHAR(64),
+    dept_type                     VARCHAR(16),
+    solicitation_flag             BIT,
+    rfq_id                        VARCHAR(64),
+    side                          VARCHAR(8),
+    price                         DECIMAL(38, 18),
+    quantity                      DECIMAL(38, 18),
+    leaves_quantity               DECIMAL(38, 18),
+    parent_order_id               VARCHAR(64),
+    min_qty                       DECIMAL(38, 18),
+    order_type                    VARCHAR(12),
+    time_in_force                 VARCHAR(3),
+    trading_session               VARCHAR(12),
+    handling_instructions         VARCHAR(40),
+    cust_dsp_intr_flag            BIT,
+    firm_designated_id            VARCHAR(40),
+    account_holder_type           VARCHAR(2),
+    affiliate_flag                BIT,
+    info_barrier_id               VARCHAR(20),
+    negotiated_trade_flag         BIT,
+    representative_ind            VARCHAR(4),
+    seq_num                       VARCHAR(40),
+    ats_display_ind               VARCHAR(4),
+    display_price                 DECIMAL(38, 18),
+    working_price                 DECIMAL(38, 18),
+    display_qty                   DECIMAL(38, 18),
+    nbb_price                     DECIMAL(38, 18),
+    nbb_qty                       DECIMAL(38, 18),
+    nbo_price                     DECIMAL(38, 18),
+    nbo_qty                       DECIMAL(38, 18),
+    nbbo_source                   VARCHAR(8),
+    nbbo_timestamp                DATETIME2(7),
+    net_price                     DECIMAL(38, 18),
+    bfmm_flag                     BIT,
+    originating_imid              VARCHAR(8),
+    sender_imid                   VARCHAR(8),
+    destination                   VARCHAR(8),
+    destination_type              VARCHAR(4),
+    routed_order_id               VARCHAR(64),
+    session                       VARCHAR(40),
+    iso_ind                       VARCHAR(4),
+    route_rejected_flag           BIT,
+    multi_leg_ind                 BIT,
+    paired_order_id               VARCHAR(64),
+    quote_key_date                DATETIME2(7),
+    quote_id                      VARCHAR(64),
+    -- lineage
+    source_file                   VARCHAR(256) NOT NULL,
+    source_batch_id               VARCHAR(64)  NOT NULL,
+    dv2_source_hk                 VARCHAR(64)  NOT NULL,
+    quality_outcome               VARCHAR(16),
+    CONSTRAINT pk_fact_order_event PRIMARY KEY NONCLUSTERED (order_event_sk) NOT ENFORCED,
+    CONSTRAINT chk_fact_order_code CHECK (event_type_code IN (
+        'MENO','MENOS','MEOR','MEORS','MEMR','MEMRS','MECR','MECRS',
+        'MEOA','MEIR','MEIM','MEIC','MEIMR','MEICR',
+        'MECO','MECOM','MECOC','MEOM','MEOMS','MEOMR',
+        'MEOJ','MEOC','MEOCR','MEOE'
+    )),
+    CONSTRAINT chk_fact_order_action CHECK (action_type IN ('NEW','FRC','RPR'))
+);
