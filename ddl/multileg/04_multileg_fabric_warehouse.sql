@@ -170,6 +170,58 @@ CREATE TABLE gold.fact_multileg_option_events (
  order_quantity DECIMAL(38, 18),
  time_in_force VARCHAR(8),
  handling_instructions VARCHAR(32),
+ -- CAT IM v4.1.0r15 spec-mapping columns added in Tier 17.5
+ underlying VARCHAR(14) NOT NULL,        -- section 5.2.1 row 8 underlying
+ order_key_date DATETIME2(7) NOT NULL,   -- section 5.2.1 row 6 orderKeyDate
+ cat_order_id VARCHAR(64) NOT NULL,      -- section 5.2.1 row 7 orderID
+ event_timestamp DATETIME2(7) NOT NULL,  -- section 5.2.1 row 9 eventTimestamp
+ manual_flag BIT NOT NULL,               -- section 5.2.1 row 10 manualFlag
+ manual_order_key_date DATETIME2(7),     -- section 5.2.1 row 11 manualOrderKeyDate
+ manual_order_id VARCHAR(64),            -- section 5.2.1 row 12 manualOrderID
+ electronic_dup_flag BIT NOT NULL,       -- section 5.2.1 row 13 electronicDupFlag
+ electronic_timestamp DATETIME2(7),      -- section 5.2.1 row 14 electronicTimestamp
+ dept_type VARCHAR(16) NOT NULL,         -- section 5.2.1 row 15 deptType
+ price DECIMAL(38, 18),                  -- section 5.2.1 row 16 net price
+ quantity DECIMAL(38, 18) NOT NULL,      -- section 5.2.1 row 17 quantity
+ min_qty DECIMAL(38, 18),                -- section 5.2.1 row 18 minQty
+ order_type VARCHAR(12) NOT NULL,        -- section 5.2.1 row 19 orderType
+ trading_session VARCHAR(16) NOT NULL,   -- section 5.2.1 row 21 tradingSession
+ firm_designated_id VARCHAR(40),         -- section 5.2.1 row 23 firmDesignatedID
+ account_holder_type VARCHAR(2),         -- section 5.2.1 row 24 accountHolderType
+ affiliate_flag BIT,                     -- section 5.2.1 row 25 affiliateFlag
+ representative_ind VARCHAR(4),          -- section 5.2.1 row 27 representativeInd
+ solicitation_flag BIT NOT NULL,         -- section 5.2.1 row 28 solicitationFlag
+ rfq_id VARCHAR(64),                     -- section 5.2.1 row 29 RFQID
+ number_of_legs INT NOT NULL,            -- section 5.2.1 row 30 numberOfLegs
+ sender_imid VARCHAR(8),                 -- section 5.2.2 row 14 senderIMID
+ destination VARCHAR(8),                 -- section 5.2.2 row 15 destination
+ destination_type VARCHAR(4),            -- section 5.2.2 row 16 destinationType
+ routed_order_id VARCHAR(64),            -- section 5.2.2 row 17 routedOrderID
+ session VARCHAR(40),                    -- section 5.2.2 row 18 session
+ route_rejected_flag BIT,                -- section 5.2.2 row 27 routeRejectedFlag
+ exch_origin_code VARCHAR(4),            -- section 5.2.2 row 28 exchOriginCode
+ paired_order_id VARCHAR(64),            -- section 5.2.2 row 34 pairedOrderID
+ receiver_imid VARCHAR(8),               -- section 5.2.3 row 15 receiverIMID
+ sender_type VARCHAR(4),                 -- section 5.2.3 row 17 senderType
+ originating_imid VARCHAR(8),            -- section 5.2.2 row 9 originatingIMID
+ prior_order_key_date DATETIME2(7),      -- section 5.2.6 row 9 priorOrderKeyDate
+ prior_order_id VARCHAR(64),             -- section 5.2.6 row 10 priorOrderID
+ parent_order_key_date DATETIME2(7),     -- section 5.2.5.1 row 9 parentOrderKeyDate
+ parent_order_id VARCHAR(64),            -- section 5.2.5.1 row 10 parentOrderID
+ initiator VARCHAR(4),                   -- section 5.2.6 row 22 initiator
+ leaves_qty DECIMAL(38, 18),             -- section 5.2.6 row 27 leavesQty
+ cancel_qty DECIMAL(38, 18),             -- section 5.2.7 row 13 cancelQty
+ request_timestamp DATETIME2(7),         -- section 5.2.6 row 33 requestTimestamp
+ quote_key_date DATETIME2(7),            -- section 5.2.8.1 row 6 quoteKeyDate
+ quote_id VARCHAR(64),                   -- section 5.2.8.1 row 7 quoteID
+ bid_price DECIMAL(38, 18),              -- section 5.2.8.1 row 11 bidPrice
+ ask_price DECIMAL(38, 18),              -- section 5.2.8.1 row 13 askPrice
+ bid_qty DECIMAL(38, 18),                -- section 5.2.8.1 row 12 bidQty
+ ask_qty DECIMAL(38, 18),                -- section 5.2.8.1 row 14 askQty
+ routed_quote_id VARCHAR(64),            -- section 5.2.8.2 row 12 routedQuoteID
+ quote_rejected_flag BIT,                -- section 5.2.8.2 row 18 quoteRejectedFlag
+ prior_quote_key_date DATETIME2(7),      -- section 5.2.8.6 row 9 priorQuoteKeyDate
+ prior_quote_id VARCHAR(64),             -- section 5.2.8.6 row 10 priorQuoteID
  source_file VARCHAR(256) NOT NULL,
  source_batch_id VARCHAR(64) NOT NULL,
  dv2_source_hk VARCHAR(64) NOT NULL,

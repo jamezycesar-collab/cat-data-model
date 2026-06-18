@@ -43,15 +43,67 @@ CREATE TABLE IF NOT EXISTS gold.fact_multileg_option_events (
     order_quantity              DECIMAL(38, 18),
     time_in_force               STRING,
     handling_instructions       STRING,
+    -- CAT IM v4.1.0r15 spec-mapping columns added in Tier 17.5
+    underlying                  STRING,         -- section 5.2.1 row 8 underlying
+    order_key_date              TIMESTAMP,      -- section 5.2.1 row 6 orderKeyDate
+    cat_order_id                STRING,         -- section 5.2.1 row 7 orderID
+    event_timestamp             TIMESTAMP,      -- section 5.2.1 row 9 eventTimestamp
+    manual_flag                 BOOLEAN,        -- section 5.2.1 row 10 manualFlag
+    manual_order_key_date       TIMESTAMP,      -- section 5.2.1 row 11 manualOrderKeyDate
+    manual_order_id             STRING,         -- section 5.2.1 row 12 manualOrderID
+    electronic_dup_flag         BOOLEAN,        -- section 5.2.1 row 13 electronicDupFlag
+    electronic_timestamp        TIMESTAMP,      -- section 5.2.1 row 14 electronicTimestamp
+    dept_type                   STRING,         -- section 5.2.1 row 15 deptType
+    price                       DECIMAL(38, 18), -- section 5.2.1 row 16 net price
+    quantity                    DECIMAL(38, 18), -- section 5.2.1 row 17 quantity
+    min_qty                     DECIMAL(38, 18), -- section 5.2.1 row 18 minQty
+    order_type                  STRING,         -- section 5.2.1 row 19 orderType
+    trading_session             STRING,         -- section 5.2.1 row 21 tradingSession
+    firm_designated_id          STRING,         -- section 5.2.1 row 23 firmDesignatedID
+    account_holder_type         STRING,         -- section 5.2.1 row 24 accountHolderType
+    affiliate_flag              BOOLEAN,        -- section 5.2.1 row 25 affiliateFlag
+    representative_ind          STRING,         -- section 5.2.1 row 27 representativeInd
+    solicitation_flag           BOOLEAN,        -- section 5.2.1 row 28 solicitationFlag
+    rfq_id                      STRING,         -- section 5.2.1 row 29 RFQID
+    number_of_legs              INT,            -- section 5.2.1 row 30 numberOfLegs
+    sender_imid                 STRING,         -- section 5.2.2 row 14 senderIMID
+    destination                 STRING,         -- section 5.2.2 row 15 destination
+    destination_type            STRING,         -- section 5.2.2 row 16 destinationType
+    routed_order_id             STRING,         -- section 5.2.2 row 17 routedOrderID
+    session                     STRING,         -- section 5.2.2 row 18 session
+    route_rejected_flag         BOOLEAN,        -- section 5.2.2 row 27 routeRejectedFlag
+    exch_origin_code            STRING,         -- section 5.2.2 row 28 exchOriginCode
+    paired_order_id             STRING,         -- section 5.2.2 row 34 pairedOrderID
+    receiver_imid               STRING,         -- section 5.2.3 row 15 receiverIMID
+    sender_type                 STRING,         -- section 5.2.3 row 17 senderType
+    originating_imid            STRING,         -- section 5.2.2 row 9 originatingIMID
+    prior_order_key_date        TIMESTAMP,      -- section 5.2.6 row 9 priorOrderKeyDate
+    prior_order_id              STRING,         -- section 5.2.6 row 10 priorOrderID
+    parent_order_key_date       TIMESTAMP,      -- section 5.2.5.1 row 9 parentOrderKeyDate
+    parent_order_id             STRING,         -- section 5.2.5.1 row 10 parentOrderID
+    initiator                   STRING,         -- section 5.2.6 row 22 initiator
+    leaves_qty                  DECIMAL(38, 18), -- section 5.2.6 row 27 leavesQty
+    cancel_qty                  DECIMAL(38, 18), -- section 5.2.7 row 13 cancelQty
+    request_timestamp           TIMESTAMP,      -- section 5.2.6 row 33 requestTimestamp
+    quote_key_date              TIMESTAMP,      -- section 5.2.8.1 row 6 quoteKeyDate
+    quote_id                    STRING,         -- section 5.2.8.1 row 7 quoteID
+    bid_price                   DECIMAL(38, 18), -- section 5.2.8.1 row 11 bidPrice
+    ask_price                   DECIMAL(38, 18), -- section 5.2.8.1 row 13 askPrice
+    bid_qty                     DECIMAL(38, 18), -- section 5.2.8.1 row 12 bidQty
+    ask_qty                     DECIMAL(38, 18), -- section 5.2.8.1 row 14 askQty
+    routed_quote_id             STRING,         -- section 5.2.8.2 row 12 routedQuoteID
+    quote_rejected_flag         BOOLEAN,        -- section 5.2.8.2 row 18 quoteRejectedFlag
+    prior_quote_key_date        TIMESTAMP,      -- section 5.2.8.6 row 9 priorQuoteKeyDate
+    prior_quote_id              STRING,         -- section 5.2.8.6 row 10 priorQuoteID
     -- lineage
     source_file                 STRING,
     source_batch_id             STRING,
     dv2_source_hk               STRING,
-    quality_outcome             STRING COMMENT 'PASS | QUARANTINE'
+    quality_outcome             STRING
 )
 PARTITIONED BY (event_date DATE)
 STORED AS PARQUET
-TBLPROPERTIES ('comment' = 'Gold fact: header-grain row per multi-leg CAT event (Section 5.2 of IM Tech Specs v4.1.0r15).');
+TBLPROPERTIES ('comment' = 'Gold fact header-grain row per multi-leg CAT event Section 5.2 of IM Tech Specs v4.1.0r15');
 
 
 CREATE TABLE IF NOT EXISTS gold.fact_multileg_option_legs (
