@@ -2,6 +2,87 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 17.5: F3.2 closure sub-tier 5 — fact_multileg_option_events (FINAL — audit backlog fully closed)
+
+### Milestone
+
+**This sub-tier closes the entire F3.2 audit backlog.** With this PR merged, `guardrails/known_field_mapping_gaps.csv` drops to 0 rows — meaning every field-mapping CSV row resolves in DDL across at least one dialect. The audit-tracked remediation arc that began with `AUDIT_2026_05_04.md` is complete.
+
+### Added
+
+- 51 spec-mapping columns to `gold.fact_multileg_option_events` across all three multileg-Gold dialects (no Fabric Lakehouse variant for multileg):
+  - `ddl/multileg/02_multileg_gold_delta.sql`
+  - `ddl/multileg/04_multileg_fabric_warehouse.sql`
+  - `ddl/multileg/06_multileg_gold_hive.sql`
+
+  **Largest single sub-tier in the F3.2 closure** — 51 columns covering CAT IM v4.1.0r15 section 5.2 (multi-leg/complex option order events). Columns grouped by purpose:
+  - Order header (§5.2.1): `underlying`, `order_key_date`, `cat_order_id`, `event_timestamp`, `manual_flag`, `manual_order_key_date`, `manual_order_id`, `electronic_dup_flag`, `electronic_timestamp`, `dept_type`, `price`, `quantity`, `min_qty`, `order_type`, `trading_session`, `firm_designated_id`, `account_holder_type`, `affiliate_flag`, `representative_ind`, `solicitation_flag`, `rfq_id`, `number_of_legs` (22 cols)
+  - Routing (§5.2.2 Multi-Leg Order Route, §5.2.3 Multi-Leg Order Accepted): `sender_imid`, `destination`, `destination_type`, `routed_order_id`, `session`, `route_rejected_flag`, `exch_origin_code`, `paired_order_id`, `receiver_imid`, `sender_type`, `originating_imid` (11 cols)
+  - Modify/cancel/parent linkage (§5.2.5.1, §5.2.6, §5.2.7): `prior_order_key_date`, `prior_order_id`, `parent_order_key_date`, `parent_order_id`, `initiator`, `leaves_qty`, `cancel_qty`, `request_timestamp` (8 cols)
+  - Quote context for RFQ/RFE (§5.2.8.1–§5.2.8.6 multi-leg quote events MLNQ/MLRQ/MLQS/MLQR/MLQC/MLQM): `quote_key_date`, `quote_id`, `bid_price`, `ask_price`, `bid_qty`, `ask_qty`, `routed_quote_id`, `quote_rejected_flag`, `prior_quote_key_date`, `prior_quote_id` (10 cols)
+
+### Changed
+
+- `guardrails/known_field_mapping_gaps.csv`: 51 → **0** rows. **The file is now an empty header-only stub.**
+
+### Why
+
+Fifth and final sub-tier of WS2 F3.2 follow-on. Mirrors the equity `fact_order_events` (Tier 16, 59 cols) + `fact_quotes` (Tier 15, 31 cols) structures combined — multi-leg events carry both order-lifecycle fields and quote-context fields because the multi-leg quote events (MLNQ/MLRQ/MLQS/MLQR/MLQC/MLQM) share the same fact-table host as the multi-leg order events.
+
+### Mapping CSV reference notes
+
+The earlier PDF verification (`TIER_17_VERIFICATION.csv`) flagged 22 rows in this host table with `SECTION_MISMATCH` or `ROW_MISMATCH` status. These were not corrected in this sub-tier — they represent valid alternative references:
+- **10 SECTION_MISMATCH cases:** Mapping CSV points to multi-leg usage site (§5.2.x); PDF verifier picked the canonical single-leg definition site (§5.1.x). Both refs are valid for spec navigation.
+- **12 ROW_MISMATCH cases:** Row numbers in supplement/sub-event field tables differ from parent event by 1-2 rows. Cosmetic.
+
+These references can be polished in an optional future tier (proposed Tier 18) without affecting DDL correctness or audit closure.
+
+### Spec verification source
+
+All 51 columns confirmed in CAT IM v4.1.0r15 PDF via `verify_cat_im_v3.py`. Full per-column results: `TIER_17_VERIFICATION.csv` (workspace folder, not committed).
+
+### Coverage — AUDIT CLOSED
+
+```
+Validators:                        8/8 pass
+known_field_mapping_gaps.csv:      0  (was 51; -51 fact_multileg_option_events rows)
+  - F3.1 phantom-table rows:       0  (cleared in Tier 13-16)
+  - F3.2 missing-column rows:      0  (cleared in Tier 17.1-17.5)
+DDL files in parity scope:        22  (unchanged)
+Tables in 2+ dialects:            42  (unchanged - same tables, new columns)
+New parity violations:             0
+AUDIT BACKLOG TOTAL:               0  (was 212 at start of remediation arc)
+```
+
+### F3.2 burndown — COMPLETE
+
+| Sub-tier | Host table | Cols | Allowlist | Status |
+|---|---|---|---|---|
+| Tier 17.1 | `fact_option_executions` | 3 | 92 → 89 | ✅ |
+| Tier 17.2 | `fact_option_allocations` | 3 | 89 → 86 | ✅ |
+| Tier 17.3 | `fact_multileg_option_legs` | 5 | 86 → 81 | ✅ |
+| Tier 17.4 | `fact_option_order_events` | 30 | 81 → 51 | ✅ |
+| **Tier 17.5 (this)** | `fact_multileg_option_events` | 51 | 51 → **0** | ✅ |
+| **F3.2 total** | — | **92** | **92 → 0** | **CLOSED** |
+
+### Audit remediation arc — full summary
+
+```
+Phase                     Tiers      Cols cleared from allowlist
+------------------------------------------------------------------
+WS2 phantom-table (F3.1)  13-16      120 cols across 4 facts
+F3.2 missing-column       17.1-17.5   92 cols across 5 facts
+------------------------------------------------------------------
+Total audit closure       Tiers 13-17.5    212 cols cleared (212 -> 0)
+```
+
+### Open followups (non-blocking, not part of this sub-tier)
+
+1. **Validator regex hardening** (tooling debt from the COMMENT-as-terminator incident in Tier 17.4) — `_CREATE_TABLE_RE` in `validate_field_specifications.py` and `validate_cross_dialect_parity.py` should treat `COMMENT` as terminator only when adjacent to the body close-paren, not inside a column declaration.
+2. **Empty `known_field_mapping_gaps.csv` housekeeping** — file is now header-only. Could be deleted entirely + the `load_known_gaps()` call removed from the validator, or kept as a stub for future audit cycles.
+3. **Multi-leg Fabric Lakehouse variant** — `ddl/multileg/` has 3 dialects vs `ddl/option/`'s 4. Adding `05_multileg_gold_fabric_lakehouse.sql` would bring multileg Gold to 4-dialect parity.
+4. **Mapping CSV polish** — apply the 22 SECTION_MISMATCH / ROW_MISMATCH refinements deferred from this sub-tier.
+
 ## [Unreleased] - Tier 17.4: F3.2 closure sub-tier 4 — fact_option_order_events columns (30 cols)
 
 ### Added
