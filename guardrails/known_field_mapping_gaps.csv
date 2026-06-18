@@ -80,8 +80,3 @@ fact_multileg_option_events,routed_quote_id,missing_column,F3.2,247
 fact_multileg_option_events,quote_rejected_flag,missing_column,F3.2,248
 fact_multileg_option_events,prior_quote_key_date,missing_column,F3.2,249
 fact_multileg_option_events,prior_quote_id,missing_column,F3.2,250
-fact_multileg_option_legs,leg_ref_id,missing_column,F3.2,251
-fact_multileg_option_legs,leg_symbol,missing_column,F3.2,252
-fact_multileg_option_legs,leg_option_id,missing_column,F3.2,253
-fact_multileg_option_legs,leg_open_close_indicator,missing_column,F3.2,254
-fact_multileg_option_legs,leg_ratio_quantity,missing_column,F3.2,256

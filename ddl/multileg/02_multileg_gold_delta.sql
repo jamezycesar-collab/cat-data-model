@@ -82,13 +82,17 @@ COMMENT 'Gold fact: header-grain row per multi-leg CAT event (Section 5.2 of IM 
 CREATE TABLE IF NOT EXISTS gold.fact_multileg_option_legs (
  multileg_leg_event_sk BIGINT GENERATED ALWAYS AS IDENTITY,
  multileg_event_sk BIGINT NOT NULL, -- FK to header
- leg_seq INT NOT NULL,
- instrument_sk BIGINT NOT NULL, -- the option or covered stock for this leg
- leg_side STRING NOT NULL, -- BUY / SELL
- leg_open_close STRING, -- O / C / NULL for stock
+ leg_seq INT NOT NULL, -- the leg index n in CAT IM legs array
+ instrument_sk BIGINT NOT NULL, -- FK to option contract or covered stock
+ -- CAT IM v4.1.0r15 section 5.2.1 row 32 legs sub-table: rows 32.n.1 - 32.n.6
+ leg_ref_id STRING, -- section 5.2.1 row 32.n.1 legRefID unique identifier of leg
+ leg_symbol STRING, -- section 5.2.1 row 32.n.2 symbol of stock leg
+ leg_option_id STRING, -- section 5.2.1 row 32.n.3 optionID OSI symbol of option leg
+ leg_open_close_indicator STRING, -- section 5.2.1 row 32.n.4 openCloseIndicator O C NULL
+ leg_side STRING NOT NULL, -- section 5.2.1 row 32.n.5 side BUY SELL
+ leg_ratio_quantity DECIMAL(10, 4) NOT NULL, -- section 5.2.1 row 32.n.6 legRatioQuantity ratio
  leg_quantity DECIMAL(38, 18) NOT NULL,
  leg_price DECIMAL(38, 18),
- leg_ratio DECIMAL(10, 4) NOT NULL,
  leg_status STRING,
  -- lineage
  source_file STRING NOT NULL,
@@ -120,11 +124,14 @@ SELECT
  et.event_code,
  et.event_name,
  l.leg_seq,
+ l.leg_ref_id,
+ l.leg_symbol,
+ l.leg_option_id,
  l.leg_side,
- l.leg_open_close,
+ l.leg_open_close_indicator,
  l.leg_quantity,
  l.leg_price,
- l.leg_ratio,
+ l.leg_ratio_quantity,
  i.instrument_bk AS leg_instrument
 FROM gold.fact_multileg_option_events h
 JOIN gold.fact_multileg_option_legs l ON h.multileg_event_sk = l.multileg_event_sk

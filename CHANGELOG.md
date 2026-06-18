@@ -2,6 +2,69 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 17.3: F3.2 closure sub-tier 3 — fact_multileg_option_legs columns
+
+### Added
+
+- 3 new spec-mapping columns to `gold.fact_multileg_option_legs` across all three dialects (multileg Gold has no Fabric Lakehouse variant):
+  - `ddl/multileg/02_multileg_gold_delta.sql`
+  - `ddl/multileg/04_multileg_fabric_warehouse.sql`
+  - `ddl/multileg/06_multileg_gold_hive.sql`
+
+  Columns: `leg_ref_id` (STRING/VARCHAR(64), legRefID per CAT IM v4.1.0r15 §5.2.1 row 32.n.1), `leg_symbol` (STRING/VARCHAR(14), §5.2.1 row 32.n.2), `leg_option_id` (STRING/VARCHAR(22), §5.2.1 row 32.n.3). All three are leg-array-indexed (`legs[n].<field>` in the JSON submission).
+
+### Changed
+
+- Renamed 2 legacy column names to match the canonical CAT IM spec naming:
+  - `leg_open_close` → `leg_open_close_indicator` (matches §5.2.1 row 32.n.4 `openCloseIndicator`)
+  - `leg_ratio` → `leg_ratio_quantity` (matches §5.2.1 row 32.n.6 `legRatioQuantity`)
+- `gold.vw_multileg_option_lifecycle` view (in same files): updated to reference the renamed columns + added the 3 new leg columns to the SELECT list.
+- `guardrails/known_field_mapping_gaps.csv`: 86 → 81 rows (5 `fact_multileg_option_legs` rows removed).
+
+### Why
+
+Third sub-tier of WS2 F3.2 follow-on. The mapping CSV's 6 leg-array columns (`leg_ref_id`, `leg_symbol`, `leg_option_id`, `leg_open_close_indicator`, `leg_side`, `leg_ratio_quantity`) didn't all exist in the DDL: 2 had legacy names (`leg_open_close`, `leg_ratio`) and 3 were genuinely missing. Renamed + added per CAT IM v4.1.0r15 §5.2.1's `legs[]` sub-table.
+
+### Spec verification
+
+All columns verified against PDF page 289 (MLNO §5.2.1 row 32.n.1–6) where the legs[] sub-table is documented:
+```
+32.n.1 legRefID Text(64) Unique identifier of the leg
+32.n.2 symbol Symbol The symbol of the stock for the leg
+32.n.3 optionID Text(22) The 21-character OSI Symbol of the option
+32.n.4 openCloseIndicator Choice Opens or closes a position
+32.n.5 side Choice Side of the leg
+32.n.6 legRatioQuantity Real Ratio of quantity for this individual leg
+```
+
+The earlier verifier's `JSON_FIELD_NOT_IN_PDF` flag on these columns was a regex false negative — the spec uses the multi-leg leg-indexed row format `"32.n.N"` that the verifier's `^\d+ <field>` row-prefix regex didn't catch.
+
+### Coverage
+
+```
+Validators:                        8/8 pass
+known_field_mapping_gaps.csv:     81  (was 86; -5 fact_multileg_option_legs rows)
+  - F3.1 phantom-table rows:       0  (unchanged - cleared in Tier 13-16)
+  - F3.2 missing-column rows:     81  (was 86)
+DDL files in parity scope:        22  (unchanged)
+Tables in 2+ dialects:            42  (unchanged - same tables, new columns)
+New parity violations:             0
+```
+
+### F3.2 burndown progress
+
+| Sub-tier | Host table | Cols | Allowlist | Status |
+|---|---|---|---|---|
+| Tier 17.1 | `fact_option_executions` | 3 | 92 → 89 | ✅ |
+| Tier 17.2 | `fact_option_allocations` | 3 | 89 → 86 | ✅ |
+| **Tier 17.3 (this)** | `fact_multileg_option_legs` | 5 | 86 → 81 | ✅ |
+| Tier 17.4 | `fact_option_order_events` | 30 | 81 → 51 | next |
+| Tier 17.5 | `fact_multileg_option_events` | 51 | 51 → 0 | queued |
+
+### Note on column-rename backwards compatibility
+
+The renames `leg_open_close` → `leg_open_close_indicator` and `leg_ratio` → `leg_ratio_quantity` affect only `gold.fact_multileg_option_legs` and its consuming view `gold.vw_multileg_option_lifecycle` (both updated in the same files). Silver-layer tables continue to use the original names; their Silver→Gold pipeline mappings handle the rename. No external consumers identified — this is fresh Gold-layer DDL prior to deployment.
+
 ## [Unreleased] - Tier 17.2: F3.2 closure sub-tier 2 — fact_option_allocations columns
 
 ### Added
