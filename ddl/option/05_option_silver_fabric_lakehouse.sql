@@ -139,6 +139,37 @@ CREATE TABLE IF NOT EXISTS gold.fact_option_order_events (
     prior_order_id              STRING,
     initiator                   STRING,
     trigger_price               DECIMAL(38, 18),
+    -- CAT IM v4.1.0r15 spec-mapping columns added in Tier 17.4
+    order_key_date              TIMESTAMP NOT NULL,     -- section 5.1.1 row 6 orderKeyDate
+    event_timestamp             TIMESTAMP NOT NULL,     -- section 5.1.1 row 9 eventTimestamp
+    manual_flag                 BOOLEAN NOT NULL,       -- section 5.1.1 row 10 manualFlag
+    manual_order_key_date       TIMESTAMP,              -- section 5.1.1 row 11 manualOrderKeyDate
+    manual_order_id             STRING,                 -- section 5.1.1 row 12 manualOrderID
+    electronic_dup_flag         BOOLEAN NOT NULL,       -- section 5.1.1 row 13 electronicDupFlag
+    electronic_timestamp        TIMESTAMP,              -- section 5.1.1 row 14 electronicTimestamp
+    dept_type                   STRING NOT NULL,        -- section 5.1.1 row 15 deptType
+    min_qty                     DECIMAL(38, 18),        -- section 5.1.1 row 19 minQty
+    solicitation_flag           BOOLEAN NOT NULL,       -- section 5.1.1 row 28 solicitationFlag
+    rfq_id                      STRING,                 -- section 5.1.1 row 32 RFQID
+    representative_ind          STRING,                 -- section 5.1.1 row 30 representativeInd
+    exch_origin_code            STRING,                 -- section 5.1.3 row 28 exchOriginCode
+    firm_designated_id          STRING,                 -- section 5.1.1 row 24 firmDesignatedID
+    account_holder_type         STRING,                 -- section 5.1.1 row 25 accountHolderType
+    affiliate_flag              BOOLEAN,                -- section 5.1.1 row 26 affiliateFlag
+    sender_imid                 STRING,                 -- section 5.1.3 row 14 senderIMID
+    receiver_imid               STRING,                 -- section 5.1.4 row 15 receiverIMID
+    sender_type                 STRING NOT NULL,        -- section 5.1.4 row 17 senderType
+    originating_imid            STRING,                 -- section 5.1.3 row 9 originatingIMID
+    destination                 STRING NOT NULL,        -- section 5.1.3 row 15 destination
+    destination_type            STRING NOT NULL,        -- section 5.1.3 row 16 destinationType
+    routed_order_id             STRING,                 -- section 5.1.3 row 17 routedOrderID
+    session                     STRING,                 -- section 5.1.3 row 18 session
+    route_rejected_flag         BOOLEAN,                -- section 5.1.3 row 27 routeRejectedFlag
+    multi_leg_ind               BOOLEAN,                -- section 5.1.3 row 30 multiLegInd
+    paired_order_id             STRING,                 -- section 5.1.3 row 34 pairedOrderID
+    prior_order_key_date        TIMESTAMP,              -- section 5.1.7 row 9 priorOrderKeyDate
+    parent_order_key_date       TIMESTAMP,              -- section 5.1.6.1 row 9 parentOrderKeyDate
+    request_timestamp           TIMESTAMP,              -- section 5.1.7 row 33 requestTimestamp
     source_file                 STRING NOT NULL,
     source_batch_id             STRING NOT NULL,
     dv2_source_hk               STRING NOT NULL,

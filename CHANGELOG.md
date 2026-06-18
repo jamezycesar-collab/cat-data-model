@@ -2,6 +2,75 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 17.4: F3.2 closure sub-tier 4 — fact_option_order_events columns (30 cols)
+
+### Added
+
+- 30 spec-mapping columns to `gold.fact_option_order_events` across all four dialects:
+  - `ddl/option/02_option_gold_delta.sql`
+  - `ddl/option/04_option_gold_hive.sql`
+  - `ddl/option/05_option_silver_fabric_lakehouse.sql`
+  - `ddl/option/06_option_fabric_warehouse.sql`
+
+  Largest single-sub-tier addition in the F3.2 follow-on. Columns grouped by purpose:
+  - Order key + timestamps (2): `order_key_date`, `event_timestamp`
+  - Manual event flags (5): `manual_flag`, `manual_order_key_date`, `manual_order_id`, `electronic_dup_flag`, `electronic_timestamp`
+  - Order metadata (6): `dept_type`, `min_qty`, `solicitation_flag`, `rfq_id`, `representative_ind`, `exch_origin_code`
+  - Party / account (3): `firm_designated_id`, `account_holder_type`, `affiliate_flag`
+  - Routing (11): `sender_imid`, `receiver_imid`, `sender_type`, `originating_imid`, `destination`, `destination_type`, `routed_order_id`, `session`, `route_rejected_flag`, `multi_leg_ind`, `paired_order_id`
+  - Modify / parent linkage (3): `prior_order_key_date`, `parent_order_key_date`, `request_timestamp`
+
+  Mirrors the equity `fact_order_events` structure introduced in Tier 16 (30 cols here is a subset of the 59 in the equity equivalent — option order events are a slight subset of equity order events).
+
+### Changed
+
+- `guardrails/known_field_mapping_gaps.csv`: 81 → 51 rows (30 `fact_option_order_events` rows removed).
+
+### Why
+
+Fourth sub-tier of WS2 F3.2 follow-on. All 30 columns passed PDF verification with `OK` status against CAT IM v4.1.0r15 sections 5.1.1 (New Option Order), 5.1.3 (Option Order Route), 5.1.4 (Option Order Accepted), 5.1.6.1 (Child Option Order), and 5.1.7 (Option Order Modified). No mapping CSV section-ref corrections needed.
+
+### Spec verification
+
+All 30 columns verified against PDF section 5.1.x (chapter 5 = options) via `verify_cat_im_v3.py`. Examples:
+- `order_key_date` → JSON `orderKeyDate`, §5.1.1 row 6 (page 248)
+- `event_timestamp` → JSON `eventTimestamp`, §5.1.1 row 9
+- `dept_type` → JSON `deptType`, §5.1.1 row 15
+- `destination` → JSON `destination`, §5.1.3 row 15
+- `parent_order_key_date` → JSON `parentOrderKeyDate`, §5.1.6.1 row 9
+
+Full per-column verification in `TIER_17_VERIFICATION.csv` (workspace folder).
+
+### Lesson learned (validator quirk)
+
+The validator's `_CREATE_TABLE_RE` includes `COMMENT` in its terminator alternation (matching SQL's table-level `COMMENT '...'` clause). When this sub-tier initially used per-column `COMMENT 'section ...'` documentation in the Hive variant, the regex misinterpreted the first column-level `COMMENT` appearing after a `DECIMAL(38, 18))` close-paren as the table-level terminator — silently truncating column discovery and triggering false `parity` errors.
+
+Workaround applied: Hive variant uses `-- section ...` line comments for spec references instead of inline `COMMENT 'string'`. Delta / Fabric Warehouse / Fabric Lakehouse variants use `-- section ...` end-of-line comments (their dialects don't conventionally use `COMMENT 'string'` for column docs anyway).
+
+Tracking as a tooling debt item: harden the validator regex to require column-list close-paren (full body close) before considering the COMMENT alternative as a body terminator.
+
+### Coverage
+
+```
+Validators:                        8/8 pass
+known_field_mapping_gaps.csv:     51  (was 81; -30 fact_option_order_events rows)
+  - F3.1 phantom-table rows:       0  (unchanged - cleared in Tier 13-16)
+  - F3.2 missing-column rows:     51  (was 81)
+DDL files in parity scope:        22  (unchanged)
+Tables in 2+ dialects:            42  (unchanged - same tables, new columns)
+New parity violations:             0
+```
+
+### F3.2 burndown progress
+
+| Sub-tier | Host table | Cols | Allowlist | Status |
+|---|---|---|---|---|
+| Tier 17.1 | `fact_option_executions` | 3 | 92 → 89 | ✅ |
+| Tier 17.2 | `fact_option_allocations` | 3 | 89 → 86 | ✅ |
+| Tier 17.3 | `fact_multileg_option_legs` | 5 | 86 → 81 | ✅ |
+| **Tier 17.4 (this)** | `fact_option_order_events` | 30 | 81 → 51 | ✅ |
+| Tier 17.5 | `fact_multileg_option_events` | 51 | 51 → 0 | next (final) |
+
 ## [Unreleased] - Tier 17.3: F3.2 closure sub-tier 3 — fact_multileg_option_legs columns
 
 ### Added
