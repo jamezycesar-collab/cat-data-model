@@ -2,6 +2,7 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+<<<<<<< Updated upstream
 ## [Unreleased] - Tier 15 (post-hoc): fact_quotes shipped with PR #16
 
 > The `fact_quotes` DDL and 31 corresponding allowlist deletions were physically
@@ -11,6 +12,72 @@ All notable changes to the data model are documented here. The format is based o
 > branch was empty and has been deleted. The merge commit `b9f5d8c` (PR #16)
 > physically contains both `fact_allocations` (Tier 14) and `fact_quotes`
 > (Tier 15). This banner records the bundle for audit-trail completeness.
+=======
+## [Unreleased] - Tier 16: WS2 burndown sub-tier 4 — fact_order_events DDL (final WS2 sub-tier)
+
+### Added
+
+- `gold.fact_order_events` across all four dialects (appended to existing Tier-13/14/15 `ddl/equity/` files):
+  - `ddl/equity/02_equity_gold_delta.sql`
+  - `ddl/equity/04_equity_gold_hive.sql`
+  - `ddl/equity/05_equity_gold_fabric_lakehouse.sql`
+  - `ddl/equity/06_equity_gold_fabric_warehouse.sql`
+
+  Largest fact table in the equity Gold layer: 72 columns total (59 spec + 9 framework + 4 lineage). PK + FK + two CHECK constraints:
+  - `event_type_code IN (24 codes)` — CAT IM v4.1.0r15 sections 4.1 New Order, 4.2 New Order Supplement, 4.3 Order Route family (MEOR/MEORS/MEMR/MEMRS/MECR/MECRS), 4.4 Order Accepted, 4.5 Internal Route family (MEIR/MEIM/MEIC/MEIMR/MEICR), 4.6 Child Order family (MECO/MECOM/MECOC), 4.7 Order Modified family (MEOM/MEOMS/MEOMR), 4.8 Order Adjusted (MEOJ), 4.9 Order Cancelled family (MEOC/MEOCR), 4.14 Order Effective (MEOE). Trade events (MEOT/MEOTS) intentionally excluded — they live on `fact_execution_events`.
+  - `action_type IN ('NEW', 'FRC', 'RPR')` — Section 4.1 row 1 firm-initiated correction vs error repair.
+
+  Replaces the legacy `fact_cat_order_events` (which compressed 59 spec fields into ~12 generic columns, only 7 overlapping).
+
+### Changed
+
+- `guardrails/known_field_mapping_gaps.csv` - 151 → 92 rows. **All 120 F3.1 phantom-table rows are now cleared.** Only F3.2 missing-column rows (92) remain.
+- `guardrails/validate_check_constraints.py`:
+  - Added `event_type_code` → `primary-sources/cat_im_event_types.csv` mapping (same target as `cat_event_code`; equity order tables use the column name from the field mapping CSV).
+  - Added `action_type` to `KNOWN_UNMAPPED_COLUMNS` (CAT IM §4.1 row 1 fixed 3-value enum: NEW/FRC/RPR — no separate primary-source CSV).
+
+### Why
+
+Final sub-tier of WS2 phantom-table burndown. `fact_order_events` was the largest phantom (59 mapping cols). Same Option B pattern: build the new spec-faithful design rather than retrofitting the legacy `fact_cat_order_events`. The legacy table flattened the entire order lifecycle into compact generic columns; the new `fact_order_events` keeps each spec field as a discrete column for spec-fidelity, downstream queries, and CAT JSON submission file generation.
+
+### Schema
+
+`fact_order_events` (72 columns):
+- `order_event_sk` BIGINT IDENTITY (PK)
+- `event_dts` / `event_date` (timestamps; partition key in non-Delta dialects)
+- 5 dim FKs: `date_sk`, `instrument_sk`, `party_sk`, `venue_sk` (nullable), `event_type_sk`
+- `action_type` (CHECK ⊂ {`NEW`, `FRC`, `RPR`})
+- `event_type_code` (CHECK ⊂ 24 equity order codes)
+- 57 other spec mapping columns (firm/error/CAT identifiers, order key/timestamps, side/price/quantity, manual-event flags, parent/child linkage, RFQ linkage, NBBO snapshot, BFMM/short-sale flag, routing destination/session/ISO indicator, paired order, quote-context refs)
+- 4 lineage cols
+
+### Coverage
+
+```
+Validators:                        8/8 pass
+known_field_mapping_gaps.csv:     92  (was 151)
+  - F3.1 phantom-table rows:       0  (was 120; -120 across Tiers 13-16)
+  - F3.2 missing-column rows:     92  (unchanged - next workstream target)
+DDL files in parity scope:        22  (unchanged - fact_order_events appended to existing equity/ files)
+Tables in 2+ dialects:            42  (was 41)
+New parity violations:             0
+SQL CHECK constraints validated:  74  (was 71; +3 = action_type x 3 dialects with constraint syntax)
+```
+
+### WS2 burndown — COMPLETE
+
+| Sub-tier | Phantom | Cols | Allowlist | Status |
+|---|---|---|---|---|
+| Tier 13 | `fact_execution_events` | 11 | 212 → 201 | ✅ |
+| Tier 14 | `fact_allocations` | 19 | 201 → 182 | ✅ |
+| Tier 15 | `fact_quotes` | 31 | 182 → 151 | ✅ (shipped with PR #16) |
+| **Tier 16 (this)** | `fact_order_events` | 59 | 151 → 92 | ✅ |
+| **Phantom-table total** | — | **120** | **212 → 92 (only F3.2 left)** | ✅ |
+
+### Next workstream
+
+F3.2 missing-column closure (~92 rows): add the absent columns to their host tables (mostly `fact_cat_order_events`, `fact_cat_quotes`, etc.). Will be sequenced as Tier 17.
+>>>>>>> Stashed changes
 
 ## [Unreleased] - Tier 15: WS2 burndown sub-tier 3 — fact_quotes DDL
 

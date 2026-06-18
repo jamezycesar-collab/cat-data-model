@@ -223,3 +223,120 @@ TBLPROPERTIES (
     'cat_submission_file_type' = 'OrderEvents',
     'grain' = 'one row per equity quote event'
 );
+
+
+-- ----------------------------------------------------------------------------
+-- 4. fact_order_events  -- equity order lifecycle events
+--    CAT IM v4.1.0r15 sections 4.1 - 4.9 + 4.14 (24 distinct event codes)
+--    Tier 16 (WS2 sub-tier 4 - final phantom-table burndown)
+--
+--    Covers New Order, Order Route, Route Modified, Route Cancelled,
+--    Order Accepted, Internal Route family, Child Order family,
+--    Order Modified, Order Adjusted, Order Cancelled, Order Effective.
+--    Trade events (MEOT/MEOTS) intentionally excluded - they live on
+--    fact_execution_events.
+-- ----------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS gold.fact_order_events (
+    order_event_sk              BIGINT GENERATED ALWAYS AS IDENTITY,
+    event_dts                   TIMESTAMP NOT NULL,
+    event_date                  DATE      NOT NULL,
+    -- conformed dimension FKs
+    date_sk                     BIGINT NOT NULL,
+    instrument_sk               BIGINT NOT NULL,
+    party_sk                    BIGINT NOT NULL,
+    venue_sk                    BIGINT,
+    event_type_sk               BIGINT NOT NULL,
+    -- equity order event specifics (CAT IM v4.1.0r15 sections 4.1 - 4.9 + 4.14)
+    action_type                 STRING NOT NULL,          -- Section 4.1 row 1 (NEW/FRC/RPR)
+    error_roe_id                STRING,                   -- Section 4.1 row 2 (required when RPR)
+    firm_roe_id                 STRING NOT NULL,          -- Section 2.3.3
+    event_type_code             STRING NOT NULL,          -- Section 6.1.5: message type code (CHECK)
+    cat_reporter_imid           STRING,                   -- Section 2.4.1
+    order_key_date              TIMESTAMP NOT NULL,       -- Section 4.1 row 6
+    cat_order_id                STRING NOT NULL,          -- Section 4.1 row 7
+    symbol                      STRING NOT NULL,          -- Section 2.4.3
+    event_timestamp             TIMESTAMP NOT NULL,       -- Section 4.1 row 9
+    manual_flag                 BOOLEAN NOT NULL,         -- Section 4.1 row 10
+    electronic_dup_flag         BOOLEAN NOT NULL,         -- Section 4.1 row 11
+    electronic_timestamp        TIMESTAMP,                -- Section 4.1 row 12
+    manual_order_key_date       TIMESTAMP,                -- Section 4.1 row 13
+    manual_order_id             STRING,                   -- Section 4.1 row 14
+    dept_type                   STRING,                   -- Section 4.1 row 15 (MENO/MEOM)
+    solicitation_flag           BOOLEAN,                  -- Section 4.1 row 16 (MENO)
+    rfq_id                      STRING,                   -- Section 4.1 row 17 (MENO)
+    side                        STRING,                   -- Section 4.1 row 18
+    price                       DECIMAL(38, 18),          -- Section 4.1 row 19
+    quantity                    DECIMAL(38, 18),          -- Section 4.1 row 20
+    leaves_quantity             DECIMAL(38, 18),          -- Section 4.1 / 4.7 / 4.11.1
+    parent_order_id             STRING,                   -- Section 4.1 parent linkage
+    min_qty                     DECIMAL(38, 18),          -- Section 4.1 row 21
+    order_type                  STRING,                   -- Section 4.1 row 22
+    time_in_force               STRING,                   -- Section 4.1 row 23
+    trading_session             STRING,                   -- Section 4.1 row 24
+    handling_instructions       STRING,                   -- Section 4.1 row 25 / 4.3 row 28
+    cust_dsp_intr_flag          BOOLEAN,                  -- Section 4.1 row 26
+    firm_designated_id          STRING,                   -- Section 2.4.2 / Appendix G
+    account_holder_type         STRING,                   -- Section 4.1 row 28
+    affiliate_flag              BOOLEAN,                  -- Section 4.1 row 29 / 4.3 row 26
+    info_barrier_id             STRING,                   -- Section 4.1 row 30
+    negotiated_trade_flag       BOOLEAN,                  -- Section 4.1 row 32
+    representative_ind          STRING,                   -- Section 4.1 row 33
+    seq_num                     STRING,                   -- Section 4.1 row 34
+    ats_display_ind             STRING,                   -- Section 4.1 row 35
+    display_price               DECIMAL(38, 18),          -- Section 4.1 row 36
+    working_price               DECIMAL(38, 18),          -- Section 4.1 row 37
+    display_qty                 DECIMAL(38, 18),          -- Section 4.1 row 38
+    nbb_price                   DECIMAL(38, 18),          -- Section 4.1 row 40
+    nbb_qty                     DECIMAL(38, 18),          -- Section 4.1 row 41
+    nbo_price                   DECIMAL(38, 18),          -- Section 4.1 row 42
+    nbo_qty                     DECIMAL(38, 18),          -- Section 4.1 row 43
+    nbbo_source                 STRING,                   -- Section 4.1 row 44
+    nbbo_timestamp              TIMESTAMP,                -- Section 4.1 row 45
+    net_price                   DECIMAL(38, 18),          -- Section 4.1 row 46
+    bfmm_flag                   BOOLEAN,                  -- Section 4.1 row 47 (short-sale BFMM)
+    originating_imid            STRING,                   -- Section 4.3 row 9
+    sender_imid                 STRING,                   -- Section 4.3 row 14
+    destination                 STRING,                   -- Section 4.3 row 15
+    destination_type            STRING,                   -- Section 4.3 row 16
+    routed_order_id             STRING,                   -- Section 4.3 row 17
+    session                     STRING,                   -- Section 4.3 row 18
+    iso_ind                     STRING,                   -- Section 4.3 row 27 (ISO)
+    route_rejected_flag         BOOLEAN,                  -- Section 4.3 row 29
+    multi_leg_ind               BOOLEAN,                  -- Section 4.3 row 32 / 4.11.1 row 35
+    paired_order_id             STRING,                   -- Section 4.3 row 33
+    quote_key_date              TIMESTAMP,                -- Section 4.3 row 36 (RFQ response)
+    quote_id                    STRING,                   -- Section 4.3 row 37 (RFQ response)
+    -- lineage
+    source_file                 STRING NOT NULL,
+    source_batch_id             STRING NOT NULL,
+    dv2_source_hk               STRING NOT NULL,
+    quality_outcome             STRING,
+    CONSTRAINT pk_fact_order_event PRIMARY KEY (order_event_sk),
+    CONSTRAINT chk_fact_order_code CHECK (event_type_code IN (
+        'MENO','MENOS','MEOR','MEORS','MEMR','MEMRS','MECR','MECRS',
+        'MEOA','MEIR','MEIM','MEIC','MEIMR','MEICR',
+        'MECO','MECOM','MECOC','MEOM','MEOMS','MEOMR',
+        'MEOJ','MEOC','MEOCR','MEOE'
+    )),
+    CONSTRAINT chk_fact_order_action CHECK (action_type IN ('NEW','FRC','RPR')),
+    CONSTRAINT fk_fact_oe_date     FOREIGN KEY (date_sk)
+        REFERENCES gold.dim_date (date_sk),
+    CONSTRAINT fk_fact_oe_instr    FOREIGN KEY (instrument_sk)
+        REFERENCES gold.dim_instrument (instrument_sk),
+    CONSTRAINT fk_fact_oe_party    FOREIGN KEY (party_sk)
+        REFERENCES gold.dim_party (party_sk),
+    CONSTRAINT fk_fact_oe_evtype   FOREIGN KEY (event_type_sk)
+        REFERENCES gold.dim_event_type (event_type_sk)
+)
+USING DELTA
+PARTITIONED BY (event_date)
+COMMENT 'CAT equity order event fact - one row per equity order lifecycle event (24 distinct codes from sections 4.1-4.9 + 4.14, excluding trades MEOT/MEOTS)'
+TBLPROPERTIES (
+    'delta.enableChangeDataFeed' = 'true',
+    'delta.autoOptimize.optimizeWrite' = 'true',
+    'compression.codec' = 'zstd',
+    'subject_area' = 'gold_fact',
+    'cat_submission_file_type' = 'OrderEvents',
+    'grain' = 'one row per equity order lifecycle event'
+);
