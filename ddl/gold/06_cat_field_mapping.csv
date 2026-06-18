@@ -176,10 +176,10 @@ fact_option_executions,tape_trade_id,tapeTradeID,OrderEvents,MOOT,STRING,N,40,Se
 fact_option_executions,side_details_ind,sideDetailsInd,OrderEvents,MOOT,STRING,Y,4,Section 5.1.11 row 18: Identifies which side the IM is on,VERIFIED
 fact_option_executions,market_center_id,marketCenterID,OrderEvents,MOOT,STRING,Y,4,Section 5.1.11 row 21: National securities exchange where the trade occurred,VERIFIED
 fact_option_executions,clearing_firm,clearingFirm,OrderEvents,MOOT,STRING,Y,16,Section 5.1.11 row 23: Clearing number of the IM's clearing firm,VERIFIED
-fact_option_executions,fill_key_date,fillKeyDate,OrderEvents,"MOOF,MOOFS,MOFA",DATETIME,Y,30,Section 5.1.13.1 row 6: Date and time the fulfillmentID was assigned,VERIFIED
+fact_option_executions,fill_key_date,fillKeyDate,OrderEvents,"MOOF,MOOFS,MOFA",DATETIME,Y,30,Section 5.1.12.1 row 6: Date and time the fulfillmentID was assigned,VERIFIED
 fact_option_executions,fulfillment_id,fulfillmentID,OrderEvents,"MOOF,MOOFS,MOFA",STRING,Y,64,Section 5.1.13.1 row 7: Unique fulfillment ID,VERIFIED
 fact_option_executions,fulfillment_link_type,fulfillmentLinkType,OrderEvents,"MOOF,MOFA",STRING,N,4,Section 5.1.13.1 row 14 / 5.1.14 row 15: Combined order linkage type (Appendix C),VERIFIED
-fact_option_executions,prior_fill_key_date,priorFillKeyDate,OrderEvents,MOFA,DATETIME,N,30,Section 5.1.14 row 9: Prior fillKeyDate when a new fulfillmentID is assigned,VERIFIED
+fact_option_executions,prior_fill_key_date,priorFillKeyDate,OrderEvents,MOFA,DATETIME,N,30,Section 5.1.12.3 row 9: Prior fillKeyDate when a new fulfillmentID is assigned,VERIFIED
 fact_option_executions,prior_fulfillment_id,priorFulfillmentID,OrderEvents,MOFA,STRING,N,64,Section 5.1.14 row 10: Prior fulfillmentID,VERIFIED
 fact_option_allocations,allocation_key_date,allocationKeyDate,Allocations,"MOPA,MOAA",DATETIME,Y,30,Section 5.1.13.1 row 6: Date and time the allocationID was assigned,VERIFIED
 fact_option_allocations,allocation_id,allocationID,Allocations,"MOPA,MOAA",STRING,Y,64,Section 5.1.13.1 row 7: Internal allocation ID,VERIFIED

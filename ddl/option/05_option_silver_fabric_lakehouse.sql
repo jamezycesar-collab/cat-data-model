@@ -159,8 +159,11 @@ CREATE TABLE IF NOT EXISTS gold.fact_option_executions (
     option_id                   STRING NOT NULL,
     cat_event_code              STRING NOT NULL,
     trade_id                    STRING,
+    trade_key_date              TIMESTAMP,              -- CAT IM v4.1.0r15 section 5.1.11 row 6 (MOOT)
     fulfillment_id              STRING,
+    fill_key_date               TIMESTAMP,              -- CAT IM v4.1.0r15 section 5.1.12.1 row 6 (MOOF/MOOFS)
     prior_fulfillment_id        STRING,
+    prior_fill_key_date         TIMESTAMP,              -- CAT IM v4.1.0r15 section 5.1.12.3 row 9 (MOFA)
     quantity                    DECIMAL(38, 18) NOT NULL,
     price                       DECIMAL(38, 18) NOT NULL,
     capacity                    STRING,

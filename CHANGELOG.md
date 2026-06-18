@@ -2,7 +2,61 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-<<<<<<< Updated upstream
+## [Unreleased] - Tier 17.1: F3.2 closure sub-tier 1 — fact_option_executions columns
+
+### Added
+
+- 3 spec-mapping columns to `gold.fact_option_executions` across all four dialects:
+  - `ddl/option/02_option_gold_delta.sql`
+  - `ddl/option/04_option_gold_hive.sql`
+  - `ddl/option/05_option_silver_fabric_lakehouse.sql`
+  - `ddl/option/06_option_fabric_warehouse.sql`
+
+  Columns: `trade_key_date` (TIMESTAMP, CAT IM v4.1.0r15 §5.1.11 row 6 — MOOT), `fill_key_date` (TIMESTAMP, §5.1.12.1 row 6 — MOOF/MOOFS), `prior_fill_key_date` (TIMESTAMP, §5.1.12.3 row 9 — MOFA). All three are natural-key timestamps grouped with the existing `trade_id` / `fulfillment_id` / `prior_fulfillment_id` identifiers.
+
+### Changed
+
+- `ddl/gold/06_cat_field_mapping.csv`:
+  - `fact_option_executions.fill_key_date`: corrected section reference from §5.1.13.1 → §5.1.12.1 (PDF verification confirmed the field is in Option Order Fulfillment Event, not Option Post-Trade Allocation).
+  - `fact_option_executions.prior_fill_key_date`: corrected section reference from §5.1.14 → §5.1.12.3 (Option Order Fulfillment Amendment Event, not Option Order Effective Event).
+- `guardrails/known_field_mapping_gaps.csv`: 92 → 89 rows (3 `fact_option_executions` rows removed).
+- `CHANGELOG.md`: removed leftover stash-pop merge conflict markers (Tier 15 banner + Tier 16 entry both legitimate; markers were committed by accident with PR #18).
+
+### Why
+
+First sub-tier of WS2 phantom-table backlog's F3.2 follow-on (the 92 remaining missing-column rows after the WS2 phantom-table burndown completed in Tier 16). Each F3.2 sub-tier adds the absent columns to its host fact table's existing `CREATE TABLE` body across all available dialects, then removes the corresponding allowlist rows. Mapping CSV section corrections are pinned to the same PR for atomicity.
+
+Started with `fact_option_executions` because it's the smallest (3 cols) — establishes the pattern for the larger sub-tiers (17.2 / 17.3 / 17.4 / 17.5).
+
+### Spec verification
+
+All 3 columns verified against CAT IM v4.1.0r15 PDF using `verify_cat_im_v3.py`:
+- `trade_key_date` → JSON `tradeKeyDate`, PDF §5.1.11 row 6, page 268
+- `fill_key_date` → JSON `fillKeyDate`, PDF §5.1.12.1 row 6, page 271
+- `prior_fill_key_date` → JSON `priorFillKeyDate`, PDF §5.1.12.3 row 9, page 276
+
+### Coverage
+
+```
+Validators:                        8/8 pass
+known_field_mapping_gaps.csv:     89  (was 92; -3 fact_option_executions rows)
+  - F3.1 phantom-table rows:       0  (unchanged - cleared in Tier 13-16)
+  - F3.2 missing-column rows:     89  (was 92)
+DDL files in parity scope:        22  (unchanged)
+Tables in 2+ dialects:            42  (unchanged - same tables, new columns)
+New parity violations:             0
+```
+
+### F3.2 burndown progress
+
+| Sub-tier | Host table | Cols | Allowlist | Status |
+|---|---|---|---|---|
+| **Tier 17.1 (this)** | `fact_option_executions` | 3 | 92 → 89 | ✅ |
+| Tier 17.2 | `fact_option_allocations` | 3 | 89 → 86 | next |
+| Tier 17.3 | `fact_multileg_option_legs` | 5 | 86 → 81 | queued |
+| Tier 17.4 | `fact_option_order_events` | 30 | 81 → 51 | queued |
+| Tier 17.5 | `fact_multileg_option_events` | 51 | 51 → 0 | queued |
+
 ## [Unreleased] - Tier 15 (post-hoc): fact_quotes shipped with PR #16
 
 > The `fact_quotes` DDL and 31 corresponding allowlist deletions were physically
@@ -12,7 +66,6 @@ All notable changes to the data model are documented here. The format is based o
 > branch was empty and has been deleted. The merge commit `b9f5d8c` (PR #16)
 > physically contains both `fact_allocations` (Tier 14) and `fact_quotes`
 > (Tier 15). This banner records the bundle for audit-trail completeness.
-=======
 ## [Unreleased] - Tier 16: WS2 burndown sub-tier 4 — fact_order_events DDL (final WS2 sub-tier)
 
 ### Added
@@ -77,7 +130,6 @@ SQL CHECK constraints validated:  74  (was 71; +3 = action_type x 3 dialects wit
 ### Next workstream
 
 F3.2 missing-column closure (~92 rows): add the absent columns to their host tables (mostly `fact_cat_order_events`, `fact_cat_quotes`, etc.). Will be sequenced as Tier 17.
->>>>>>> Stashed changes
 
 ## [Unreleased] - Tier 15: WS2 burndown sub-tier 3 — fact_quotes DDL
 
