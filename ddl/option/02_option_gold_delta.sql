@@ -130,7 +130,9 @@ CREATE TABLE IF NOT EXISTS gold.fact_option_allocations (
     option_id                   STRING NOT NULL,
     cat_event_code              STRING NOT NULL,        -- MOPA / MOAA
     allocation_id               STRING NOT NULL,
+    allocation_key_date         TIMESTAMP NOT NULL,     -- CAT IM v4.1.0r15 §5.1.13.1 row 6 (MOPA/MOAA)
     prior_allocation_id         STRING,
+    prior_allocation_key_date   TIMESTAMP,              -- CAT IM v4.1.0r15 §5.1.13.2 row 8 (MOAA)
     side                        STRING,
     quantity                    DECIMAL(38, 18) NOT NULL,
     price                       DECIMAL(38, 18),
@@ -143,6 +145,7 @@ CREATE TABLE IF NOT EXISTS gold.fact_option_allocations (
     allocation_type             STRING,
     institution_flag            BOOLEAN,
     account_holder_type         STRING,
+    allocation_instruction_time TIMESTAMP,              -- CAT IM v4.1.0r15 §5.1.13.1 row 24 (MOPA/MOAA)
     cancel_flag                 BOOLEAN,
     cancel_timestamp            TIMESTAMP,
     -- lineage

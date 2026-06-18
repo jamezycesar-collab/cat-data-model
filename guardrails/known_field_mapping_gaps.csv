@@ -29,9 +29,6 @@ fact_option_order_events,originating_imid,missing_column,F3.2,159
 fact_option_order_events,prior_order_key_date,missing_column,F3.2,160
 fact_option_order_events,parent_order_key_date,missing_column,F3.2,162
 fact_option_order_events,request_timestamp,missing_column,F3.2,167
-fact_option_allocations,allocation_key_date,missing_column,F3.2,184
-fact_option_allocations,prior_allocation_key_date,missing_column,F3.2,186
-fact_option_allocations,allocation_instruction_time,missing_column,F3.2,195
 fact_multileg_option_events,underlying,missing_column,F3.2,198
 fact_multileg_option_events,order_key_date,missing_column,F3.2,199
 fact_multileg_option_events,cat_order_id,missing_column,F3.2,200
