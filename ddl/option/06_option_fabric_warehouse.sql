@@ -198,7 +198,9 @@ CREATE TABLE gold.fact_option_allocations (
     option_id                   VARCHAR(22) NOT NULL,
     cat_event_code              VARCHAR(8) NOT NULL,
     allocation_id               VARCHAR(64) NOT NULL,
+    allocation_key_date         DATETIME2(7) NOT NULL,  -- CAT IM v4.1.0r15 section 5.1.13.1 row 6 (MOPA/MOAA)
     prior_allocation_id         VARCHAR(64),
+    prior_allocation_key_date   DATETIME2(7),           -- CAT IM v4.1.0r15 section 5.1.13.2 row 8 (MOAA)
     side                        VARCHAR(8),
     quantity                    DECIMAL(38, 18) NOT NULL,
     price                       DECIMAL(38, 18),
@@ -211,6 +213,7 @@ CREATE TABLE gold.fact_option_allocations (
     allocation_type             VARCHAR(8),
     institution_flag            BIT,
     account_holder_type         VARCHAR(2),
+    allocation_instruction_time DATETIME2(7),           -- CAT IM v4.1.0r15 section 5.1.13.1 row 24 (MOPA/MOAA)
     cancel_flag                 BIT,
     cancel_timestamp            DATETIME2(7),
     source_file                 VARCHAR(256) NOT NULL,

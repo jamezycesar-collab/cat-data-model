@@ -2,6 +2,56 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 17.2: F3.2 closure sub-tier 2 — fact_option_allocations columns
+
+### Added
+
+- 3 spec-mapping columns to `gold.fact_option_allocations` across all four dialects:
+  - `ddl/option/02_option_gold_delta.sql`
+  - `ddl/option/04_option_gold_hive.sql`
+  - `ddl/option/05_option_silver_fabric_lakehouse.sql`
+  - `ddl/option/06_option_fabric_warehouse.sql`
+
+  Columns: `allocation_key_date` (TIMESTAMP NOT NULL, CAT IM v4.1.0r15 §5.1.13.1 row 6 — MOPA/MOAA), `prior_allocation_key_date` (TIMESTAMP nullable, §5.1.13.2 row 8 — MOAA), `allocation_instruction_time` (TIMESTAMP nullable, §5.1.13.1 row 24 — MOPA/MOAA). Mirrors the equity-side `fact_allocations` layout introduced in Tier 14.
+
+### Changed
+
+- `guardrails/known_field_mapping_gaps.csv`: 89 → 86 rows (3 `fact_option_allocations` rows removed).
+
+### Why
+
+Second sub-tier of WS2 F3.2 follow-on. Three columns total, all natural-key timestamps and operational time stamps grouped with their existing identifier counterparts (`allocation_id`, `prior_allocation_id`, and `cancel_flag` / `cancel_timestamp` respectively).
+
+### Spec verification
+
+All 3 mapping CSV section references confirmed correct via direct PDF inspection (no mapping CSV fixes needed for this sub-tier — the earlier verifier `SECTION_MISMATCH` flag on `allocation_key_date` was a boundary artifact at the §5.1.13 → §5.1.13.1 page transition):
+
+- `allocation_key_date` → JSON `allocationKeyDate`, PDF §5.1.13.1 row 6, page 277
+- `prior_allocation_key_date` → JSON `priorAllocationKeyDate`, PDF §5.1.13.2 row 8, page 280
+- `allocation_instruction_time` → JSON `allocationInstructionTime`, PDF §5.1.13.1 row 24, page 278
+
+### Coverage
+
+```
+Validators:                        8/8 pass
+known_field_mapping_gaps.csv:     86  (was 89; -3 fact_option_allocations rows)
+  - F3.1 phantom-table rows:       0  (unchanged - cleared in Tier 13-16)
+  - F3.2 missing-column rows:     86  (was 89)
+DDL files in parity scope:        22  (unchanged)
+Tables in 2+ dialects:            42  (unchanged - same tables, new columns)
+New parity violations:             0
+```
+
+### F3.2 burndown progress
+
+| Sub-tier | Host table | Cols | Allowlist | Status |
+|---|---|---|---|---|
+| Tier 17.1 | `fact_option_executions` | 3 | 92 → 89 | ✅ |
+| **Tier 17.2 (this)** | `fact_option_allocations` | 3 | 89 → 86 | ✅ |
+| Tier 17.3 | `fact_multileg_option_legs` | 5 | 86 → 81 | next |
+| Tier 17.4 | `fact_option_order_events` | 30 | 81 → 51 | queued |
+| Tier 17.5 | `fact_multileg_option_events` | 51 | 51 → 0 | queued |
+
 ## [Unreleased] - Tier 17.1: F3.2 closure sub-tier 1 — fact_option_executions columns
 
 ### Added
