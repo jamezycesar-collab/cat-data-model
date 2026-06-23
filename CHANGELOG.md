@@ -2,6 +2,53 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 18.2: Post-audit guardrails README
+
+### Added
+
+- `guardrails/README.md` - maintainer-facing operational guide to the validator suite. Documents:
+  - The 8 validators (purpose, allowlist file, scope notes)
+  - The 4 allowlist CSV files and their post-audit state (1 file at 0 rows; 3 retaining intentional deferred items)
+  - The shared utilities (`_ddl_parser.py`, `test__ddl_parser.py`, `spec_pins.json`, `pre-commit`)
+  - How to add new allowlist entries if a future audit cycle uncovers gaps
+  - How to close an allowlisted gap (delete the row; validator verifies)
+  - The two failure modes the Tier 18.1 parser fixed (parens-in-comments, per-column `COMMENT 'string'`)
+  - Post-audit state and references to the institutional-knowledge documents (CHANGELOG, VERIFICATION_PROTOCOL, ROOT_CAUSE_AUDIT)
+
+### Why
+
+Post-audit housekeeping. With the F3.1/F3.2 backlog closed and the validator regex hardened, the guardrails suite is in a steady-state. Capturing the operational knowledge in a maintainer-facing README protects future readers from having to reconstruct the audit closure history from CHANGELOG entries scattered across Tiers 13-18.
+
+Complements (rather than replaces) the existing `guardrails/VERIFICATION_PROTOCOL.md`, which is the policy document. The new README is the operational reference: what each validator does, how to interpret its output, and how to extend the suite.
+
+### Changed
+
+- None. This is a pure docs addition.
+
+### Verification
+
+- All 8 guardrails still pass (no behavior change).
+- 10/10 regression tests in `test__ddl_parser.py` still pass.
+- Audit-tracked backlog (`known_field_mapping_gaps.csv`) remains at 0 rows.
+
+### Coverage
+
+```
+Validators:                        8/8 pass
+Python files in scope:            43  (unchanged)
+Markdown files in guardrails/:     2  (was 1; +README.md)
+Allowlisted backlog:               0  (audit closed in Tier 17.5)
+```
+
+### Open followups remaining
+
+| # | Item | Status |
+|---|---|---|
+| 1 | Validator regex hardening | ✅ Tier 18.1 |
+| 2 | Empty `known_field_mapping_gaps.csv` housekeeping | ✅ this sub-tier (kept as header-only stub; documented in README) |
+| 3 | Multi-leg Fabric Lakehouse Gold variant | open |
+| 4 | Mapping CSV section/row polish (22 cosmetic refs) | open |
+
 ## [Unreleased] - Tier 18.1: Validator regex hardening (post-audit tooling debt)
 
 ### Added
