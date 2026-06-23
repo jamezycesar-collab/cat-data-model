@@ -219,24 +219,24 @@ fact_multileg_option_events,representative_ind,representativeInd,OrderEvents,MLN
 fact_multileg_option_events,solicitation_flag,solicitationFlag,OrderEvents,MLNO,BOOLEAN,Y,1,Section 5.2.1 row 28: True if the order was originated in response to an RFQ or other solicitation,VERIFIED
 fact_multileg_option_events,rfq_id,RFQID,OrderEvents,"MLNO,MLOR,MLOA",STRING,N,64,Section 5.2.1 row 29: For events responding to an RFQ,VERIFIED
 fact_multileg_option_events,number_of_legs,numberOfLegs,OrderEvents,"MLNO,MLOR,MLOA",INT,Y,3,Section 5.2.1 row 30: Number of CAT-reportable legs in the multi-leg order,VERIFIED
-fact_multileg_option_events,sender_imid,senderIMID,OrderEvents,"MLOR,MLMR,MLCR,MLOA,MLOM",STRING,N,8,Section 5.2.2 row 14: IMID of the IM sending the route,VERIFIED
-fact_multileg_option_events,destination,destination,OrderEvents,"MLOR,MLMR,MLCR",STRING,Y,8,Section 5.2.2 row 15: Destination IMID,VERIFIED
-fact_multileg_option_events,destination_type,destinationType,OrderEvents,"MLOR,MLMR,MLCR",STRING,Y,4,Section 5.2.2 row 16: Whether destination is exchange / affiliated firm / other,VERIFIED
-fact_multileg_option_events,routed_order_id,routedOrderID,OrderEvents,"MLOR,MLOA",STRING,N,64,Section 5.2.2 row 17: ID assigned to the routed order,VERIFIED
-fact_multileg_option_events,session,session,OrderEvents,"MLOR,MLMR",STRING,N,40,Section 5.2.2 row 18: Session ID used when routing,VERIFIED
-fact_multileg_option_events,route_rejected_flag,routeRejectedFlag,OrderEvents,"MLOR,MLMR,MLCR",BOOLEAN,N,1,Section 5.2.2 row 27: True if the routed order was not accepted by destination,VERIFIED
-fact_multileg_option_events,exch_origin_code,exchOriginCode,OrderEvents,MLOR,STRING,N,4,Section 5.2.2 row 28: Code signifying the origin of the account as sent to exchange,VERIFIED
-fact_multileg_option_events,paired_order_id,pairedOrderID,OrderEvents,"MLOR,MLOA",STRING,N,64,Section 5.2.2 row 34 / 5.2.3 row 30: Paired order identifier,VERIFIED
+fact_multileg_option_events,sender_imid,senderIMID,OrderEvents,"MLOR,MLMR,MLCR,MLOA,MLOM",STRING,N,8,Section 5.2.2 row 13: IMID of the IM sending the route,VERIFIED
+fact_multileg_option_events,destination,destination,OrderEvents,"MLOR,MLMR,MLCR",STRING,Y,8,Section 5.2.2 row 14: Destination IMID,VERIFIED
+fact_multileg_option_events,destination_type,destinationType,OrderEvents,"MLOR,MLMR,MLCR",STRING,Y,4,Section 5.2.2 row 15: Whether destination is exchange / affiliated firm / other,VERIFIED
+fact_multileg_option_events,routed_order_id,routedOrderID,OrderEvents,"MLOR,MLOA",STRING,N,64,Section 5.2.2 row 16: ID assigned to the routed order,VERIFIED
+fact_multileg_option_events,session,session,OrderEvents,"MLOR,MLMR",STRING,N,40,Section 5.2.2 row 17: Session ID used when routing,VERIFIED
+fact_multileg_option_events,route_rejected_flag,routeRejectedFlag,OrderEvents,"MLOR,MLMR,MLCR",BOOLEAN,N,1,Section 5.2.2 row 26: True if the routed order was not accepted by destination,VERIFIED
+fact_multileg_option_events,exch_origin_code,exchOriginCode,OrderEvents,MLOR,STRING,N,4,Section 5.2.2 row 27: Code signifying the origin of the account as sent to exchange,VERIFIED
+fact_multileg_option_events,paired_order_id,pairedOrderID,OrderEvents,"MLOR,MLOA",STRING,N,64,Section 5.2.2 row 28 / 5.2.3 row 30: Paired order identifier,VERIFIED
 fact_multileg_option_events,receiver_imid,receiverIMID,OrderEvents,"MLOA,MLOM",STRING,N,8,Section 5.2.3 row 15: IMID of the IM receiving the order,VERIFIED
 fact_multileg_option_events,sender_type,senderType,OrderEvents,"MLOA,MLOM",STRING,Y,4,Section 5.2.3 row 17: Type of origin from which the order is routed,VERIFIED
 fact_multileg_option_events,originating_imid,originatingIMID,OrderEvents,"MLOR,MLOM,MLOC,MLOCR,MLOE",STRING,N,8,Section 5.2.2 row 9: Used in mergers/acquisitions where prior firm orders are still open,VERIFIED
 fact_multileg_option_events,prior_order_key_date,priorOrderKeyDate,OrderEvents,"MLOM,MLOE",DATETIME,N,30,Section 5.2.6 row 9: Prior orderKeyDate when a new orderID is assigned,VERIFIED
-fact_multileg_option_events,prior_order_id,priorOrderID,OrderEvents,"MLOM,MLOE",STRING,N,64,Section 5.2.6 row 10: Prior orderID,VERIFIED
+fact_multileg_option_events,prior_order_id,priorOrderID,OrderEvents,"MLOM,MLOE",STRING,N,64,Section 5.2.6 row 9: Prior orderID,VERIFIED
 fact_multileg_option_events,parent_order_key_date,parentOrderKeyDate,OrderEvents,MLCO,DATETIME,Y,30,Section 5.2.5.1 row 9: orderKeyDate of the parent event from which the Child Order was sliced,VERIFIED
 fact_multileg_option_events,parent_order_id,parentOrderID,OrderEvents,MLCO,STRING,Y,64,Section 5.2.5.1 row 10: orderID of the parent event,VERIFIED
-fact_multileg_option_events,initiator,initiator,OrderEvents,"MLOM,MLOC,MLOCR",STRING,Y,4,Section 5.2.6 row 22: Indicates who initiated the modification/cancellation,VERIFIED
-fact_multileg_option_events,leaves_qty,leavesQty,OrderEvents,"MLOM,MLOC",DECIMAL,N,15,Section 5.2.6 row 27 / 5.2.7 row 14: Number of units left open after modification or cancel,VERIFIED
-fact_multileg_option_events,cancel_qty,cancelQty,OrderEvents,"MLOC,MLOCR",DECIMAL,N,15,Section 5.2.7 row 13: Quantity being cancelled,VERIFIED
+fact_multileg_option_events,initiator,initiator,OrderEvents,"MLOM,MLOC,MLOCR",STRING,Y,4,Section 5.2.6 row 21: Indicates who initiated the modification/cancellation,VERIFIED
+fact_multileg_option_events,leaves_qty,leavesQty,OrderEvents,"MLOM,MLOC",DECIMAL,N,15,Section 5.2.6 row 25 / 5.2.7 row 14: Number of units left open after modification or cancel,VERIFIED
+fact_multileg_option_events,cancel_qty,cancelQty,OrderEvents,"MLOC,MLOCR",DECIMAL,N,15,Section 5.2.7 row 12: Quantity being cancelled,VERIFIED
 fact_multileg_option_events,request_timestamp,requestTimestamp,OrderEvents,"MLOM,MLOC",DATETIME,N,30,Section 5.2.6 row 33 / 5.2.7 row 17: Date/time the modification or cancellation was requested,VERIFIED
 fact_multileg_option_events,quote_key_date,quoteKeyDate,OrderEvents,"MLNQ,MLRQ,MLQS,MLQR,MLQC,MLQM",DATETIME,Y,30,Section 5.2.8 quote events: Date and time the quoteID was assigned,VERIFIED
 fact_multileg_option_events,quote_id,quoteID,OrderEvents,"MLNQ,MLRQ,MLQS,MLQR,MLQC,MLQM",STRING,Y,64,Section 5.2.8 quote events: Internal quote ID,VERIFIED
