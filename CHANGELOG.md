@@ -2,6 +2,51 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 18.3: Multi-leg Fabric Lakehouse Gold variant
+
+### Added
+
+- `ddl/multileg/05_multileg_gold_fabric_lakehouse.sql` (NEW) - the fourth-dialect variant of the multi-leg Gold layer. Brings multi-leg Gold to 4-dialect parity with the option Gold layout (Delta + Fabric Lakehouse + Fabric Warehouse + Hive).
+
+  Contains:
+  - `gold.dim_multileg_strategy` (9 cols) - SCD2 dimension of known multi-leg strategies
+  - `gold.fact_multileg_option_events` (75 cols) - full post-Tier-17.5 column set including all CAT IM v4.1.0r15 §5.2 spec-mapping columns
+  - `gold.fact_multileg_option_legs` (15 cols) - per-leg detail with `leg_*_indicator`/`leg_ratio_quantity` canonical names (Tier 17.3 renames)
+  - `gold.vw_multileg_option_lifecycle` - consolidated lifecycle view (mirrors the Delta + Hive variants)
+  - `CHECK (cat_event_code IN (...))` and `CHECK (leg_count >= 2)` constraints (Fabric Lakehouse supports CHECK via Delta underlying)
+
+### Why
+
+Pre-existing dialect-coverage gap closed. `ddl/option/` had 4 dialects (Delta, Hive, Fabric Lakehouse, Fabric Warehouse) but `ddl/multileg/` only had 3 — Fabric Lakehouse was missing. The gap predated the Tier 13 audit closure work and was flagged as followup item #3 in Tier 17.5's CHANGELOG.
+
+Closing this aligns the multi-leg and option Gold layouts symmetrically and means a Microsoft Fabric Lakehouse deployment can now provision both option and multi-leg facts from this repo without manual translation.
+
+### Coverage
+
+```
+Validators:                        8/8 pass
+DDL files in parity scope:        23  (was 22; +05_multileg_gold_fabric_lakehouse.sql)
+Tables in 2+ dialects:            42  (unchanged - new file adds dialect for existing tables)
+New parity violations:             0
+Allowlisted parity diffs:         12  (unchanged - F5.1, F5.2, F5.3 backlog)
+Allowlisted field mapping rows:    0  (unchanged - audit closed in Tier 17.5)
+```
+
+### Verification
+
+- All 8 guardrails pass.
+- 10/10 regression tests in `test__ddl_parser.py` pass (new file parses cleanly via the Tier-18.1 balanced-paren parser).
+- Column-name set on `dim_multileg_strategy`, `fact_multileg_option_events`, and `fact_multileg_option_legs` matches the existing 3 dialects exactly - no new parity-allowlist entries required.
+
+### Open followups remaining
+
+| # | Item | Status |
+|---|---|---|
+| 1 | Validator regex hardening | ✅ Tier 18.1 |
+| 2 | Empty allowlist housekeeping (stub + README) | ✅ Tier 18.2 |
+| 3 | Multi-leg Fabric Lakehouse Gold variant | ✅ this sub-tier |
+| 4 | Mapping CSV section/row polish (22 cosmetic refs) | open |
+
 ## [Unreleased] - Tier 18.2: Post-audit guardrails README
 
 ### Added
