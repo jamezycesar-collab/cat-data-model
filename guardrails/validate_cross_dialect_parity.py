@@ -54,11 +54,12 @@ _RESERVED_LINE_STARTS = {
     "lifecycle", "as", "select",
 }
 
-_CREATE_TABLE_RE = re.compile(
-    r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[\w\.]*?(\w+)\s*\(([^;]+?)\)\s*"
-    r"(USING|PARTITIONED|TBLPROPERTIES|CLUSTER|COMMENT|STORED|;)",
-    re.IGNORECASE | re.DOTALL,
-)
+# CREATE TABLE parsing is delegated to guardrails/_ddl_parser.py which uses
+# a balanced-paren walker rather than a regex. This is robust to nested
+# parens (DECIMAL(38,18), CHECK(...)), per-column COMMENT 'string' clauses,
+# parens inside line comments, and SQL escaped quotes.
+from _ddl_parser import find_create_tables  # noqa: E402
+
 _PARTITIONED_BY_RE = re.compile(
     r"PARTITIONED\s+BY\s*\(\s*([^)]+?)\s*\)",
     re.IGNORECASE | re.DOTALL,
@@ -100,11 +101,11 @@ def parse_file(path: Path) -> dict[str, set[str]]:
     """Return {table_name: column_set} for one DDL file."""
     text = path.read_text()
     out: dict[str, set[str]] = {}
-    for m in _CREATE_TABLE_RE.finditer(text):
-        tbl = m.group(1).lower()
-        cols = extract_columns_from_body(m.group(2))
-        # Look at PARTITIONED BY clause starting at the trailing keyword
-        tail = text[m.start(3):m.start(3) + 400]
+    for tbl_name, body, _body_start, body_end, _kw in find_create_tables(text):
+        tbl = tbl_name.lower()
+        cols = extract_columns_from_body(body)
+        # Look at PARTITIONED BY clause starting after the body close
+        tail = text[body_end:body_end + 400]
         pm = _PARTITIONED_BY_RE.search(tail)
         if pm:
             for line in pm.group(1).splitlines():

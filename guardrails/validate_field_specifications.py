@@ -65,12 +65,12 @@ VERIFIED_CSV = REPO / "ddl" / "gold" / "06_cat_field_mapping.csv"
 UNVERIFIED_CSV = REPO / "ddl" / "gold" / "06b_cat_field_mapping_unverified_candidates.csv"
 KNOWN_GAPS_CSV = Path(__file__).parent / "known_field_mapping_gaps.csv"
 
-# Pattern: CREATE TABLE [IF NOT EXISTS] [schema.]name ( ... ) <terminator>
-_CREATE_TABLE_RE = re.compile(
-    r"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[\w\.]*?(\w+)\s*\(([^;]+?)\)"
-    r"\s*(?:USING|PARTITIONED|TBLPROPERTIES|CLUSTER|COMMENT|STORED|;)",
-    re.IGNORECASE | re.DOTALL,
-)
+# CREATE TABLE parsing is delegated to guardrails/_ddl_parser.py which uses
+# a balanced-paren walker rather than a regex. This is robust to nested
+# parens (DECIMAL(38,18), CHECK(...)), per-column COMMENT 'string' clauses,
+# parens inside line comments, and SQL escaped quotes.
+from _ddl_parser import find_create_tables  # noqa: E402
+
 _COL_NAME_RE = re.compile(r"(\w+)\s+\w")
 
 
@@ -102,9 +102,8 @@ def discover_ddl_tables() -> dict[str, set[str]]:
         return tables
     for f in ddl_root.rglob("*.sql"):
         text = f.read_text()
-        for m in _CREATE_TABLE_RE.finditer(text):
-            tbl = m.group(1).lower()
-            body = m.group(2)
+        for tbl_name, body, _body_start, _body_end, _kw in find_create_tables(text):
+            tbl = tbl_name.lower()
             cols = tables.setdefault(tbl, set())
             for line in body.splitlines():
                 line = line.strip().rstrip(",")
