@@ -2,6 +2,64 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 18.1: Validator regex hardening (post-audit tooling debt)
+
+### Added
+
+- `guardrails/_ddl_parser.py` - shared `find_create_tables()` function that replaces the brittle `_CREATE_TABLE_RE` regex previously duplicated in `validate_field_specifications.py` and `validate_cross_dialect_parity.py`. Uses an explicit balanced-paren walker that:
+  - Tracks paren depth so nested `()` in type declarations (`DECIMAL(38, 18)`, `VARCHAR(64)`) and `CHECK` constraints can't fool the body terminator
+  - Skips SQL string literals (`'BUY','SELL'`) including `''` escaped quotes
+  - Skips identifier-quoted names (`"col)"`, `\`col)\``)
+  - Skips line comments (`-- text with (parens)`) and block comments (`/* ... */`)
+  - Returns the trailing keyword (USING / PARTITIONED / TBLPROPERTIES / etc.) for downstream consumers like the parity validator's `PARTITIONED BY` lookahead
+- `guardrails/test__ddl_parser.py` - 10 regression tests covering the failure modes observed during Tier 17 work:
+  - Per-column `COMMENT 'string'` after `DECIMAL(...)` (Tier 17.4 Hive incident)
+  - Parens inside `--` line comments (Tier 17.3 multi-leg legs incident)
+  - Multi-table files, nested CHECK with quoted strings, escaped quotes, unterminated tables, block comments, backtick and double-quoted identifiers
+  - End-to-end sanity on actual repo DDL files
+
+### Changed
+
+- `guardrails/validate_field_specifications.py` - replaces `_CREATE_TABLE_RE.finditer(text)` with `find_create_tables(text)` from the shared parser. Behavior unchanged when DDL is well-formed; previously-broken edge cases now parse correctly.
+- `guardrails/validate_cross_dialect_parity.py` - same swap. The `PARTITIONED BY` post-lookahead now uses `body_end` from the parser instead of `m.start(3)` from the regex's keyword group.
+
+### Why
+
+During Tier 17 work, two distinct failure modes of the previous regex were observed:
+
+**Tier 17.3 (multi-leg legs):** Comments containing parens (e.g. `-- the n index in legs[] array (row 32.n.X)`) caused the non-greedy `[^;]+?` body pattern to enter catastrophic backtracking. The regex silently failed to match the affected CREATE TABLE — the parity validator then reported the entire table as a phantom. Worked around at the time by stripping parens from comments.
+
+**Tier 17.4 (Hive `fact_option_order_events`):** Per-column `COMMENT 'string'` clauses caused the body terminator alternation `\s*(?:USING|PARTITIONED|...|COMMENT|...)` to misfire — the regex matched the `)` of `DECIMAL(38, 18)` followed by the column-level `COMMENT`, prematurely truncating column discovery. Worked around at the time by switching Hive to `-- ` line comments.
+
+Both workarounds were textual constraints on how comments could be written. This sub-tier removes those constraints by switching to a structural (paren-balanced) parser.
+
+### Verification
+
+- All 8 guardrails pass.
+- 10/10 regression tests in `guardrails/test__ddl_parser.py` pass.
+- End-to-end test confirms the actual repo files where the regex previously failed (`ddl/multileg/02_multileg_gold_delta.sql`, `ddl/option/04_option_gold_hive.sql`, etc.) now parse all 3 tables correctly.
+
+### Coverage
+
+```
+Validators:                        8/8 pass
+Python files in scope:            43  (was 41; +_ddl_parser.py + test__ddl_parser.py)
+Field-mapping rows verified:     257  (unchanged)
+Allowlisted backlog:               0  (audit closed in Tier 17.5)
+New parity violations:             0
+```
+
+### Impact on the audit-closed state
+
+None. The validators produce the same outputs (PASS, 0 errors) before and after this change. The hardening is purely defensive — future DDL edits that use parens-in-comments or per-column `COMMENT 'string'` clauses won't silently break the validators.
+
+### Open followups remaining (non-blocking, from post-audit list)
+
+1. ~~Validator regex hardening~~ ✅ (this sub-tier)
+2. Empty `known_field_mapping_gaps.csv` housekeeping (delete or keep as header-only stub)
+3. Multi-leg Fabric Lakehouse Gold variant (4-dialect parity for multileg)
+4. Mapping CSV section/row polish (22 cosmetic refs deferred from Tier 17.5)
+
 ## [Unreleased] - Tier 17.5: F3.2 closure sub-tier 5 — fact_multileg_option_events (FINAL — audit backlog fully closed)
 
 ### Milestone
