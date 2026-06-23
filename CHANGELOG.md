@@ -2,6 +2,99 @@
 
 All notable changes to the data model are documented here. The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased] - Tier 18.4: Mapping CSV ROW_MISMATCH polish (post-audit followup #4, FINAL)
+
+### Milestone
+
+**This sub-tier closes the last item on the post-audit followup list.** With this PR merged, all four post-Tier-17.5 followups are complete:
+- ✅ #1 Validator regex hardening (Tier 18.1, PR #24)
+- ✅ #2 Empty allowlist housekeeping + guardrails README (Tier 18.2, PR #25)
+- ✅ #3 Multi-leg Fabric Lakehouse Gold variant (Tier 18.3, PR #26)
+- ✅ #4 Mapping CSV section/row polish (this sub-tier)
+
+The cat-data-model is now in a fully steady-state.
+
+### Changed
+
+- `ddl/gold/06_cat_field_mapping.csv` - corrected 12 row-number references on `fact_multileg_option_events` rows where the PDF-verified row number differs from the row originally claimed in the mapping CSV. All 12 corrections were identified during Tier 17.0's PDF verification pass (recorded in `TIER_17_VERIFICATION.csv`) and deferred to optional polish per the Tier 17.5 CHANGELOG.
+
+### Corrections applied
+
+All in `fact_multileg_option_events`. Format: `column: §section old_row → new_row`.
+
+In §5.2.2 (Multi-Leg Order Route Event field table — row numbering differs slightly from equity §4.3):
+
+| Column | Old row | New row (PDF-verified, page) |
+|---|---|---|
+| `sender_imid` | 14 | 13 (p 291) |
+| `destination` | 15 | 14 (p 291) |
+| `destination_type` | 16 | 15 (p 291) |
+| `routed_order_id` | 17 | 16 (p 291) |
+| `session` | 18 | 17 (p 291) |
+| `route_rejected_flag` | 27 | 26 (p 292) |
+| `exch_origin_code` | 28 | 27 (p 292) |
+| `paired_order_id` | 34 | 28 (p 292) |
+
+In §5.2.6 (Multi-Leg Order Modified field table):
+
+| Column | Old row | New row |
+|---|---|---|
+| `prior_order_id` | 10 | 9 (p 324) |
+| `initiator` | 22 | 21 (p 325) |
+| `leaves_qty` | 27 | 25 (p 325) |
+
+In §5.2.7 (Multi-Leg Order Cancelled field table):
+
+| Column | Old row | New row |
+|---|---|---|
+| `cancel_qty` | 13 | 12 (p 331) |
+
+### Why
+
+Cosmetic accuracy. These row numbers describe where each field appears in the multi-leg field-table rendering of CAT IM v4.1.0r15. The PDF verifier (`verify_cat_im_v3.py`) caught the off-by-one or off-by-multi-row discrepancies during Tier 17.0's comprehensive verification pass. The Tier 17.5 CHANGELOG explicitly deferred the polish: *"These references can be polished in an optional future tier (proposed Tier 18) without affecting DDL correctness or audit closure."*
+
+### Why this is the polish-stop point
+
+10 SECTION_MISMATCH cases identified in Tier 17.0 remain **intentionally unmodified**. They represent legitimate alternative references between:
+- Multi-leg event usage sites (§5.2.x sections) — where the field appears in a specific multi-leg event's field table
+- Single-leg canonical definition sites (§5.1.x sections) — where the field is first defined for option events
+
+Both reference styles are spec-supported. The mapping CSV's current §5.2.x style is meaningful in the multi-leg context and was preserved as a design decision.
+
+### Verification
+
+- All 8 guardrails pass.
+- 10/10 regression tests in `test__ddl_parser.py` pass.
+- All 12 corrected rows now match the PDF spot-check exactly.
+
+### Coverage
+
+```
+Validators:                        8/8 pass
+Allowlisted backlog:               0  (audit closed in Tier 17.5)
+Field-mapping rows verified:     257  (unchanged)
+DDL files in parity scope:        23  (unchanged)
+Mapping CSV row corrections:      12  (this sub-tier)
+```
+
+### Post-followup state — STEADY
+
+All four post-audit followups are complete:
+
+| # | Item | PR |
+|---|---|---|
+| 1 | Validator regex hardening (balanced-paren `_ddl_parser.py`) | #24 |
+| 2 | Empty allowlist housekeeping + guardrails README | #25 |
+| 3 | Multi-leg Fabric Lakehouse Gold variant | #26 |
+| 4 | Mapping CSV ROW_MISMATCH polish | this PR |
+
+The repository is in a fully steady-state:
+- F3.1 phantom-table backlog: **0** (closed Tier 13-16)
+- F3.2 missing-column backlog: **0** (closed Tier 17.1-17.5)
+- Post-audit tooling debt: **0** (closed Tier 18.1-18.4)
+- All 8 guardrails passing with 0 allowlist exceptions on field-mapping
+- 4-dialect parity coverage for option and multi-leg Gold layers
+
 ## [Unreleased] - Tier 18.3: Multi-leg Fabric Lakehouse Gold variant
 
 ### Added
